@@ -1,0 +1,33 @@
+{
+  "name": "virtual-pro-grappler",
+  "version": "0.1.0",
+  "description": "Open-source web wrestling game faithful to WWF No Mercy. Data-driven, frame-deterministic, Babylon.js + vanilla JS.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "keywords": [
+    "wrestling",
+    "game",
+    "babylonjs",
+    "no-mercy"
+  ],
+  "author": "",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@babylonjs/core": "^9.0.0",
+    "@babylonjs/loaders": "^9.0.0",
+    "howler": "^2.2.4"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^1.6.1",
+    "ajv": "^8.18.0",
+    "vite": "^5.4.21",
+    "vitest": "^1.6.1"
+  }
+}

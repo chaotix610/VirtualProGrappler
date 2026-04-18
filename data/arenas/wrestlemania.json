@@ -1,0 +1,14 @@
+{
+  "id": "wrestlemania",
+  "displayName": "WrestleMania",
+  "arenaGlb": "assets/glb/arenas/wrestlemania.glb",
+  "ringOverrides": {
+    "mat_canvas": "assets/textures/ring/canvas_wrestlemania.png",
+    "mat_apron": "assets/textures/ring/apron_wrestlemania.png",
+    "mat_turnbuckle": "assets/textures/ring/turnbuckle_wrestlemania.png",
+    "mat_rope_top": null,
+    "mat_rope_middle": null,
+    "mat_rope_bottom": null,
+    "ropeColor": "#FFFFFF"
+  }
+}

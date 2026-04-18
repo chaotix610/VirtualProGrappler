@@ -1,0 +1,13 @@
+{
+  "id": "raw",
+  "displayName": "RAW is WAR",
+  "arenaGlb": "assets/glb/arenas/raw.glb",
+  "ringOverrides": {
+    "mat_canvas": "assets/textures/ring/canvas_raw.png",
+    "mat_apron": "assets/textures/ring/apron_raw.png",
+    "mat_rope_top": null,
+    "mat_rope_middle": null,
+    "mat_rope_bottom": null,
+    "ropeColor": "#FF0000"
+  }
+}

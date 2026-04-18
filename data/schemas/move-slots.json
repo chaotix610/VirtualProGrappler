@@ -1,0 +1,737 @@
+{
+  "grappling": {
+    "frontGrapple": {
+      "frontWeakGrapple": {
+        "opponentState": "front-weak-grapple-defending",
+        "setup": "Tap [A] in front of standing opponent",
+        "slots": {
+          "A": "front-weak-grapple-1",
+          "leftRight+A": "front-weak-grapple-2",
+          "up+A": "front-weak-grapple-3",
+          "down+A": "front-weak-grapple-4",
+          "B": "front-weak-grapple-5",
+          "leftRight+B": "front-weak-grapple-6",
+          "up+B": "front-weak-grapple-7",
+          "down+B": "front-weak-grapple-8"
+        }
+      },
+      "frontStrongGrapple": {
+        "opponentState": "front-strong-grapple-defending",
+        "setup": "Hold [A] in front of standing opponent",
+        "slots": {
+          "A": "front-strong-grapple-1",
+          "leftRight+A": "front-strong-grapple-2",
+          "up+A": "front-strong-grapple-3",
+          "down+A": "front-strong-grapple-4",
+          "B": "front-strong-grapple-5",
+          "leftRight+B": "front-strong-grapple-6",
+          "up+B": "front-strong-grapple-7",
+          "down+B": "front-strong-grapple-8",
+          "controlStick": "front-finisher"
+        }
+      }
+    },
+    "backGrapple": {
+      "backWeakGrapple": {
+        "opponentState": "back-weak-grapple-defending",
+        "setup": "Tap [A] when behind a standing opponent",
+        "slots": {
+          "A": "back-weak-grapple-1",
+          "anyDirection+A": "back-weak-grapple-2",
+          "B": "back-weak-grapple-3",
+          "anyDirection+B": "back-weak-grapple-4"
+        }
+      },
+      "backStrongGrapple": {
+        "opponentState": "back-strong-grapple-defending",
+        "setup": "Hold [A] when behind a standing opponent",
+        "slots": {
+          "A": "back-strong-grapple-1",
+          "anyDirection+A": "back-strong-grapple-2",
+          "B": "back-strong-grapple-3",
+          "anyDirection+B": "back-strong-grapple-4",
+          "controlStick": "back-finisher"
+        }
+      }
+    },
+    "reversals": {
+      "backWeakGrappleCounter": {
+        "opponentState": "back-weak-grapple-attacking",
+        "setup": "Press [R] while defending a back weak grapple",
+        "slots": {
+          "R": "back-weak-grapple-counter"
+        }
+      },
+      "backStrongGrappleCounter": {
+        "opponentState": "back-strong-grapple-attacking",
+        "setup": "Press [R] while defending a back strong grapple",
+        "slots": {
+          "R": "back-strong-grapple-counter"
+        }
+      }
+    }
+  },
+
+  "standing": {
+    "weakStriking": {
+      "weakArmStrike": {
+        "opponentState": "standing-facing-player, standing-facing-away",
+        "setup": "Press [B] close to a standing opponent",
+        "slots": {
+          "B": "weak-arm-strike-1",
+          "anyDirection+B": "weak-arm-strike-2"
+        }
+      },
+      "weakLegStrike": {
+        "opponentState": "standing-facing-player, standing-facing-away",
+        "setup": "Press [B] at mid range from a standing opponent",
+        "slots": {
+          "B": "weak-leg-strike-1",
+          "anyDirection+B": "weak-leg-strike-2"
+        }
+      }
+    },
+    "strongStriking": {
+      "strongStrike": {
+        "opponentState": "standing-facing-player, standing-facing-away",
+        "setup": "Press [B] at any range from a standing opponent (strong strike threshold)",
+        "slots": {
+          "B": "strong-strike-1",
+          "anyDirection+B": "strong-strike-2",
+          "A+B": "strong-strike-3"
+        }
+      }
+    },
+    "recoveringStrike": {
+      "duckingStrike": {
+        "opponentState": "standing-facing-player, standing-facing-away",
+        "setup": "Press [B] while getting up",
+        "slots": {
+          "B": "ducking-strike"
+        }
+      }
+    },
+    "counterAttack": {
+      "counterPunch": {
+        "opponentState": "throwing-punch",
+        "setup": "Press [R] during opponent's punch animation",
+        "slots": {
+          "R": "counter-punch"
+        }
+      },
+      "specialCounterPunch": {
+        "opponentState": "throwing-punch",
+        "setup": "Press [R] with special meter during opponent's punch animation",
+        "slots": {
+          "R": "special-counter-punch"
+        }
+      },
+      "counterKick": {
+        "opponentState": "throwing-kick",
+        "setup": "Press [R] + [A] or [R] + [B] during opponent's kick animation",
+        "slots": {
+          "R+A": "counter-kick-1",
+          "R+B": "counter-kick-2"
+        }
+      },
+      "specialCounterKick": {
+        "opponentState": "throwing-kick",
+        "setup": "Press [R] + [A] or [B] with special meter during opponent's kick animation",
+        "slots": {
+          "R+A/B": "special-counter-kick"
+        }
+      }
+    },
+    "walkingStyle": {
+      "walkingStyle": {
+        "opponentState": "n/a",
+        "setup": "Move with [D-Pad] while standing",
+        "slots": {
+          "anyDirection": "walking-style"
+        }
+      }
+    }
+  },
+
+  "running": {
+    "runningStrike": {
+      "weakRunningStrike": {
+        "opponentState": "standing-facing-player, standing-facing-away",
+        "setup": "Hold [Run] then press [B] or [A+B] toward a standing opponent",
+        "slots": {
+          "run+B": "weak-running-strike-1",
+          "run+A+B": "weak-running-strike-2"
+        }
+      },
+      "strongRunningStrike": {
+        "opponentState": "standing-facing-player, standing-facing-away",
+        "setup": "Hold [D-Pad] + [Run] then press [B] or [A+B] toward a standing opponent",
+        "slots": {
+          "dpad+run+B": "strong-running-strike-1",
+          "dpad+run+A+B": "strong-running-strike-2"
+        }
+      }
+    },
+    "runningGrapple": {
+      "runFrontGrapple": {
+        "opponentState": "standing-facing-player",
+        "setup": "Hold [Run] then press [A] into a standing opponent facing you",
+        "slots": {
+          "run+A": "run-front-grapple"
+        }
+      },
+      "runBackGrapple": {
+        "opponentState": "standing-facing-away",
+        "setup": "Hold [Run] then press [A] into a standing opponent facing away",
+        "slots": {
+          "run+A": "run-back-grapple"
+        }
+      }
+    },
+    "runningGroundStrike": {
+      "runGroundStrike": {
+        "opponentState": "down-facing-up, down-facing-down, sitting-up, kneeling-all-fours",
+        "setup": "Hold [Run] then press [B] toward a downed opponent",
+        "slots": {
+          "run+B_facingUp": "run-ground-strike-facing-up",
+          "run+B_facingDown": "run-ground-strike-facing-down",
+          "run+B_sittingUp": "run-ground-strike-sitting-up",
+          "run+B_kneelingAllFours": "run-ground-strike-kneeling-all-fours"
+        }
+      }
+    },
+    "evasion": {
+      "evasion": {
+        "opponentState": "n/a",
+        "setup": "Hold [Run] then press [R]",
+        "slots": {
+          "run+R": "evasion"
+        }
+      }
+    }
+  },
+
+  "ground": {
+    "upperBodySubmission": {
+      "upperBodySubmission": {
+        "opponentState": "down-facing-up, down-facing-down, sitting-up, kneeling-all-fours",
+        "setup": "Press [A] close to a downed opponent (upper body position)",
+        "slots": {
+          "A_facingUp": "upper-body-submission-facing-up",
+          "A_facingDown": "upper-body-submission-facing-down",
+          "A_sittingUp": "upper-body-submission-sitting-up",
+          "A_kneelingAllFours": "upper-body-submission-kneeling-all-fours"
+        }
+      }
+    },
+    "upperBodyFinisher": {
+      "upperBodyFinisher": {
+        "opponentState": "down-facing-up, down-facing-down",
+        "setup": "Press [A] with special meter close to a downed opponent (upper body position)",
+        "slots": {
+          "A_facingUp": "upper-body-finisher-facing-up",
+          "A_facingDown": "upper-body-finisher-facing-down"
+        }
+      }
+    },
+    "lowerBodySubmission": {
+      "lowerBodySubmission": {
+        "opponentState": "down-facing-up, down-facing-down",
+        "setup": "Press [A] close to a downed opponent (lower body position)",
+        "slots": {
+          "A_facingUp": "lower-body-submission-facing-up",
+          "A_facingDown": "lower-body-submission-facing-down"
+        }
+      }
+    },
+    "lowerBodyFinisher": {
+      "lowerBodyFinisher": {
+        "opponentState": "down-facing-up, down-facing-down",
+        "setup": "Press [A] with special meter close to a downed opponent (lower body position)",
+        "slots": {
+          "A_facingUp": "lower-body-finisher-facing-up",
+          "A_facingDown": "lower-body-finisher-facing-down"
+        }
+      }
+    },
+    "groundStriking": {
+      "groundStrike": {
+        "opponentState": "down-facing-up, down-facing-down, sitting-up, kneeling-all-fours",
+        "setup": "Press [B] close to a downed opponent",
+        "slots": {
+          "B_facingUp": "ground-strike-facing-up",
+          "B_facingDown": "ground-strike-facing-down",
+          "B_sittingUp": "ground-strike-sitting-up",
+          "B_kneelingAllFours": "ground-strike-kneeling-all-fours"
+        }
+      }
+    }
+  },
+
+  "turnbuckle": {
+    "turnbuckleStrikes": {
+      "turnbuckleStrike": {
+        "opponentState": "at-turnbuckle-facing-out",
+        "setup": "Press [B] or [D-Pad] + [B] close to cornered opponent",
+        "slots": {
+          "B": "turnbuckle-strike-1",
+          "anyDirection+B": "turnbuckle-strike-2"
+        }
+      },
+      "runningTurnbuckleStrike": {
+        "opponentState": "at-turnbuckle-facing-out",
+        "setup": "Hold [Run] then press [B] or [A+B] toward a cornered opponent",
+        "slots": {
+          "run+B": "running-turnbuckle-strike-1",
+          "run+A+B": "running-turnbuckle-strike-2"
+        }
+      }
+    },
+    "cornerCounter": {
+      "cornerCounter": {
+        "opponentState": "standing-facing-player",
+        "setup": "Rapidly tap [R], [A], [B] when Irish whipped into the corner",
+        "slots": {
+          "rapidlyTap_R_A_B": "irish-whip-to-corner-counter"
+        }
+      }
+    },
+    "treeOfWoe": {
+      "treeOfWoeStrike": {
+        "opponentState": "tree-of-woe",
+        "setup": "Press [B] or [D-Pad] + [B] close to a tree-of-woe opponent",
+        "slots": {
+          "B": "tree-of-woe-strike-1",
+          "anyDirection+B": "tree-of-woe-strike-2"
+        }
+      },
+      "runningTreeOfWoeStrike": {
+        "opponentState": "tree-of-woe",
+        "setup": "Hold [Run] then press [B] toward a tree-of-woe opponent",
+        "slots": {
+          "run+B": "running-tree-of-woe-strike"
+        }
+      }
+    },
+    "frontTurnbuckleGrapple": {
+      "turnbuckleFrontWeakGrapple": {
+        "opponentState": "turnbuckle-front-weak-grapple-defending",
+        "setup": "Tap [A] in front of a cornered opponent",
+        "slots": {
+          "A": "turnbuckle-front-weak-grapple-1",
+          "B": "turnbuckle-front-weak-grapple-2"
+        }
+      },
+      "turnbuckleFrontStrongGrapple": {
+        "opponentState": "turnbuckle-front-strong-grapple-defending",
+        "setup": "Hold [A] in front of a cornered opponent",
+        "slots": {
+          "A": "turnbuckle-front-strong-grapple-1",
+          "B": "turnbuckle-front-strong-grapple-2",
+          "controlStick": "turnbuckle-front-finisher"
+        }
+      }
+    },
+    "backTurnbuckleGrapple": {
+      "turnbuckleBackWeakGrapple": {
+        "opponentState": "turnbuckle-back-weak-grapple-defending",
+        "setup": "Tap [A] behind a cornered opponent",
+        "slots": {
+          "A": "turnbuckle-back-weak-grapple-1",
+          "B": "turnbuckle-back-weak-grapple-2"
+        }
+      },
+      "turnbuckleBackStrongGrapple": {
+        "opponentState": "turnbuckle-back-strong-grapple-defending",
+        "setup": "Hold [A] behind a cornered opponent",
+        "slots": {
+          "A": "turnbuckle-back-strong-grapple-1",
+          "B": "turnbuckle-back-strong-grapple-2",
+          "controlStick": "turnbuckle-back-finisher"
+        }
+      }
+    },
+    "flyingMoveCounter": {
+      "flyingMoveCounter": {
+        "opponentState": "on-turnbuckle-facing-player, on-turnbuckle-facing-away",
+        "setup": "Press [A] close to an opponent on the turnbuckle",
+        "slots": {
+          "A_facingPlayer": "front-flying-move-counter",
+          "A_facingAway": "back-flying-move-counter"
+        }
+      }
+    },
+    "flyingAttackStanding": {
+      "flyingTopTurnbuckleStanding": {
+        "opponentState": "standing-facing-player, standing-facing-away",
+        "setup": "Climb turnbuckle via [D-Pad] + [Run], release [Run] toward a standing opponent",
+        "slots": {
+          "releaseRun": "flying-top-turnbuckle-standing-opponent"
+        }
+      },
+      "flyingTopTurnbuckleStandingToOutside": {
+        "opponentState": "outside-ring",
+        "setup": "Climb turnbuckle via [D-Pad] + [Run], release [Run] toward opponent outside ring",
+        "slots": {
+          "releaseRun": "flying-top-turnbuckle-standing-opponent-to-outside"
+        }
+      },
+      "flyingTopTurnbuckleStandingSpecial": {
+        "opponentState": "standing-facing-player, standing-facing-away, outside-ring",
+        "setup": "Climb turnbuckle via [D-Pad] + [Run] with special meter, release [Run]",
+        "slots": {
+          "releaseRun": "flying-top-turnbuckle-standing-opponent-special"
+        }
+      }
+    },
+    "flyingAttackLaying": {
+      "flyingTopTurnbuckleLaying": {
+        "opponentState": "down-in-ring",
+        "setup": "Climb turnbuckle via [D-Pad] + [Run], release [Run] toward a downed opponent",
+        "slots": {
+          "releaseRun": "flying-top-turnbuckle-laying-opponent"
+        }
+      },
+      "flyingTopTurnbuckleLayingToOutside": {
+        "opponentState": "down-outside-ring",
+        "setup": "Climb turnbuckle via [D-Pad] + [Run], release [Run] toward downed opponent outside",
+        "slots": {
+          "releaseRun": "flying-top-turnbuckle-laying-opponent-to-outside"
+        }
+      },
+      "flyingTopTurnbuckleLayingSpecial": {
+        "opponentState": "down-in-ring, down-outside-ring",
+        "setup": "Climb turnbuckle via [D-Pad] + [Run] with special meter, release [Run] toward downed opponent",
+        "slots": {
+          "releaseRun": "flying-top-turnbuckle-laying-opponent-special"
+        }
+      }
+    },
+    "flyingAttackSecondRope": {
+      "flyingSecondTurnbuckle": {
+        "opponentState": "down-in-ring",
+        "setup": "Stand at turnbuckle, press [A] toward a downed nearby opponent",
+        "slots": {
+          "A": "flying-second-turnbuckle-laying-opponent"
+        }
+      }
+    },
+    "turnbuckleTaunt": {
+      "cornerTaunt": {
+        "opponentState": "n/a",
+        "setup": "Press [D-Pad] + [Control Stick] while standing at a turnbuckle",
+        "slots": {
+          "dpad+controlStick": "corner-taunt"
+        }
+      },
+      "topRopeTaunt": {
+        "opponentState": "n/a",
+        "setup": "Press [Control Stick] while on the top rope",
+        "slots": {
+          "controlStick": "top-rope-taunt"
+        }
+      }
+    }
+  },
+
+  "ringside": {
+    "grappleToApron": {
+      "weakGrappleToApron": {
+        "opponentState": "apron-weak-grapple-from-inside-defending",
+        "setup": "Tap [A] toward opponent on the apron (from inside)",
+        "slots": {
+          "A_or_B": "weak-grapple-to-apron"
+        }
+      },
+      "strongGrappleToApron": {
+        "opponentState": "apron-strong-grapple-from-inside-defending",
+        "setup": "Hold [A] toward opponent on the apron (from inside)",
+        "slots": {
+          "A_or_B": "strong-grapple-to-apron"
+        }
+      },
+      "specialGrappleToApron": {
+        "opponentState": "apron-strong-grapple-from-inside-defending",
+        "setup": "Press [Control Stick] with special meter toward opponent on the apron (from inside)",
+        "slots": {
+          "controlStick": "special-grapple-to-apron"
+        }
+      },
+      "counterGrappleFromApron": {
+        "opponentState": "apron-weak-grapple-from-inside-attacking, apron-strong-grapple-from-inside-attacking",
+        "setup": "Rapidly tap [A] and [B] while defending a grapple from inside",
+        "slots": {
+          "rapidlyTap_A_B": "counter-grapple-from-apron"
+        }
+      }
+    },
+    "ropeInsideAttack": {
+      "springboardAttack": {
+        "opponentState": "down-in-ring",
+        "setup": "Press [D-Pad] + [A] at the ropes toward a downed opponent inside",
+        "slots": {
+          "dpad+A": "springboard-attack-to-inside"
+        }
+      }
+    },
+    "flyingAttackToOutside": {
+      "flyingAttackToOutside": {
+        "opponentState": "outside-ring",
+        "setup": "Press [D-Pad] + [A] at the ropes toward an opponent outside",
+        "slots": {
+          "dpad+A": "flying-attack-to-outside"
+        }
+      },
+      "runningDivingAttack": {
+        "opponentState": "outside-ring",
+        "setup": "Hold [Run] toward the ropes with an opponent outside, then press [A] or [D-Pad] + [A]",
+        "slots": {
+          "run+A": "running-diving-attack-1",
+          "run+dpad+A": "running-diving-attack-2"
+        }
+      }
+    },
+    "runningDivingTaunt": {
+      "runningDivingTaunt": {
+        "opponentState": "n/a",
+        "setup": "Hold [Run] toward the ropes then press [Control Stick]",
+        "slots": {
+          "run+controlStick": "running-diving-taunt"
+        }
+      }
+    },
+    "reboundFlyingAttack": {
+      "reboundFlyingAttack": {
+        "opponentState": "standing-facing-player, standing-facing-away",
+        "setup": "Press [A] while running (rebounding off ropes) toward a standing opponent",
+        "slots": {
+          "run+A": "rebound-flying-attack"
+        }
+      }
+    }
+  },
+
+  "apron": {
+    "apronStrike": {
+      "apronKick": {
+        "opponentState": "standing-facing-player, standing-facing-away, outside-ring",
+        "setup": "Press [B] while on the apron toward an opponent inside or outside",
+        "slots": {
+          "B_toInside": "apron-kick-to-inside",
+          "B_toOutside": "apron-kick-to-outside"
+        }
+      }
+    },
+    "grappleFromApron": {
+      "weakGrappleFromApron": {
+        "opponentState": "apron-weak-grapple-from-apron-defending",
+        "setup": "Tap [A] on the apron toward opponent (from apron)",
+        "slots": {
+          "A_or_B": "weak-grapple-from-apron"
+        }
+      },
+      "strongGrappleFromApron": {
+        "opponentState": "apron-strong-grapple-from-apron-defending",
+        "setup": "Hold [A] on the apron toward opponent (from apron)",
+        "slots": {
+          "A_or_B": "strong-grapple-from-apron"
+        }
+      },
+      "finisherFromApron": {
+        "opponentState": "apron-strong-grapple-from-apron-defending",
+        "setup": "Press [Control Stick] with special meter while in apron strong grapple",
+        "slots": {
+          "controlStick": "finisher-from-apron"
+        }
+      }
+    },
+    "counterGrappleFromApron": {
+      "counterGrappleFromApronApron": {
+        "opponentState": "apron-weak-grapple-from-apron-attacking, apron-strong-grapple-from-apron-attacking",
+        "setup": "Rapidly tap [A] and [B] while defending a grapple on the apron",
+        "slots": {
+          "rapidlyTap_A_B": "counter-grapple-from-apron-apron"
+        }
+      }
+    },
+    "flyingAttackFromApron": {
+      "flyingAttackFromApron": {
+        "opponentState": "outside-ring",
+        "setup": "Press [D-Pad] + [A] while on the apron toward opponent outside",
+        "slots": {
+          "dpad+A": "flying-attack-from-apron"
+        }
+      },
+      "runningFlyingAttackFromApron": {
+        "opponentState": "outside-ring",
+        "setup": "Hold [Run] on the apron then press [A] toward opponent outside",
+        "slots": {
+          "run+A": "running-flying-attack-from-apron"
+        }
+      }
+    },
+    "flyingAttackToRing": {
+      "flyingAttackToRingStanding": {
+        "opponentState": "standing-facing-player, standing-facing-away",
+        "setup": "Press [A] on the apron toward a standing opponent inside",
+        "slots": {
+          "A": "flying-attack-to-ring-standing"
+        }
+      },
+      "flyingAttackToRingLaying": {
+        "opponentState": "down-in-ring",
+        "setup": "Press [A] on the apron toward a downed opponent inside",
+        "slots": {
+          "A": "flying-attack-to-ring-laying"
+        }
+      },
+      "flyingAttackToRingSpecial": {
+        "opponentState": "standing-facing-player, standing-facing-away, down-in-ring",
+        "setup": "Press [A] with special meter on the apron toward an opponent inside",
+        "slots": {
+          "A": "flying-attack-to-ring-special"
+        }
+      }
+    },
+    "apronTaunt": {
+      "apronTaunt": {
+        "opponentState": "n/a",
+        "setup": "Press [Control Stick] while on the apron",
+        "slots": {
+          "controlStick": "apron-taunt"
+        }
+      }
+    }
+  },
+
+  "irishWhip": {
+    "irishWhipStrike": {
+      "irishWhipStrike": {
+        "opponentState": "running-toward-opponent",
+        "setup": "Press [B] while opponent runs toward you",
+        "slots": {
+          "B": "irish-whip-strike"
+        }
+      }
+    },
+    "irishWhipGrappleWeak": {
+      "weakIrishWhipGrapple": {
+        "opponentState": "running-toward-from-weak-whip",
+        "setup": "Tap or hold [A] while opponent returns from a weak Irish whip",
+        "slots": {
+          "tapA": "weak-irish-whip-grapple-1",
+          "holdA": "weak-irish-whip-grapple-2"
+        }
+      }
+    },
+    "irishWhipGrappleStrong": {
+      "strongIrishWhipGrapple": {
+        "opponentState": "running-toward-from-strong-whip",
+        "setup": "Tap or hold [A] while opponent returns from a strong Irish whip",
+        "slots": {
+          "tapA": "strong-irish-whip-grapple-1",
+          "holdA": "strong-irish-whip-grapple-2"
+        }
+      },
+      "irishWhipFinisher": {
+        "opponentState": "running-toward-from-strong-whip",
+        "setup": "Press [Control Stick] with special meter while opponent returns from a strong Irish whip",
+        "slots": {
+          "controlStick": "irish-whip-finisher"
+        }
+      }
+    }
+  },
+
+  "taunt": {
+    "standingTaunt": {
+      "taunt": {
+        "opponentState": "n/a",
+        "setup": "Flick [Control Stick] up, left, or right while standing",
+        "slots": {
+          "controlStickUp": "taunt-1",
+          "controlStickLeft": "taunt-2",
+          "controlStickRight": "taunt-3"
+        }
+      },
+      "specialTaunt": {
+        "opponentState": "n/a",
+        "setup": "Flick [Control Stick] up, left, or right with special meter while standing",
+        "slots": {
+          "controlStickUp_Left_Right": "special-taunt"
+        }
+      }
+    },
+    "duckingTaunt": {
+      "duckingTaunt": {
+        "opponentState": "n/a",
+        "setup": "Flick [Control Stick] down while ducking",
+        "slots": {
+          "controlStickDown": "ducking-taunt"
+        }
+      }
+    },
+    "celebrationTaunt": {
+      "celebrationTaunt": {
+        "opponentState": "defeated",
+        "setup": "Automatic on match end",
+        "slots": {
+          "automatic": "celebration-taunt"
+        }
+      }
+    },
+    "entryTaunt": {
+      "entryTaunt": {
+        "opponentState": "n/a",
+        "setup": "Automatic during entrance sequence",
+        "slots": {
+          "automatic": "entryway-taunt"
+        }
+      }
+    }
+  },
+
+  "doubleTeam": {
+    "doubleTeamGrapple": {
+      "frontDoubleTeamGrapple": {
+        "opponentState": "double-team-grapple-front-defending",
+        "setup": "Press [A] when partner initiates a front double-team grapple",
+        "slots": {
+          "A": "front-double-team-grapple"
+        }
+      },
+      "backDoubleTeamGrapple": {
+        "opponentState": "double-team-grapple-back-defending",
+        "setup": "Press [A] when partner initiates a back double-team grapple",
+        "slots": {
+          "A": "back-double-team-grapple"
+        }
+      },
+      "sandwichDoubleTeamGrapple": {
+        "opponentState": "double-team-grapple-sandwich-defending",
+        "setup": "Press [A] when partner initiates a sandwich double-team grapple",
+        "slots": {
+          "A": "sandwich-double-team-grapple"
+        }
+      },
+      "runningDoubleTeamGrapple": {
+        "opponentState": "running-toward-opponent",
+        "setup": "Press [A] while running toward an opponent running toward your partner",
+        "slots": {
+          "A": "running-double-team-grapple"
+        }
+      }
+    },
+    "doubleTeamFlyingAttack": {
+      "doubleTeamFlyingAttack": {
+        "opponentState": "held-on-shoulders",
+        "setup": "Automatic — triggered by partner holding opponent on shoulders",
+        "slots": {
+          "automatic_fromTopTurnbuckle": "double-team-flying-off-top-turnbuckle",
+          "automatic_fromTopTurnbuckleToOutside": "double-team-flying-off-top-turnbuckle-to-outside",
+          "automatic_fromApronOverTopRope": "double-team-flying-from-apron-over-top-rope"
+        }
+      }
+    }
+  }
+}
