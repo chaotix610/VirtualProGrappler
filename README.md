@@ -1,6 +1,6 @@
-# VPG Engine
+# Virtual Pro Grappler
 
-A fully free, open-source professional wrestling video game engine built on modern web technology, designed to recreate the legendary gameplay mechanics and environmental design of WWF No Mercy.
+A fully free, open-source professional wrestling video game (and engine) built on modern web technology, designed to recreate the legendary gameplay mechanics and environmental design of WWF No Mercy, Virtual Pro Wrestling 2, WCW/nWo Revenge, Def Jam Vendetta, etc.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
