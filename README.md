@@ -17,7 +17,7 @@ VPG Engine aims to faithfully recreate the core gameplay experience of WWF No Me
 - **Built on modern web technology** (JavaScript/Web-based)
 - **Legally clean** — zero copyrighted content in the final release
 - **Highly customizable** — JSON-driven content with full modding support
-- Built with ![BabylonJS](https://img.shields.io/badge/babylon-JS-BB464B?logo=babylondotjs)
+- Built with ![BabylonJS](https://img.shields.io/badge/babylonJS-gray?logo=babylondotjs)
 
 
 
