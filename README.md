@@ -1,6 +1,6 @@
 # Virtual Pro Grappler
 
-![Virtual Pro Grappler](/assets/artwork/box-art.png)
+!(/assets/artwork/box-art.png)
 
 A fully free, open-source professional wrestling video game (and engine) built on modern web technology, designed to recreate the legendary gameplay mechanics and environmental design of WWF No Mercy, Virtual Pro Wrestling 2, WCW/nWo Revenge, Def Jam Vendetta, etc.
 
