@@ -1,6 +1,7 @@
 # Virtual Pro Grappler
 
-![Virtual Pro Grappler](/assets/artwork/box-art.png)
+[![Virtual Pro Grappler](assets/artwork/vpg-box-art.png)
+
 
 A fully free, open-source professional wrestling video game (and engine) built on modern web technology, designed to recreate the legendary gameplay mechanics and environmental design of WWF No Mercy, Virtual Pro Wrestling 2, WCW/nWo Revenge, Def Jam Vendetta, etc.
 
@@ -16,7 +17,7 @@ VPG Engine aims to faithfully recreate the core gameplay experience of WWF No Me
 - **Built on modern web technology** (JavaScript/Web-based)
 - **Legally clean** — zero copyrighted content in the final release
 - **Highly customizable** — JSON-driven content with full modding support
-- Built with [Babylon.js](https://www.babylonjs.com/)
+- Built with ![Babylon.js](https://www.babylonjs.com/)
 
 The engine is being developed using No Mercy as a design reference, with all final assets being original creations. Characters are built in Blender and exported as GLB files with per-part texture mapping.
 
