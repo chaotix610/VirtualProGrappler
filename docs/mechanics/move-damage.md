@@ -290,25 +290,35 @@ $$
 ### Each Wrench
 
 - Limb‑adjusted damage = 1
+
 $$
 \text{Factor1} = \left\lfloor (35 + 50) \cdot 2 \cdot 0.01 \right\rfloor = 1
 $$
+
 - Spirit bonus = 3
+
 $$
 \text{Factor3} = 3
 $$
+
 - Special bonus → total = **4**
+
 $$
 T = 1 + 0 + 3 = 4
 $$
+
 $$
 \text{MainHealthDamage} = \left\lfloor 4 \cdot 1.2 \right\rfloor = 4
 $$
+
 - Submission Skill bonus = **+1 Leg**, **+1 Flying**
+
 $$
 B = +1.0
 $$
+
 - Final Joint Stamina damage = **4 Leg**, **4 Flying**
+
 $$
 \text{Leg} = 2 + 1 = 4,\quad \text{Flying} = 2 + 1 = 4
 $$
