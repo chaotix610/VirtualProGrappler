@@ -254,28 +254,39 @@ These bonuses/penalties apply **per wrench/pulse** to **each affected limb**.
 ### Initial Application
 
 - Limb‑adjusted damage = 4
+
 $$
 \text{Factor1} = \left\lfloor (35 + 50) \cdot 5 \cdot 0.01 \right\rfloor = 4
 $$
+
 - Parameter bonus = 0
+
 $$
 \text{Factor2} = 0
 $$
+
 - Spirit bonus = 3
+
 $$
 \text{Factor3} = \left\lfloor 64 \cdot 0.05 \right\rfloor = 3
 $$
+
 - Main Health Damage = 8
+
 $$
 T = 4 + 0 + 3 = 7
 $$
+
 $$
 \text{MainHealthDamage} = \left\lfloor 7 \cdot 1.2 \right\rfloor = 8
 $$
+
 - Joint Stamina damage = **3 Leg**, **3 Flying**
+
 $$
 \text{Leg} = 3,\quad \text{Flying} = 3
 $$
+
 ### Each Wrench
 
 - Limb‑adjusted damage = 1
