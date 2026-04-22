@@ -137,11 +137,11 @@ This Parameter Bonus can never be a negative number.
 
 ### Relationship to Wrestler Parameters
 
-The attacker’s **Offense Parameter** and the defender’s **Defense Parameter** directly feed into **Factor 2 (Parameter Bonus)** of the damage formula. These values come from the wrestler’s parameter profile described in [[Parameters.md]] **Parameters.md**.
+The attacker’s **Offense Parameter** and the defender’s **Defense Parameter** directly feed into **Factor 2 (Parameter Bonus)** of the damage formula. These values come from the wrestler’s parameter profile described in [Parameters](parameters.md).
 
 Higher Offense increases damage, higher Defense reduces it, and equal values cancel each other out.
 
-For full details on how these parameters are assigned and what they represent, see: **➡️** `Parameters.md` **— Parameter System Overview**
+For full details on how these parameters are assigned and what they represent, see: **➡️** [Parameters](parameters.md) **— Parameter System Overview**
 
 
 ## 4.3 Factor 3 — Spirit Bonus
