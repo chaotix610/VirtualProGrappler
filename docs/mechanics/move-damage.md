@@ -135,7 +135,7 @@ Rounded down.
 
 This Parameter Bonus can never be a negative number.
 
-### 📌 Relationship to Wrestler Parameters
+### Relationship to Wrestler Parameters
 
 The attacker’s **Offense Parameter** and the defender’s **Defense Parameter** directly feed into **Factor 2 (Parameter Bonus)** of the damage formula. These values come from the wrestler’s parameter profile described in [[Parameters.md]] **Parameters.md**.
 
