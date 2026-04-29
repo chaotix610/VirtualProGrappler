@@ -1,0 +1,93 @@
+{
+  "metadata": {
+    "name": "ring_steps",
+    "version": "2.0",
+    "units": "generic",
+    "description": "Low-poly wrestling ring steps: 8 wide, 12 deep, 8 high; three 2x2 front steps; 6-unit top platform; centered 90-degree V cut in back/top platform only."
+  },
+  "coordinate_system": {
+    "origin": "front-left-bottom corner",
+    "axes": {
+      "x": "width, left to right, 0 to 8",
+      "y": "depth, front to back, 0 to 12",
+      "z": "height, bottom to top, 0 to 8"
+    }
+  },
+  "dimensions": {
+    "width": 8,
+    "depth": 12,
+    "height": 8
+  },
+  "front_steps": {
+    "visible_step_count": 3,
+    "step_depth": 2,
+    "step_height": 2,
+    "description": "The front has three visible steps. Each tread is 2 units deep and each rise is 2 units high. A final 2-unit rise leads to the top platform."
+  },
+  "top_platform": {
+    "start_y": 6,
+    "end_y": 12,
+    "depth": 6,
+    "bottom_z": 6,
+    "top_z": 8,
+    "description": "The top platform is 6 units deep and occupies the rear half of the object before the back V cut is removed."
+  },
+  "back_v_cut": {
+    "enabled": true,
+    "center_x": 4,
+    "back_y": 12,
+    "vertex": [4, 8],
+    "left_back_corner": [0, 12],
+    "right_back_corner": [8, 12],
+    "depth": 4,
+    "angle_degrees": 90,
+    "side_length_exact": "4√2",
+    "side_length_numeric": 5.656854249,
+    "affects_y_range": [8, 12],
+    "affects_z_range": [6, 8],
+    "description": "The V cut is centered at x=4, cuts 4 units forward from the back edge, forms a perfect 90-degree angle, and only affects the top platform. It does not reach or cut into the front steps."
+  },
+  "construction_blocks": [
+    {
+      "name": "FrontStep_1",
+      "x": [0, 8],
+      "y": [0, 6],
+      "z": [0, 2]
+    },
+    {
+      "name": "FrontStep_2",
+      "x": [0, 8],
+      "y": [2, 6],
+      "z": [2, 4]
+    },
+    {
+      "name": "FrontStep_3",
+      "x": [0, 8],
+      "y": [4, 6],
+      "z": [4, 6]
+    },
+    {
+      "name": "TopPlatformWithVCut",
+      "x": [0, 8],
+      "y": [6, 12],
+      "z": [6, 8],
+      "footprint_polygon_xy": [
+        [0, 6],
+        [8, 6],
+        [8, 12],
+        [4, 8],
+        [0, 12]
+      ]
+    }
+  ],
+  "material": {
+    "name": "LowPolyMetal",
+    "diffuse_color": [0.62, 0.62, 0.62, 1.0]
+  },
+  "export": {
+    "format": "GLB",
+    "single_mesh": true,
+    "flat_shading": true,
+    "sharp_edges": true
+  }
+}

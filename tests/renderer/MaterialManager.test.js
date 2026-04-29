@@ -17,6 +17,26 @@ function mockMesh(matName) {
   return { material: mockMaterial(matName) };
 }
 
+/** Create a mock mesh with a name and cloneable material. */
+function mockNamedMesh(meshName, matName = null) {
+  return {
+    name: meshName,
+    material: {
+      name: matName,
+      albedoTexture: null,
+      albedoColor: { r: 1, g: 1, b: 1 },
+      clone(cloneName) {
+        return {
+          name: cloneName,
+          albedoTexture: null,
+          albedoColor: { r: 1, g: 1, b: 1 },
+          clone: this.clone,
+        };
+      },
+    },
+  };
+}
+
 /** Create a mock mesh with a multi-material (e.g. the rope mesh). */
 function mockMultiMesh(subNames) {
   return {
@@ -153,7 +173,7 @@ describe('MaterialManager', () => {
   // ─ applyRingOverrides ──────────────────────────────────────────
 
   describe('applyRingOverrides', () => {
-    it('calls swapTexture for each override with a texture path', () => {
+    it('calls swapTexture for non-rope overrides with a texture path', async () => {
       const meshes = [mockMesh('mat_canvas'), mockMesh('mat_apron')];
       const scene = mockScene();
 
@@ -163,7 +183,7 @@ describe('MaterialManager', () => {
       };
 
       const spy = vi.spyOn(mgr, 'swapTexture');
-      mgr.applyRingOverrides(meshes, overrides, scene);
+      await mgr.applyRingOverrides(meshes, overrides, scene);
 
       expect(spy).toHaveBeenCalledTimes(2);
       expect(spy).toHaveBeenCalledWith(
@@ -180,12 +200,12 @@ describe('MaterialManager', () => {
       );
     });
 
-    it('warns and skips materials not found on any mesh', () => {
+    it('warns and falls back when material names are not found on any mesh', async () => {
       const meshes = [mockMesh('mat_canvas')];
       const scene = mockScene();
       const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      mgr.applyRingOverrides(
+      await mgr.applyRingOverrides(
         meshes,
         { mat_nonexistent: 'some/path.png' },
         scene
@@ -198,7 +218,7 @@ describe('MaterialManager', () => {
       spy.mockRestore();
     });
 
-    it('applies ropeColor to rope materials whose override is null', () => {
+    it('applies ropeColor to rope materials whose override is null', async () => {
       const meshes = [
         mockMultiMesh(['mat_rope_top', 'mat_rope_middle', 'mat_rope_bottom']),
       ];
@@ -212,7 +232,7 @@ describe('MaterialManager', () => {
       };
 
       const colorSpy = vi.spyOn(mgr, 'setMaterialColor');
-      mgr.applyRingOverrides(meshes, overrides, scene);
+      await mgr.applyRingOverrides(meshes, overrides, scene);
 
       expect(colorSpy).toHaveBeenCalledTimes(3);
       expect(colorSpy).toHaveBeenCalledWith(
@@ -221,26 +241,140 @@ describe('MaterialManager', () => {
       );
     });
 
-    it('skips null overrides on non-rope materials without error', () => {
+    it('swaps rope textures without overriding the GLB UV mapping', async () => {
+      const meshes = [
+        mockMultiMesh(['mat_rope_top', 'mat_rope_middle', 'mat_rope_bottom']),
+      ];
+      const scene = mockScene();
+      const swapSpy = vi.spyOn(mgr, 'swapTexture');
+
+      await mgr.applyRingOverrides(
+        meshes,
+        {
+          mat_rope_top: 'assets/textures/ring/shared/rope.png',
+          mat_rope_middle: 'assets/textures/ring/shared/rope.png',
+          mat_rope_bottom: 'assets/textures/ring/shared/rope.png',
+          ropeColor: '#FF0000',
+          ropeColorOpacity: 0.4,
+        },
+        scene
+      );
+
+      expect(swapSpy).toHaveBeenCalledTimes(3);
+      expect(swapSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'mat_rope_top' }),
+        'assets/textures/ring/shared/rope.png',
+        scene,
+        undefined
+      );
+    });
+
+    it('skips null overrides on non-rope materials without error', async () => {
       const meshes = [mockMesh('mat_post')];
       const scene = mockScene();
 
       const swapSpy = vi.spyOn(mgr, 'swapTexture');
       const colorSpy = vi.spyOn(mgr, 'setMaterialColor');
 
-      mgr.applyRingOverrides(meshes, { mat_post: null }, scene);
+      await mgr.applyRingOverrides(meshes, { mat_post: null }, scene);
 
       expect(swapSpy).not.toHaveBeenCalled();
       expect(colorSpy).not.toHaveBeenCalled();
     });
 
-    it('handles null / undefined overrides gracefully', () => {
+    it('handles null / undefined overrides gracefully', async () => {
       const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-      expect(() => mgr.applyRingOverrides([], null, {})).not.toThrow();
-      expect(() => mgr.applyRingOverrides([], undefined, {})).not.toThrow();
+      await expect(mgr.applyRingOverrides([], null, {})).resolves.toBeUndefined();
+      await expect(mgr.applyRingOverrides([], undefined, {})).resolves.toBeUndefined();
 
       spy.mockRestore();
+    });
+
+    it('falls back to mesh-name-based preview mapping when materials are unnamed', async () => {
+      const meshes = [
+        mockNamedMesh('canvas'),
+        mockNamedMesh('apron-west'),
+        mockNamedMesh('rope-east-top'),
+        mockNamedMesh('ring-post-ne'),
+        mockNamedMesh('turnbuckle-bolt-cover-ne-top'),
+      ];
+      const scene = mockScene();
+
+      await mgr.applyRingOverrides(
+        meshes,
+        {
+          mat_canvas: 'assets/textures/ring/canvas_raw.png',
+          mat_apron: 'assets/textures/ring/apron_raw.png',
+          mat_rope_top: null,
+          mat_turnbuckle_bolt_cover: 'assets/textures/ring/shared/turnbuckle-bolt-cover.png',
+          ropeColor: '#FF0000',
+        },
+        scene
+      );
+
+      expect(meshes[0].material.albedoTexture.url).toBe('assets/textures/ring/canvas_raw.png');
+      expect(meshes[1].material.albedoTexture.url).toBe('assets/textures/ring/apron_raw.png');
+      // rope-east-top gets the shared rope texture with wrapU=1 via fallback
+      expect(meshes[2].material.albedoTexture.url).toBe('assets/textures/ring/shared/rope.png');
+      expect(meshes[3].material.albedoTexture.url).toBe('assets/textures/ring/shared/post.png');
+      expect(meshes[4].material.albedoTexture.url).toBe(
+        'assets/textures/ring/shared/turnbuckle-bolt-cover.png'
+      );
+    });
+
+    it('clones shared materials during mesh fallback so per-mesh preview overrides stay isolated', async () => {
+      const sharedMaterial = {
+        name: null,
+        albedoTexture: null,
+        albedoColor: { r: 1, g: 1, b: 1 },
+        clone(cloneName) {
+          return {
+            name: cloneName,
+            albedoTexture: null,
+            albedoColor: { r: 1, g: 1, b: 1 },
+            clone: this.clone,
+          };
+        },
+      };
+      const meshes = [
+        { name: 'ring-platform', material: sharedMaterial },
+        { name: 'rope-east-top', material: sharedMaterial },
+      ];
+      const scene = mockScene();
+
+      await mgr.applyRingOverrides(
+        meshes,
+        {
+          mat_canvas: 'assets/textures/ring/canvas_raw.png',
+          mat_rope_top: null,
+          ropeColor: '#FF0000',
+        },
+        scene
+      );
+
+      // Both meshes must have been given their own cloned material
+      expect(meshes[0].material).not.toBe(sharedMaterial);
+      expect(meshes[1].material).not.toBe(sharedMaterial);
+      expect(meshes[0].material).not.toBe(meshes[1].material);
+
+      // ring-platform gets the canvas texture directly via swapTexture
+      expect(meshes[0].material.albedoTexture.url).toBe('assets/textures/ring/canvas_raw.png');
+    });
+
+    it('supports the canonical bolt cover material name directly', async () => {
+      const meshes = [mockMesh('mat_turnbuckle_bolt_cover')];
+      const scene = mockScene();
+
+      await mgr.applyRingOverrides(
+        meshes,
+        { mat_turnbuckle_bolt_cover: 'assets/textures/ring/shared/turnbuckle-bolt-cover.png' },
+        scene
+      );
+
+      expect(meshes[0].material.albedoTexture.url).toBe(
+        'assets/textures/ring/shared/turnbuckle-bolt-cover.png'
+      );
     });
   });
 });

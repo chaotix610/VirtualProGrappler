@@ -31,13 +31,15 @@ export class SceneManager {
     this.camera = new ArcRotateCamera(
       'mainCamera',
       -Math.PI / 2, // alpha — horizontal angle
-      Math.PI / 3,  // beta  — vertical angle
-      12,           // radius
+      Math.PI / 2.6, // beta  — vertical angle
+      18,            // radius
       Vector3.Zero(),
       this.scene
     );
     this.camera.attachControl(this.canvas, true);
-    this.camera.lowerRadiusLimit = 4;
+    this.camera.lowerBetaLimit = Math.PI / 6;
+    this.camera.upperBetaLimit = Math.PI / 2.2;
+    this.camera.lowerRadiusLimit = 8;
     this.camera.upperRadiusLimit = 30;
 
     // Ambient hemisphere light — N64-style flat shading baseline

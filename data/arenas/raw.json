@@ -3,11 +3,12 @@
   "displayName": "RAW is WAR",
   "arenaGlb": "assets/glb/arenas/raw.glb",
   "ringOverrides": {
-    "mat_canvas": "assets/textures/ring/canvas_raw.png",
+    "mat_canvas": "assets/textures/ring/shared/canvas.png",
     "mat_apron": "assets/textures/ring/apron_raw.png",
-    "mat_rope_top": null,
-    "mat_rope_middle": null,
-    "mat_rope_bottom": null,
-    "ropeColor": "#FF0000"
+    "mat_rope_top": "assets/textures/ring/shared/rope.png",
+    "mat_rope_middle": "assets/textures/ring/shared/rope.png",
+    "mat_rope_bottom": "assets/textures/ring/shared/rope.png",
+    "ropeColor": "#FF0000",
+    "ropeColorOpacity": 0.4
   }
 }

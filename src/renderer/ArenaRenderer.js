@@ -8,6 +8,8 @@ import '@babylonjs/loaders/glTF/2.0/index.js';
 import { loadJSON } from '../data/DataLoader.js';
 import { MaterialManager } from './MaterialManager.js';
 
+const RING_GLB_PATH = 'assets/glb/ring/ring-standard-1.glb';
+
 /**
  * ArenaRenderer — loads a ring GLB and an arena-specific GLB, positions
  * them at world origin, and applies per-arena material overrides.
@@ -55,7 +57,7 @@ export class ArenaRenderer {
     const ringResult = await SceneLoader.ImportMeshAsync(
       '',                        // meshNames — empty string = all meshes
       '',                        // rootUrl — empty, path is fully qualified
-      'assets/glb/ring/ring-standard.glb',
+      RING_GLB_PATH,
       scene
     );
 
@@ -93,7 +95,7 @@ export class ArenaRenderer {
 
     // 4. Apply material overrides from arena JSON ────────────────
     if (this.arenaData.ringOverrides) {
-      this.materialManager.applyRingOverrides(
+      await this.materialManager.applyRingOverrides(
         this.ringMeshes,
         this.arenaData.ringOverrides,
         scene,
@@ -116,7 +118,54 @@ export class ArenaRenderer {
     this.scene = null;
   }
 
+  /**
+   * Calculate world-space bounds for the currently loaded ring meshes.
+   *
+   * @returns {{ min: Vector3, max: Vector3, center: Vector3, size: Vector3 } | null}
+   */
+  getRingBounds() {
+    return this._calculateBounds(this.ringMeshes);
+  }
+
   // ── private helpers ─────────────────────────────────────────────
+
+  /**
+   * Calculate a combined bounding box for a set of Babylon meshes.
+   *
+   * @param {object[]} meshes
+   * @returns {{ min: Vector3, max: Vector3, center: Vector3, size: Vector3 } | null}
+   */
+  _calculateBounds(meshes) {
+    let min = new Vector3(Infinity, Infinity, Infinity);
+    let max = new Vector3(-Infinity, -Infinity, -Infinity);
+    let foundGeometry = false;
+
+    for (const mesh of meshes) {
+      if (!mesh?.getBoundingInfo || !mesh?.getTotalVertices) {
+        continue;
+      }
+
+      if (mesh.getTotalVertices() === 0) {
+        continue;
+      }
+
+      mesh.computeWorldMatrix?.(true);
+
+      const bounds = mesh.getBoundingInfo().boundingBox;
+      min = Vector3.Minimize(min, bounds.minimumWorld);
+      max = Vector3.Maximize(max, bounds.maximumWorld);
+      foundGeometry = true;
+    }
+
+    if (!foundGeometry) {
+      return null;
+    }
+
+    const center = min.add(max).scale(0.5);
+    const size = max.subtract(min);
+
+    return { min, max, center, size };
+  }
 
   /**
    * Find the root (parent-less) mesh from an ImportMesh result.

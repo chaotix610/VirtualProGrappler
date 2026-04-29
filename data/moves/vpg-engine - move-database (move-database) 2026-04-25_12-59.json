@@ -1,0 +1,78 @@
+[
+    {
+        "name": "Arm Drag",
+        "moveId": "arm_drag",
+        "power": "F",
+        "ko": false,
+        "bleed": false,
+        "feature": null,
+        "position": "Grappling",
+        "group": "front_weak_grapple_a",
+        "slotId": {
+            "front_weak_grapple_1",
+            "front_weak_grapple_2",
+            "front_weak_grapple_3",
+            "front_weak_grapple_4"
+        }
+    },
+    {
+        "name": "Chop 01",
+        "moveId": "chop_01",
+        "power": "F",
+        "ko": false,
+        "bleed": false,
+        "feature": null,
+        "position": "Grappling",
+        "group": "front_weak_grapple_a",
+        "slotId": {
+            "front_weak_grapple_1",
+            "front_weak_grapple_2",
+            "front_weak_grapple_3",
+            "front_weak_grapple_4"
+        }    },
+    {
+        "name": "Chop 02",
+        "moveId": "chop_02",
+        "power": "F",
+        "ko": false,
+        "bleed": false,
+        "feature": null,
+        "position": "Grappling",
+        "group": "front_weak_grapple_a",
+        "slotId": {
+            "front_weak_grapple_1",
+            "front_weak_grapple_2",
+            "front_weak_grapple_3",
+            "front_weak_grapple_4"
+        }    },
+    {
+        "name": "Chop 03",
+        "moveId": "chop_03",
+        "power": "F",
+        "ko": false,
+        "bleed": true,
+        "feature": null,
+        "position": "Grappling",
+        "group": "front_weak_grapple_a",
+        "slotId": {
+            "front_weak_grapple_1",
+            "front_weak_grapple_2",
+            "front_weak_grapple_3",
+            "front_weak_grapple_4"
+        }    },
+    {
+        "name": "Chop 04",
+        "moveId": "chop_04",
+        "power": "F",
+        "ko": false,
+        "bleed": false,
+        "feature": null,
+        "position": "Grappling",
+        "group": "front_weak_grapple_a",
+        "slotId": {
+            "front_weak_grapple_1",
+            "front_weak_grapple_2",
+            "front_weak_grapple_3",
+            "front_weak_grapple_4"
+        }    }
+]
