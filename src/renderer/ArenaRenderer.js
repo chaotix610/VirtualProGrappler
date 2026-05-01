@@ -8,11 +8,11 @@ import '@babylonjs/loaders/glTF/2.0/index.js';
 import { loadJSON } from '../data/DataLoader.js';
 import { MaterialManager } from './MaterialManager.js';
 
-const RING_GLB_PATH = 'assets/glb/ring/ring-standard-1.glb';
+const RING_GLB_PATH = 'assets/glb/ring/ring-standard.glb';
 
 /**
- * ArenaRenderer — loads a ring GLB and an arena-specific GLB, positions
- * them at world origin, and applies per-arena material overrides.
+ * ArenaRenderer — loads a ring GLB plus zero or more arena environment GLBs,
+ * positions them in the scene, and applies per-arena ring material overrides.
  *
  * All paths and material names come from the arena JSON file at
  * `data/arenas/{arenaId}.json` — nothing is hardcoded.
@@ -31,7 +31,7 @@ export class ArenaRenderer {
     /** @type {object[]} all meshes loaded for the ring GLB */
     this.ringMeshes = [];
 
-    /** @type {object[]} all meshes loaded for the arena GLB */
+    /** @type {object[]} all meshes loaded for the arena GLBs */
     this.arenaMeshes = [];
 
     /** @type {object|null} parsed arena JSON data */
@@ -69,26 +69,17 @@ export class ArenaRenderer {
       ringRoot.position = new Vector3(0, 0, 0);
     }
 
-    // 3. Load the arena GLB (if specified) ───────────────────────
-    if (this.arenaData.arenaGlb) {
+    // 3. Load the arena environment GLBs (if specified) ──────────
+    const arenaParts = this._getArenaPartDefs(this.arenaData);
+    for (const part of arenaParts) {
       try {
-        const arenaResult = await SceneLoader.ImportMeshAsync(
-          '',
-          '',
-          this.arenaData.arenaGlb,
-          scene
-        );
-        this.arenaMeshes = arenaResult.meshes;
-
-        // Position arena root at world origin
-        const arenaRoot = this._findRoot(this.arenaMeshes);
-        if (arenaRoot) {
-          arenaRoot.position = new Vector3(0, 0, 0);
-        }
+        const arenaResult = await SceneLoader.ImportMeshAsync('', '', part.glb, scene);
+        this._applyPartOffset(arenaResult.meshes, part.position);
+        this.arenaMeshes.push(...arenaResult.meshes);
       } catch (err) {
         console.warn(
-          `ArenaRenderer: failed to load arena GLB "${this.arenaData.arenaGlb}" — ` +
-          `ring will render without arena surroundings.\n${err.message}`
+          `ArenaRenderer: failed to load arena GLB "${part.glb}" — ` +
+          `continuing without that environment piece.\n${err.message}`
         );
       }
     }
@@ -98,6 +89,15 @@ export class ArenaRenderer {
       await this.materialManager.applyRingOverrides(
         this.ringMeshes,
         this.arenaData.ringOverrides,
+        scene,
+        Texture
+      );
+    }
+
+    if (this.arenaData.arenaOverrides) {
+      await this.materialManager.applyMaterialOverrides(
+        this.arenaMeshes,
+        this.arenaData.arenaOverrides,
         scene,
         Texture
       );
@@ -125,6 +125,15 @@ export class ArenaRenderer {
    */
   getRingBounds() {
     return this._calculateBounds(this.ringMeshes);
+  }
+
+  /**
+   * Calculate world-space bounds for all loaded environment and ring meshes.
+   *
+   * @returns {{ min: Vector3, max: Vector3, center: Vector3, size: Vector3 } | null}
+   */
+  getArenaBounds() {
+    return this._calculateBounds([...this.ringMeshes, ...this.arenaMeshes]);
   }
 
   // ── private helpers ─────────────────────────────────────────────
@@ -177,6 +186,103 @@ export class ArenaRenderer {
    */
   _findRoot(meshes) {
     return meshes.find((m) => !m.parent) ?? meshes[0] ?? null;
+  }
+
+  /**
+   * Normalize arena JSON into a list of GLB part definitions.
+   *
+   * Supports both the new `arenaParts` array and the older `arenaGlb`
+   * single-file field for backward compatibility.
+   *
+   * @param {object|null} arenaData
+   * @returns {{ glb: string, position: Vector3 }[]}
+   */
+  _getArenaPartDefs(arenaData) {
+    if (!arenaData || typeof arenaData !== 'object') {
+      return [];
+    }
+
+    if (Array.isArray(arenaData.arenaParts)) {
+      return arenaData.arenaParts
+        .map((part) => this._normalizeArenaPart(part))
+        .filter(Boolean);
+    }
+
+    if (typeof arenaData.arenaGlb === 'string' && arenaData.arenaGlb.length > 0) {
+      return [{ glb: arenaData.arenaGlb, position: Vector3.Zero() }];
+    }
+
+    return [];
+  }
+
+  /**
+   * Convert a raw arena-part JSON entry into a normalized runtime shape.
+   *
+   * Accepted forms:
+   *   - `"assets/glb/arena/floor.glb"`
+   *   - `{ "glb": "assets/glb/arena/floor.glb", "position": [0, 0, 0] }`
+   *
+   * @param {string|object|null} part
+   * @returns {{ glb: string, position: Vector3 }|null}
+   */
+  _normalizeArenaPart(part) {
+    if (typeof part === 'string' && part.length > 0) {
+      return { glb: part, position: Vector3.Zero() };
+    }
+
+    if (!part || typeof part !== 'object') {
+      return null;
+    }
+
+    if (typeof part.glb !== 'string' || part.glb.length === 0) {
+      return null;
+    }
+
+    return {
+      glb: part.glb,
+      position: this._toVector3(part.position),
+    };
+  }
+
+  /**
+   * Apply a world-space offset to each root-level mesh in an imported part.
+   *
+   * We preserve the authored relative transforms inside the GLB and simply
+   * shift the part as a whole when a placement offset is provided.
+   *
+   * @param {object[]} meshes
+   * @param {Vector3} offset
+   */
+  _applyPartOffset(meshes, offset) {
+    if (!offset || (offset.x === 0 && offset.y === 0 && offset.z === 0)) {
+      return;
+    }
+
+    for (const mesh of meshes) {
+      if (!mesh || mesh.parent || !mesh.position?.addInPlace) {
+        continue;
+      }
+
+      mesh.position.addInPlace(offset);
+    }
+  }
+
+  /**
+   * Convert a JSON position array into a Babylon Vector3.
+   *
+   * @param {unknown} value
+   * @returns {Vector3}
+   */
+  _toVector3(value) {
+    if (Array.isArray(value) && value.length === 3) {
+      return new Vector3(
+        Number(value[0]) || 0,
+        Number(value[1]) || 0,
+        Number(value[2]) || 0
+      );
+    }
+
+    return Vector3.Zero();
   }
 
   /**

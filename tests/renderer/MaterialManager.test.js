@@ -172,6 +172,55 @@ describe('MaterialManager', () => {
 
   // ─ applyRingOverrides ──────────────────────────────────────────
 
+  describe('applyMaterialOverrides', () => {
+    it('swaps textures on matching material names without changing UV mapping', async () => {
+      const meshes = [mockMesh('mat_floor_cut_4x8'), mockMesh('mat_floor_8x8')];
+      const scene = mockScene();
+      const swapSpy = vi.spyOn(mgr, 'swapTexture');
+
+      await mgr.applyMaterialOverrides(
+        meshes,
+        {
+          mat_floor_cut_4x8: 'assets/textures/arena/floor_mat_1.png',
+          mat_floor_8x8: 'assets/textures/arena/floor_mat_1-double.png',
+        },
+        scene
+      );
+
+      expect(swapSpy).toHaveBeenCalledTimes(2);
+      expect(swapSpy).toHaveBeenCalledWith(
+        meshes[0].material,
+        'assets/textures/arena/floor_mat_1.png',
+        scene,
+        undefined
+      );
+      expect(swapSpy).toHaveBeenCalledWith(
+        meshes[1].material,
+        'assets/textures/arena/floor_mat_1-double.png',
+        scene,
+        undefined
+      );
+    });
+
+    it('warns when an arena override does not match any material name', async () => {
+      const meshes = [mockMesh('mat_floor_8x8')];
+      const scene = mockScene();
+      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      await mgr.applyMaterialOverrides(
+        meshes,
+        { mat_floor_cut_4x8: 'assets/textures/arena/floor_mat_1.png' },
+        scene
+      );
+
+      expect(spy).toHaveBeenCalledWith(
+        expect.stringContaining('mat_floor_cut_4x8')
+      );
+
+      spy.mockRestore();
+    });
+  });
+
   describe('applyRingOverrides', () => {
     it('calls swapTexture for non-rope overrides with a texture path', async () => {
       const meshes = [mockMesh('mat_canvas'), mockMesh('mat_apron')];
@@ -232,21 +281,24 @@ describe('MaterialManager', () => {
       };
 
       const colorSpy = vi.spyOn(mgr, 'setMaterialColor');
+      const clearSpy = vi.spyOn(mgr, 'clearMaterialTexture');
       await mgr.applyRingOverrides(meshes, overrides, scene);
 
       expect(colorSpy).toHaveBeenCalledTimes(3);
+      expect(clearSpy).toHaveBeenCalledTimes(3);
       expect(colorSpy).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'mat_rope_top' }),
         '#FF0000'
       );
     });
 
-    it('swaps rope textures without overriding the GLB UV mapping', async () => {
+    it('uses JSON rope textures with colour overlay without overriding the GLB UV mapping', async () => {
       const meshes = [
         mockMultiMesh(['mat_rope_top', 'mat_rope_middle', 'mat_rope_bottom']),
       ];
       const scene = mockScene();
-      const swapSpy = vi.spyOn(mgr, 'swapTexture');
+      const overlaySpy = vi.spyOn(mgr, '_applyRopeTextureWithColorOverlay')
+        .mockResolvedValue();
 
       await mgr.applyRingOverrides(
         meshes,
@@ -260,10 +312,12 @@ describe('MaterialManager', () => {
         scene
       );
 
-      expect(swapSpy).toHaveBeenCalledTimes(3);
-      expect(swapSpy).toHaveBeenCalledWith(
+      expect(overlaySpy).toHaveBeenCalledTimes(3);
+      expect(overlaySpy).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'mat_rope_top' }),
         'assets/textures/ring/shared/rope.png',
+        '#FF0000',
+        0.4,
         scene,
         undefined
       );

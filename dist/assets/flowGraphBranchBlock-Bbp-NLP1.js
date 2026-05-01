@@ -1,0 +1,2 @@
+import{aD as t,a9 as e,a1 as i}from"./index-BSc5uCLs.js";class s extends t{constructor(a){super(a),this.condition=this.registerDataInput("condition",e),this.onTrue=this._registerSignalOutput("onTrue"),this.onFalse=this._registerSignalOutput("onFalse")}_execute(a){this.condition.getValue(a)?this.onTrue._activateSignal(a):this.onFalse._activateSignal(a)}getClassName(){return"FlowGraphBranchBlock"}}i("FlowGraphBranchBlock",s);export{s as FlowGraphBranchBlock};
+//# sourceMappingURL=flowGraphBranchBlock-Bbp-NLP1.js.map

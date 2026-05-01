@@ -9,6 +9,48 @@
  */
 export class MaterialManager {
   /**
+   * Apply simple per-material texture overrides to any mesh set.
+   *
+   * Each key in `overrides` is a material name. String values swap the
+   * material texture while `null` values are ignored.
+   *
+   * @param {object[]} meshes
+   * @param {object} overrides
+   * @param {object} scene
+   * @param {Function} [TextureClass]
+   * @returns {Promise<void>}
+   */
+  async applyMaterialOverrides(meshes, overrides, scene, TextureClass) {
+    if (!overrides || typeof overrides !== 'object') {
+      console.warn('MaterialManager: no overrides provided — skipping.');
+      return;
+    }
+
+    const materialMap = this._buildMaterialMap(meshes);
+    const unmatchedOverrides = [];
+
+    for (const [matName, value] of Object.entries(overrides)) {
+      if (typeof value !== 'string' || value.length === 0) {
+        continue;
+      }
+
+      const material = materialMap.get(matName);
+      if (!material) {
+        unmatchedOverrides.push(matName);
+        continue;
+      }
+
+      this.swapTexture(material, value, scene, TextureClass);
+    }
+
+    if (unmatchedOverrides.length > 0) {
+      console.warn(
+        `MaterialManager: material overrides not found by name: ${unmatchedOverrides.join(', ')}.`
+      );
+    }
+  }
+
+  /**
    * Apply per-material overrides from an arena JSON `ringOverrides` block.
    *
    * Each key in `overrides` is a material name (e.g. "mat_canvas").
@@ -53,9 +95,21 @@ export class MaterialManager {
       matchedMaterials.add(matName);
 
       if (typeof value === 'string' && value.length > 0) {
-        this.swapTexture(material, value, scene, TextureClass);
+        if (ropeMaterials.includes(matName) && ropeColor) {
+          await this._applyRopeTextureWithColorOverlay(
+            material,
+            value,
+            ropeColor,
+            ropeColorOpacity,
+            scene,
+            TextureClass
+          );
+        } else {
+          this.swapTexture(material, value, scene, TextureClass);
+        }
       } else if (value === null && ropeMaterials.includes(matName) && ropeColor) {
-        // Null texture on a rope material — apply the rope colour directly
+        // Null texture on a rope material — remove any baked GLB texture and apply the rope colour.
+        this.clearMaterialTexture(material);
         this.setMaterialColor(material, ropeColor);
       }
       // value === null on a non-rope material: leave the material as-is.
@@ -129,6 +183,19 @@ export class MaterialManager {
       material.diffuseColor.r = r;
       material.diffuseColor.g = g;
       material.diffuseColor.b = b;
+    }
+  }
+
+  /**
+   * Remove any base/diffuse texture from a material.
+   *
+   * @param {object} material
+   */
+  clearMaterialTexture(material) {
+    if ('albedoTexture' in material) {
+      material.albedoTexture = null;
+    } else if ('diffuseTexture' in material) {
+      material.diffuseTexture = null;
     }
   }
 
