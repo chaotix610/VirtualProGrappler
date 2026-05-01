@@ -135,13 +135,13 @@ Rounded down.
 
 This Parameter Bonus can never be a negative number.
 
-### 📌 Relationship to Wrestler Parameters
+### Relationship to Wrestler Parameters
 
-The attacker’s **Offense Parameter** and the defender’s **Defense Parameter** directly feed into **Factor 2 (Parameter Bonus)** of the damage formula. These values come from the wrestler’s parameter profile described in [[Parameters.md]] **Parameters.md**.
+The attacker’s **Offense Parameter** and the defender’s **Defense Parameter** directly feed into **Factor 2 (Parameter Bonus)** of the damage formula. These values come from the wrestler’s parameter profile described in [Parameters](Parameters.md).
 
 Higher Offense increases damage, higher Defense reduces it, and equal values cancel each other out.
 
-For full details on how these parameters are assigned and what they represent, see: **➡️** `Parameters.md` **— Parameter System Overview**
+For full details on how these parameters are assigned and what they represent, see: **➡️** [Parameters](Parameters.md) **— Parameter System Overview**
 
 
 ## 4.3 Factor 3 — Spirit Bonus
@@ -254,50 +254,71 @@ These bonuses/penalties apply **per wrench/pulse** to **each affected limb**.
 ### Initial Application
 
 - Limb‑adjusted damage = 4
+
 $$
 \text{Factor1} = \left\lfloor (35 + 50) \cdot 5 \cdot 0.01 \right\rfloor = 4
 $$
+
 - Parameter bonus = 0
+
 $$
 \text{Factor2} = 0
 $$
+
 - Spirit bonus = 3
+
 $$
 \text{Factor3} = \left\lfloor 64 \cdot 0.05 \right\rfloor = 3
 $$
+
 - Main Health Damage = 8
+
 $$
 T = 4 + 0 + 3 = 7
 $$
+
 $$
 \text{MainHealthDamage} = \left\lfloor 7 \cdot 1.2 \right\rfloor = 8
 $$
+
 - Joint Stamina damage = **3 Leg**, **3 Flying**
+
 $$
 \text{Leg} = 3,\quad \text{Flying} = 3
 $$
+
 ### Each Wrench
 
 - Limb‑adjusted damage = 1
+
 $$
 \text{Factor1} = \left\lfloor (35 + 50) \cdot 2 \cdot 0.01 \right\rfloor = 1
 $$
+
 - Spirit bonus = 3
+
 $$
 \text{Factor3} = 3
 $$
+
 - Special bonus → total = **4**
+
 $$
 T = 1 + 0 + 3 = 4
 $$
+
 $$
 \text{MainHealthDamage} = \left\lfloor 4 \cdot 1.2 \right\rfloor = 4
 $$
+
 - Submission Skill bonus = **+1 Leg**, **+1 Flying**
+
 $$
 B = +1.0
 $$
+
 - Final Joint Stamina damage = **4 Leg**, **4 Flying**
+
 $$
 \text{Leg} = 2 + 1 = 4,\quad \text{Flying} = 2 + 1 = 4
 $$

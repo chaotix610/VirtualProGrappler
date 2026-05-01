@@ -179,7 +179,8 @@ is applied mathematically as:
 $$
 Factor2=⌊max⁡(0,A−B)⋅D⋅0.1⌋
 $$
-This formula is documented in detail in: [[move-damage.md]] **— Factor 2: Parameter Bonus**
+
+This formula is documented in detail in: [move-damage](move-damage.md)**— Factor 2: Parameter Bonus**
 
 # **6. Submissions: A Special Case**
 
