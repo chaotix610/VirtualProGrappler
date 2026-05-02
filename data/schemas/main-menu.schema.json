@@ -1,0 +1,154 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "data/schemas/main-menu.schema.json",
+  "title": "Virtual Pro Grappler Main Menu",
+  "description": "Schema for the top-level main menu data used by the VPG UI.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "version", "pages"],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "pages": {
+      "type": "object",
+      "description": "Named main menu pages keyed by camelCase page id.",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/definitions/page"
+      }
+    }
+  },
+  "definitions": {
+    "page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "displayName", "headingImage", "menuItems"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/snakeCaseId"
+        },
+        "displayName": {
+          "$ref": "#/definitions/displayText"
+        },
+        "headingImage": {
+          "$ref": "#/definitions/assetPath"
+        },
+        "menuItems": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/menuItem"
+          }
+        }
+      }
+    },
+    "menuItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "displayName", "target", "instructions"],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/snakeCaseId"
+        },
+        "displayName": {
+          "$ref": "#/definitions/displayText"
+        },
+        "target": {
+          "type": "string",
+          "description": "Dot-delimited target route or game state id.",
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+        },
+        "instructions": {
+          "$ref": "#/definitions/instructions"
+        }
+      }
+    },
+    "instructions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "blocks"],
+      "properties": {
+        "title": {
+          "$ref": "#/definitions/displayText"
+        },
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/instructionBlock"
+          }
+        }
+      }
+    },
+    "instructionBlock": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/paragraphBlock"
+        },
+        {
+          "$ref": "#/definitions/definitionListBlock"
+        }
+      ]
+    },
+    "paragraphBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "text"],
+      "properties": {
+        "type": {
+          "const": "paragraph"
+        },
+        "text": {
+          "$ref": "#/definitions/displayText"
+        }
+      }
+    },
+    "definitionListBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "items"],
+      "properties": {
+        "type": {
+          "const": "definitionList"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/definitionListItem"
+          }
+        }
+      }
+    },
+    "definitionListItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["term", "definition"],
+      "properties": {
+        "term": {
+          "$ref": "#/definitions/displayText"
+        },
+        "definition": {
+          "$ref": "#/definitions/displayText"
+        }
+      }
+    },
+    "displayText": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assetPath": {
+      "type": "string",
+      "pattern": "^assets/.+\\.(png|jpg|jpeg|webp|gif)$"
+    },
+    "snakeCaseId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    }
+  }
+}

@@ -1,2 +1,0 @@
-import{a4 as s,aF as e,aG as u,a1 as o}from"./index-BpLpSt5r.js";class l extends s{constructor(t){super(t),this.config=t,this.output=this.registerDataOutput("output",e(t.value))}_updateOutputs(t){this.output.setValue(this.config.value,t)}getClassName(){return"FlowGraphConstantBlock"}serialize(t={},a=u){super.serialize(t),a("value",this.config.value,t.config)}}o("FlowGraphConstantBlock",l);export{l as FlowGraphConstantBlock};
-//# sourceMappingURL=flowGraphConstantBlock-Cv5ndSmA.js.map

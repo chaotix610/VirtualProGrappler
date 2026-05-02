@@ -1,0 +1,2 @@
+import{ai as t,a1 as a}from"./index-C6WtG_Ky.js";class n extends t{constructor(){super(...arguments),this.initPriority=-1,this.type="SceneReady"}_executeEvent(e,s){return this._execute(e),!0}_preparePendingTasks(e){}_cancelPendingTasks(e){}getClassName(){return"FlowGraphSceneReadyEventBlock"}}a("FlowGraphSceneReadyEventBlock",n);export{n as FlowGraphSceneReadyEventBlock};
+//# sourceMappingURL=flowGraphSceneReadyEventBlock-keX57Lbz.js.map

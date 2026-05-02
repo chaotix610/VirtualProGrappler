@@ -1,0 +1,247 @@
+{
+  "$schema": "data/schemas/main-menu.schema.json",
+  "version": "1.0.0",
+  "pages": {
+    "multiPlay": {
+      "id": "multi_play",
+      "displayName": "Multi Play",
+      "headingImage": "assets/textures/ui/heading_multiplay.png",
+      "menuItems": [
+        {
+          "id": "exhibition",
+          "displayName": "Exhibition",
+          "target": "match_setup.exhibition",
+          "instructions": {
+            "title": "<< Exhibition Mode >>",
+            "blocks": [
+              {
+                "type": "definitionList",
+                "items": [
+                  { "term": "Single Match", "definition": "1 vs. 1" },
+                  { "term": "Tag Match", "definition": "2 vs. 2" },
+                  { "term": "Triple Threat Match", "definition": "1 vs. 1 vs. 1" },
+                  { "term": "Handicap Match", "definition": "2 vs. 1" },
+                  { "term": "Cage Match", "definition": "1 vs. 1" }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "id": "royal_rumble",
+          "displayName": "Royal Rumble",
+          "target": "match_setup.royal_rumble",
+          "instructions": {
+            "title": "<< Royal Rumble Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Four Superstars do battle until one Superstar survives all. Players can select the number of participants in the event. Up to 40 Superstars can participate."
+              },
+              {
+                "type": "paragraph",
+                "text": "When a player is eliminated, a new Superstar will come out of the locker room to join the match."
+              }
+            ]
+          }
+        },
+        {
+          "id": "pay_per_view",
+          "displayName": "Pay-Per-View",
+          "target": "match_setup.pay_per_view",
+          "instructions": {
+            "title": "<< Pay-Per-View Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Players can set up the name of the event, date, location, number of matches, and the match types."
+              },
+              {
+                "type": "paragraph",
+                "text": "It is possible to recreate historic shows from the past, or create an original show."
+              }
+            ]
+          }
+        },
+        {
+          "id": "king_of_the_ring",
+          "displayName": "King of the Ring",
+          "target": "match_setup.king_of_the_ring",
+          "instructions": {
+            "title": "<< King of the Ring Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "The tournament to crown a new King of the Ring."
+              },
+              {
+                "type": "paragraph",
+                "text": "3 to 16 Superstars may participate in this event."
+              }
+            ]
+          }
+        },
+        {
+          "id": "guest_referee",
+          "displayName": "Guest Referee",
+          "target": "match_setup.guest_referee",
+          "instructions": {
+            "title": "<< Guest Referee Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Be a referee in a match."
+              },
+              {
+                "type": "paragraph",
+                "text": "Call it right down the middle and try not to get distracted."
+              }
+            ]
+          }
+        },
+        {
+          "id": "ladder_match",
+          "displayName": "Ladder Match",
+          "target": "match_setup.ladder_match",
+          "instructions": {
+            "title": "<< Ladder Match Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "The first player to climb up the ladder and get the belt can leave the event with it."
+              }
+            ]
+          }
+        },
+        {
+          "id": "ironman_match",
+          "displayName": "Ironman Match",
+          "target": "match_setup.ironman_match",
+          "instructions": {
+            "title": "<< Ironman Match Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Two Superstars do battle to decide who is better."
+              },
+              {
+                "type": "paragraph",
+                "text": "The Superstar with the most falls in time limit. A fall is scored when a competitor is disqualified, submits, gets knocked out, or is pinned to the mat for a count of 3."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "singlePlay": {
+      "id": "single_play",
+      "displayName": "Single Play",
+      "headingImage": "assets/textures/ui/heading_singleplay.png",
+      "menuItems": [
+        {
+          "id": "championship",
+          "displayName": "Championship",
+          "target": "single_play.championship",
+          "instructions": {
+            "title": "<< Championship Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "This is a quest mode. There are different scenarios for each of the championship belts in the World Wrestling Federation."
+              },
+              {
+                "type": "paragraph",
+                "text": "Difficulty setting of Superstars, scenarios, and events are different depending on the World Wrestling Federation title. Choose a belt and see if you can walk the long road to a World Wrestling Federation title."
+              }
+            ]
+          }
+        },
+        {
+          "id": "survival",
+          "displayName": "Survival",
+          "target": "single_play.survival",
+          "instructions": {
+            "title": "<< Survival Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Choose a Superstar and run the gauntlet of 100 participants."
+              },
+              {
+                "type": "paragraph",
+                "text": "How many Superstars can you defeat, and how much money can you earn?"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "commissioner": {
+      "id": "commissioner",
+      "displayName": "Commissioner",
+      "headingImage": "assets/textures/ui/heading_commissioner.png",
+      "menuItems": [
+        {
+          "id": "smackdown_mall",
+          "displayName": "Smackdown Mall",
+          "target": "commissioner.smackdown_mall",
+          "instructions": {
+            "title": "<< Smackdown Mall >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Create your own original Superstar and use them in matches. You can spend points you earned in the game and purchase items in this shopping mall."
+              },
+              {
+                "type": "paragraph",
+                "text": "And, you can store those Superstars in the Controller Pak and exchange them with your friends."
+              }
+            ]
+          }
+        },
+        {
+          "id": "options",
+          "displayName": "Options",
+          "target": "commissioner.options",
+          "instructions": {
+            "title": "<< Options Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Adjust the in-game presentation."
+              }
+            ]
+          }
+        },
+        {
+          "id": "arena_viewer",
+          "displayName": "Arena Viewer",
+          "target": "commissioner.arena_viewer",
+          "instructions": {
+            "title": "<< Arena Viewer >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "View the arenas currently available in VPG."
+              }
+            ]
+          }
+        },
+        {
+          "id": "controls",
+          "displayName": "Controls",
+          "target": "commissioner.controls",
+          "instructions": {
+            "title": "<< Controls Mode >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Set the inputs and controls for Virtual Pro Grappler."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

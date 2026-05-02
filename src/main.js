@@ -1,147 +1,126 @@
 import { SceneManager } from './renderer/SceneManager.js';
 import { ArenaRenderer } from './renderer/ArenaRenderer.js';
 import '@babylonjs/core/Helpers/sceneHelpers.js';
+import mainMenuData from '../data/ui/main-menu.json';
 
 const arenaModules = import.meta.glob('../data/arenas/*.json', {
   eager: true,
   import: 'default',
 });
 
-const MENU_OPTIONS = [
-  {
-    id: 'arena-viewer',
-    label: 'Arena Viewer',
-    description: 'Preview every arena package loaded from the arena data files.',
+const PAGE_KEYS = ['multiPlay', 'singlePlay', 'commissioner'];
+const DEFAULT_CONTROL_MAPPINGS = {
+  version: '1.0.0',
+  profile: 'default',
+  bindings: {
+    dpadUp: ['ArrowUp'],
+    dpadDown: ['ArrowDown'],
+    dpadLeft: ['ArrowLeft'],
+    dpadRight: ['ArrowRight'],
+    a: ['Enter'],
+    b: ['Escape'],
+    z: ['KeyZ'],
+    l: ['KeyQ'],
+    r: ['KeyE'],
+    start: ['Space'],
+    cUp: ['KeyI'],
+    cDown: ['KeyK'],
+    cLeft: ['KeyJ'],
+    cRight: ['KeyL'],
   },
-  {
-    id: 'test-option-1',
-    label: 'Test Option 1',
-    description: 'Prototype a match setup flow with keyboard-driven rules and arena picks.',
-  },
-  {
-    id: 'test-option-2',
-    label: 'Test Option 2',
-    description: 'Inspect arena package diagnostics, renderer state, and asset readiness.',
-  },
+};
+
+const CONTROL_ROWS = [
+  { id: 'dpadUp', label: 'D-Pad Up' },
+  { id: 'dpadDown', label: 'D-Pad Down' },
+  { id: 'dpadLeft', label: 'D-Pad Left' },
+  { id: 'dpadRight', label: 'D-Pad Right' },
+  { id: 'a', label: 'A' },
+  { id: 'b', label: 'B' },
+  { id: 'z', label: 'Z', image: 'assets/textures/ui/button_z.png' },
+  { id: 'l', label: 'L', image: 'assets/textures/ui/button_l.png' },
+  { id: 'r', label: 'R', image: 'assets/textures/ui/button_r.png' },
+  { id: 'start', label: 'Start' },
+  { id: 'cUp', label: 'C-Up' },
+  { id: 'cDown', label: 'C-Down' },
+  { id: 'cLeft', label: 'C-Left' },
+  { id: 'cRight', label: 'C-Right' },
 ];
 
-const MATCH_SETUP_FIELDS = [
-  {
-    key: 'matchType',
-    label: 'Match Type',
-    options: ['Single', 'Tag', 'Triple Threat', 'Ladder'],
-  },
-  {
-    key: 'playerMode',
-    label: 'Player Mode',
-    options: ['1P vs CPU', '1P vs 2P', 'Watch'],
-  },
-  {
-    key: 'arenaId',
-    label: 'Arena',
-    options: [],
-  },
-  {
-    key: 'rules',
-    label: 'Rules',
-    options: ['Normal', 'Hardcore', 'No DQ', 'Iron Man'],
-  },
-  {
-    key: 'belt',
-    label: 'Belt',
-    options: ['Non Title', 'World Title', 'Intercontinental', 'Tag Titles'],
-  },
+const CONTROL_ACTIONS = [
+  { id: 'reset', label: 'Reset Defaults' },
+  { id: 'export', label: 'Export JSON' },
+  { id: 'back', label: 'Back' },
 ];
 
-const DIAGNOSTIC_PANELS = [
-  {
-    id: 'arena-files',
-    label: 'Arena Files',
-    getValue: () => `${availableArenas.length} loaded`,
-    getDetails: () => [
-      `JSON source: data/arenas`,
-      `Available arenas: ${availableArenas.map((arena) => arena.displayName).join(', ')}`,
-      'Arena list is populated from the current repo data files at startup.',
-    ],
-  },
-  {
-    id: 'renderer',
-    label: 'Renderer',
-    getValue: () => 'Babylon 9.x',
-    getDetails: () => [
-      'SceneManager boots the scene, camera, and environment lighting.',
-      'ArenaRenderer assembles the ring plus modular arena parts from JSON.',
-      `Preview framing target: ${getPreviewFrameTargetFromQuery()}`,
-    ],
-  },
-  {
-    id: 'asset-kit',
-    label: 'Asset Kit',
-    getValue: () => '4 core GLBs',
-    getDetails: () => [
-      'Ring: ring-standard.glb',
-      'Floor: arena-floor.glb',
-      'Barricade: barricade.glb',
-      'Steps: ring-steps-positioned.glb',
-    ],
-  },
-  {
-    id: 'controls',
-    label: 'Controls',
-    getValue: () => 'Keyboard Ready',
-    getDetails: () => [
-      'Main Menu: Up / Down, Enter',
-      'Arena Viewer: Enter to open list, Esc to back out',
-      'Prototype screens: Up / Down to move, Left / Right to adjust',
-    ],
-  },
-];
+const LOCAL_STORAGE_KEY = 'vpg-control-mappings';
+const PAGE_TRANSITION_MS = 1350;
+const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+const app = document.getElementById('app');
+const canvas = document.getElementById('vpg-canvas');
+const availableArenas = getAvailableArenas();
+const previewFrameTarget = getPreviewFrameTargetFromQuery();
+const initialArenaId = sanitizeArenaId(getArenaIdFromQuery(), availableArenas);
+const sceneManager = new SceneManager(canvas);
+const arenaRenderer = new ArenaRenderer();
+
+sceneManager.init();
+window._scene = sceneManager.scene;
+window._sceneManager = sceneManager;
+sceneManager.scene.createDefaultEnvironment({
+  createGround: false,
+  createSkybox: false,
+});
+sceneManager.run();
+
+let loadToken = 0;
+
+const state = {
+  screen: 'main-menu',
+  pageIndex: 0,
+  arenaIndex: Math.max(availableArenas.findIndex((arena) => arena.id === initialArenaId), 0),
+  arenaId: initialArenaId,
+  itemIndices: Object.fromEntries(PAGE_KEYS.map((pageKey) => [pageKey, 0])),
+  instructionsOpen: false,
+  transitionInProgress: false,
+  queuedDirection: 0,
+  controlsIndex: 0,
+  listeningControlId: null,
+  pendingBinding: null,
+  confirmIndex: 0,
+  mappings: loadControlMappings(),
+};
+
+const elements = {
+  stage: null,
+  panels: new Map(),
+  menuItems: new Map(),
+  backdrop: null,
+  modal: null,
+  modalTitle: null,
+  modalBody: null,
+  routeStatus: null,
+  controlsRows: new Map(),
+  controlsPage: null,
+  confirmDialog: null,
+  confirmOptions: [],
+  arenaPage: null,
+  arenaGrid: null,
+  arenaStatus: null,
+  arenaCards: [],
+  arenas: [],
+};
 
 function getArenaIdFromQuery() {
   const params = new URLSearchParams(window.location.search);
   const arenaId = params.get('arena');
-
-  if (!arenaId) {
-    return 'raw';
-  }
-
-  return arenaId.trim() || 'raw';
+  return arenaId?.trim() || 'raw';
 }
 
 function getPreviewFrameTargetFromQuery() {
   const params = new URLSearchParams(window.location.search);
-  const frameTarget = params.get('frame');
-
-  if (!frameTarget) {
-    return 'ring';
-  }
-
-  return frameTarget.trim().toLowerCase() || 'ring';
-}
-
-function framePreviewCamera(camera, bounds) {
-  const maxDimension = Math.max(bounds.size.x, bounds.size.y, bounds.size.z);
-  const target = bounds.center.clone();
-
-  target.y += bounds.size.y * 0.1;
-
-  camera.setTarget(target);
-  camera.radius = Math.max(maxDimension * 1.2, 12);
-  camera.lowerRadiusLimit = Math.max(maxDimension * 0.35, 8);
-  camera.upperRadiusLimit = Math.max(maxDimension * 3, camera.radius + 10);
-}
-
-function getAvailableArenas() {
-  return Object.entries(arenaModules)
-    .map(([path, data]) => {
-      const id = path.split('/').pop()?.replace(/\.json$/i, '') ?? '';
-      return {
-        id,
-        displayName: data.displayName ?? id,
-      };
-    })
-    .filter((arena) => arena.id.length > 0)
-    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+  return params.get('frame')?.trim().toLowerCase() || 'ring';
 }
 
 function sanitizeArenaId(arenaId, arenas) {
@@ -168,561 +147,507 @@ function updateQuery(paramsToSet) {
   window.history.replaceState({}, '', nextUrl);
 }
 
-const previewFrameTarget = getPreviewFrameTargetFromQuery();
-const availableArenas = getAvailableArenas();
-const initialArenaId = sanitizeArenaId(getArenaIdFromQuery(), availableArenas);
+function framePreviewCamera(camera, bounds) {
+  const maxDimension = Math.max(bounds.size.x, bounds.size.y, bounds.size.z);
+  const target = bounds.center.clone();
 
-const canvas = document.getElementById('vpg-canvas');
-const app = document.getElementById('app');
-const sceneManager = new SceneManager(canvas);
-const arenaRenderer = new ArenaRenderer();
+  target.y += bounds.size.y * 0.1;
+  camera.setTarget(target);
+  camera.radius = Math.max(maxDimension * 1.2, 12);
+  camera.lowerRadiusLimit = Math.max(maxDimension * 0.35, 8);
+  camera.upperRadiusLimit = Math.max(maxDimension * 3, camera.radius + 10);
+}
 
-sceneManager.init();
-window._scene = sceneManager.scene;
-window._sceneManager = sceneManager;
+function toDomPageId(page) {
+  return page.id.replaceAll('_', '-');
+}
 
-sceneManager.scene.createDefaultEnvironment({
-  createGround: false,
-  createSkybox: false,
-});
+function getPageKey() {
+  return PAGE_KEYS[state.pageIndex];
+}
 
-let loadToken = 0;
+function getPage(pageKey = getPageKey()) {
+  return mainMenuData.pages[pageKey];
+}
 
-const state = {
-  screen: 'menu',
-  selectedMenuIndex: 0,
-  arenaId: initialArenaId,
-  matchSetupFieldIndex: 0,
-  diagnosticPanelIndex: 0,
-  matchSetup: {
-    matchType: 'Single',
-    playerMode: '1P vs CPU',
-    arenaId: initialArenaId,
-    rules: 'Normal',
-    belt: 'Non Title',
-  },
-};
+function getActiveItem(pageKey = getPageKey()) {
+  const page = getPage(pageKey);
+  return page.menuItems[state.itemIndices[pageKey] ?? 0];
+}
 
-const elements = {
-  menuButtons: [],
-  arenaTrigger: null,
-  arenaMenu: null,
-  arenaOptions: [],
-  arenaRoot: null,
-  arenaTitle: null,
-  arenaStatus: null,
-  matchSetupRows: [],
-  matchSetupValueNodes: new Map(),
-  matchSetupSummary: null,
-  diagnosticRows: [],
-  diagnosticValueNodes: new Map(),
-  diagnosticDetail: null,
-};
+function normalizeKeyCode(event) {
+  return event.code || event.key;
+}
 
-function buildMainMenu() {
-  const shell = document.createElement('section');
-  shell.className = 'screen main-menu-screen';
-  shell.dataset.screen = 'menu';
+function cloneMappings(mappings) {
+  return JSON.parse(JSON.stringify(mappings));
+}
 
-  const marquee = document.createElement('div');
-  marquee.className = 'menu-marquee';
+function loadControlMappings() {
+  try {
+    const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (stored) {
+      return { ...cloneMappings(DEFAULT_CONTROL_MAPPINGS), ...JSON.parse(stored) };
+    }
+  } catch (error) {
+    console.warn('Unable to load stored control mappings.', error);
+  }
 
-  const eyebrow = document.createElement('div');
-  eyebrow.className = 'menu-eyebrow';
-  eyebrow.textContent = 'Virtual Pro Grappler';
+  return cloneMappings(DEFAULT_CONTROL_MAPPINGS);
+}
 
+function saveControlMappings() {
+  window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state.mappings));
+}
+
+function matchesBinding(event, actionId) {
+  const bindings = state.mappings.bindings[actionId] ?? [];
+  return bindings.includes(normalizeKeyCode(event)) || bindings.includes(event.key);
+}
+
+function getInput(event) {
+  if (matchesBinding(event, 'dpadUp')) return 'up';
+  if (matchesBinding(event, 'dpadDown')) return 'down';
+  if (matchesBinding(event, 'dpadLeft') || matchesBinding(event, 'l')) return 'left';
+  if (matchesBinding(event, 'dpadRight') || matchesBinding(event, 'r')) return 'right';
+  if (matchesBinding(event, 'a')) return 'a';
+  if (matchesBinding(event, 'b')) return 'b';
+  if (matchesBinding(event, 'z')) return 'z';
+  if (matchesBinding(event, 'start')) return 'start';
+  return null;
+}
+
+function buildApp() {
+  app.textContent = '';
+
+  elements.stage = document.createElement('main');
+  elements.stage.className = 'vpg-stage';
+  elements.stage.dataset.page = toDomPageId(getPage());
+  elements.stage.dataset.zoom = 'in';
+  elements.stage.dataset.transition = 'idle';
+
+  const background = document.createElement('div');
+  background.className = 'vpg-menu-background';
+
+  const chrome = document.createElement('div');
+  chrome.className = 'vpg-menu-chrome';
+
+  for (const pageKey of PAGE_KEYS) {
+    const panel = buildMenuPanel(pageKey);
+    chrome.append(panel);
+    elements.panels.set(pageKey, panel);
+  }
+
+  elements.routeStatus = document.createElement('div');
+  elements.routeStatus.className = 'vpg-route-status';
+  elements.routeStatus.setAttribute('aria-live', 'polite');
+
+  elements.stage.append(background, chrome, elements.routeStatus);
+  app.append(elements.stage);
+
+  buildInstructionsModal();
+  buildControlsPage();
+  buildArenaPage();
+  updateMenu();
+  updateInstructionsContent();
+}
+
+function buildMenuPanel(pageKey) {
+  const page = getPage(pageKey);
+  const panel = document.createElement('section');
+  panel.className = 'vpg-menu-panel';
+  panel.dataset.page = toDomPageId(page);
+  panel.dataset.active = 'false';
+
+  const frame = document.createElement('div');
+  frame.className = 'vpg-menu-frame';
+
+  const titlebar = document.createElement('div');
+  titlebar.className = 'vpg-menu-titlebar';
+
+  const titleLogo = document.createElement('img');
+  titleLogo.className = 'vpg-menu-title-logo';
+  titleLogo.src = page.headingImage;
+  titleLogo.alt = page.displayName;
+  titlebar.append(titleLogo);
+
+  const list = document.createElement('ul');
+  list.className = 'vpg-menu-items';
+  list.setAttribute('role', 'menu');
+  list.setAttribute('aria-label', page.displayName);
+
+  const itemNodes = page.menuItems.map((item, index) => {
+    const node = document.createElement('li');
+    node.className = 'vpg-menu-item';
+    node.dataset.id = item.id;
+    node.dataset.state = 'idle';
+    node.setAttribute('role', 'menuitem');
+    node.tabIndex = 0;
+    node.textContent = item.displayName;
+    node.addEventListener('click', () => {
+      state.pageIndex = PAGE_KEYS.indexOf(pageKey);
+      state.itemIndices[pageKey] = index;
+      updateMenu();
+      openActiveTarget();
+    });
+    list.append(node);
+    return node;
+  });
+
+  elements.menuItems.set(pageKey, itemNodes);
+  frame.append(titlebar, list);
+  panel.append(frame);
+  return panel;
+}
+
+function buildInstructionsModal() {
+  elements.backdrop = document.createElement('div');
+  elements.backdrop.className = 'vpg-instructions-backdrop';
+  elements.backdrop.dataset.state = 'hidden';
+
+  elements.modal = document.createElement('section');
+  elements.modal.className = 'vpg-instructions-modal';
+  elements.modal.dataset.state = 'hidden';
+  elements.modal.setAttribute('role', 'dialog');
+  elements.modal.setAttribute('aria-modal', 'true');
+
+  elements.modalTitle = document.createElement('h3');
+  elements.modalTitle.className = 'vpg-instructions-title';
+
+  elements.modalBody = document.createElement('div');
+  elements.modalBody.className = 'vpg-instructions-body';
+
+  elements.modal.append(elements.modalTitle, elements.modalBody);
+  document.body.append(elements.backdrop, elements.modal);
+}
+
+function buildControlsPage() {
+  elements.controlsPage = document.createElement('section');
+  elements.controlsPage.className = 'vpg-subscreen vpg-controls-page';
+  elements.controlsPage.dataset.active = 'false';
+
+  const titlebar = document.createElement('div');
+  titlebar.className = 'vpg-menu-titlebar vpg-text-titlebar';
   const title = document.createElement('h1');
-  title.className = 'menu-title';
-  title.textContent = 'Main Menu';
-
-  const subtitle = document.createElement('p');
-  subtitle.className = 'menu-subtitle';
-  subtitle.textContent = 'Choose a mode with the D-Pad and press Enter.';
-
-  marquee.append(eyebrow, title, subtitle);
+  title.className = 'vpg-text-title';
+  title.textContent = 'Controls';
+  titlebar.append(title);
 
   const panel = document.createElement('div');
-  panel.className = 'menu-panel';
+  panel.className = 'vpg-subscreen-panel';
 
-  const list = document.createElement('div');
-  list.className = 'menu-list';
-  list.setAttribute('role', 'menu');
-  list.setAttribute('aria-label', 'Main Menu');
+  const rows = document.createElement('div');
+  rows.className = 'vpg-controls-rows';
 
-  const detail = document.createElement('div');
-  detail.className = 'menu-detail';
+  for (const row of CONTROL_ROWS) {
+    const node = document.createElement('button');
+    node.type = 'button';
+    node.className = 'vpg-control-row';
+    node.dataset.id = row.id;
+    node.addEventListener('click', () => startListening(row.id));
 
-  const detailTitle = document.createElement('div');
-  detailTitle.className = 'menu-detail-title';
+    const label = document.createElement('span');
+    label.className = 'vpg-control-label';
+    if (row.image) {
+      const image = document.createElement('img');
+      image.className = 'vpg-control-button-art';
+      image.src = row.image;
+      image.alt = row.label;
+      label.append(image);
+    } else {
+      label.textContent = row.label;
+    }
 
-  const detailText = document.createElement('p');
-  detailText.className = 'menu-detail-text';
+    const value = document.createElement('span');
+    value.className = 'vpg-control-binding';
 
-  const menuButtons = MENU_OPTIONS.map((option, index) => {
+    node.append(label, value);
+    rows.append(node);
+    elements.controlsRows.set(row.id, node);
+  }
+
+  for (const action of CONTROL_ACTIONS) {
+    const node = document.createElement('button');
+    node.type = 'button';
+    node.className = 'vpg-control-row vpg-control-action';
+    node.dataset.id = action.id;
+    node.textContent = action.label;
+    node.addEventListener('click', () => runControlAction(action.id));
+    rows.append(node);
+    elements.controlsRows.set(action.id, node);
+  }
+
+  panel.append(rows);
+  elements.controlsPage.append(titlebar, panel);
+  app.append(elements.controlsPage);
+
+  buildConfirmDialog();
+}
+
+function buildConfirmDialog() {
+  elements.confirmDialog = document.createElement('section');
+  elements.confirmDialog.className = 'vpg-confirm-dialog';
+  elements.confirmDialog.dataset.state = 'hidden';
+  elements.confirmDialog.setAttribute('role', 'dialog');
+  elements.confirmDialog.setAttribute('aria-modal', 'true');
+
+  const message = document.createElement('p');
+  message.textContent = 'Replace existing binding?';
+
+  const actions = document.createElement('div');
+  actions.className = 'vpg-confirm-actions';
+
+  for (const label of ['Yes', 'No']) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'menu-option';
-    button.setAttribute('role', 'menuitem');
-    button.dataset.optionId = option.id;
-    button.innerHTML = `
-      <span class="menu-option-index">${String(index + 1).padStart(2, '0')}</span>
-      <span class="menu-option-label">${option.label}</span>
-    `;
-
-    button.addEventListener('click', () => {
-      state.selectedMenuIndex = index;
-      updateMainMenuSelection();
-      openMenuOption(option.id);
-    });
-
-    list.append(button);
-    return button;
-  });
-
-  elements.menuButtons = menuButtons;
-
-  function updateMainMenuSelection() {
-    menuButtons.forEach((button, index) => {
-      const isSelected = index === state.selectedMenuIndex;
-      button.dataset.selected = String(isSelected);
-      if (isSelected) {
-        button.focus();
-      }
-    });
-
-    const selected = MENU_OPTIONS[state.selectedMenuIndex];
-    detailTitle.textContent = selected.label;
-    detailText.textContent = selected.description;
+    button.className = 'vpg-confirm-option';
+    button.textContent = label;
+    button.addEventListener('click', () => resolveBindingConflict(label === 'Yes'));
+    actions.append(button);
+    elements.confirmOptions.push(button);
   }
 
-  window.updateMainMenuSelection = updateMainMenuSelection;
-
-  detail.append(detailTitle, detailText);
-  panel.append(list, detail);
-  shell.append(marquee, panel);
-
-  const footer = document.createElement('div');
-  footer.className = 'screen-footer';
-  footer.textContent = 'Up / Down: Move   Enter: Confirm';
-  shell.append(footer);
-
-  app.append(shell);
-  updateMainMenuSelection();
+  elements.confirmDialog.append(message, actions);
+  document.body.append(elements.confirmDialog);
 }
 
-function buildArenaViewer() {
-  const shell = document.createElement('section');
-  shell.className = 'screen arena-viewer-screen';
-  shell.dataset.screen = 'arena-viewer';
+function buildArenaPage() {
+  elements.arenaPage = document.createElement('section');
+  elements.arenaPage.className = 'vpg-subscreen vpg-arena-page';
+  elements.arenaPage.dataset.active = 'false';
 
+  const titlebar = document.createElement('div');
+  titlebar.className = 'vpg-menu-titlebar vpg-text-titlebar';
   const title = document.createElement('h1');
-  title.className = 'viewer-title';
+  title.className = 'vpg-text-title';
   title.textContent = 'Arena Viewer';
+  elements.arenaStatus = document.createElement('div');
+  elements.arenaStatus.className = 'vpg-arena-status';
+  titlebar.append(title, elements.arenaStatus);
 
-  const toolbar = document.createElement('div');
-  toolbar.className = 'viewer-toolbar';
+  elements.arenaGrid = document.createElement('div');
+  elements.arenaGrid.className = 'vpg-arena-grid';
 
-  const label = document.createElement('span');
-  label.className = 'viewer-label';
-  label.textContent = 'Arena';
+  elements.arenas = availableArenas;
 
-  const dropdown = document.createElement('div');
-  dropdown.className = 'arena-select';
-  dropdown.dataset.open = 'false';
-
-  const trigger = document.createElement('button');
-  trigger.type = 'button';
-  trigger.className = 'arena-select-trigger';
-  trigger.setAttribute('aria-haspopup', 'listbox');
-  trigger.setAttribute('aria-expanded', 'false');
-
-  const triggerText = document.createElement('span');
-  triggerText.className = 'arena-select-trigger-text';
-
-  const triggerHint = document.createElement('span');
-  triggerHint.className = 'arena-select-trigger-hint';
-  triggerHint.textContent = 'Press Enter';
-
-  trigger.append(triggerText, triggerHint);
-
-  const menu = document.createElement('ul');
-  menu.className = 'arena-select-menu';
-  menu.setAttribute('role', 'listbox');
-  menu.tabIndex = -1;
-  menu.hidden = true;
-
-  const status = document.createElement('div');
-  status.className = 'viewer-status';
-
-  function closeMenu() {
-    dropdown.dataset.open = 'false';
-    trigger.setAttribute('aria-expanded', 'false');
-    menu.hidden = true;
-  }
-
-  function openMenu() {
-    dropdown.dataset.open = 'true';
-    trigger.setAttribute('aria-expanded', 'true');
-    menu.hidden = false;
-    const selected = menu.querySelector('[aria-selected="true"]');
-    selected?.focus();
-  }
-
-  function toggleMenu() {
-    if (dropdown.dataset.open === 'true') {
-      closeMenu();
-    } else {
-      openMenu();
-    }
-  }
-
-  trigger.addEventListener('click', () => toggleMenu());
-  trigger.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      toggleMenu();
-    }
-
-    if (event.key === 'ArrowDown' && dropdown.dataset.open !== 'true') {
-      event.preventDefault();
-      openMenu();
-    }
-  });
-
-  menu.addEventListener('keydown', (event) => {
-    const items = elements.arenaOptions;
-    const currentIndex = items.indexOf(document.activeElement);
-
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeMenu();
-      trigger.focus();
-      return;
-    }
-
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
-      items[nextIndex]?.focus();
-      return;
-    }
-
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
-      items[prevIndex]?.focus();
-      return;
-    }
-
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      document.activeElement?.click?.();
-    }
-  });
-
-  for (const arena of availableArenas) {
-    const option = document.createElement('li');
-    option.className = 'arena-select-option';
-    option.setAttribute('role', 'option');
-    option.tabIndex = -1;
-    option.dataset.arenaId = arena.id;
-    option.textContent = arena.displayName;
-
-    option.addEventListener('click', () => {
-      closeMenu();
+  for (const [index, arena] of elements.arenas.entries()) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'vpg-arena-card';
+    card.dataset.index = String(index);
+    card.addEventListener('click', () => {
+      state.arenaIndex = index;
+      updateArenaPage();
       loadArena(arena.id);
-      trigger.focus();
     });
 
-    menu.append(option);
-    elements.arenaOptions.push(option);
-  }
-
-  document.addEventListener('click', (event) => {
-    if (!dropdown.contains(event.target)) {
-      closeMenu();
-    }
-  });
-
-  dropdown.append(trigger, menu);
-  toolbar.append(label, dropdown, status);
-  shell.append(title, toolbar);
-
-  const footer = document.createElement('div');
-  footer.className = 'screen-footer';
-  footer.textContent = 'Enter: Open Arena List   Esc: Back to Main Menu';
-  shell.append(footer);
-
-  app.append(shell);
-
-  elements.arenaRoot = shell;
-  elements.arenaTitle = triggerText;
-  elements.arenaTrigger = trigger;
-  elements.arenaMenu = menu;
-  elements.arenaStatus = status;
-}
-
-function buildMatchSetupScreen() {
-  const shell = document.createElement('section');
-  shell.className = 'screen test-screen';
-  shell.dataset.screen = 'test-option-1';
-
-  const title = document.createElement('h1');
-  title.className = 'viewer-title';
-  title.textContent = 'Test Option 1';
-
-  const layout = document.createElement('div');
-  layout.className = 'test-layout';
-
-  const card = document.createElement('div');
-  card.className = 'test-card';
-
-  const cardHeader = document.createElement('div');
-  cardHeader.className = 'test-card-header';
-  cardHeader.textContent = 'Match Setup Prototype';
-
-  const list = document.createElement('div');
-  list.className = 'test-list';
-
-  for (const field of MATCH_SETUP_FIELDS) {
-    const item = document.createElement('div');
-    item.className = 'test-row';
-    item.dataset.fieldKey = field.key;
-
-    const label = document.createElement('span');
-    label.className = 'test-row-label';
-    label.textContent = field.label;
-
-    const value = document.createElement('span');
-    value.className = 'test-row-value';
-    value.textContent = '';
-
-    item.append(label, value);
-    list.append(item);
-    elements.matchSetupRows.push(item);
-    elements.matchSetupValueNodes.set(field.key, value);
-  }
-
-  card.append(cardHeader, list);
-
-  const summary = document.createElement('div');
-  summary.className = 'test-card';
-
-  const summaryHeader = document.createElement('div');
-  summaryHeader.className = 'test-card-header';
-  summaryHeader.textContent = 'Current Card';
-
-  const summaryText = document.createElement('div');
-  summaryText.className = 'test-summary';
-
-  summary.append(summaryHeader, summaryText);
-  layout.append(card, summary);
-  shell.append(title, layout);
-
-  const footer = document.createElement('div');
-  footer.className = 'screen-footer';
-  footer.textContent = 'Up / Down: Select   Left / Right: Change   Esc: Back';
-  shell.append(footer);
-
-  app.append(shell);
-  elements.matchSetupSummary = summaryText;
-}
-
-function buildDiagnosticsScreen() {
-  const shell = document.createElement('section');
-  shell.className = 'screen test-screen';
-  shell.dataset.screen = 'test-option-2';
-
-  const title = document.createElement('h1');
-  title.className = 'viewer-title';
-  title.textContent = 'Test Option 2';
-
-  const layout = document.createElement('div');
-  layout.className = 'test-layout';
-
-  const card = document.createElement('div');
-  card.className = 'test-card';
-
-  const cardHeader = document.createElement('div');
-  cardHeader.className = 'test-card-header';
-  cardHeader.textContent = 'Diagnostics';
-
-  const list = document.createElement('div');
-  list.className = 'test-list';
-
-  for (const panel of DIAGNOSTIC_PANELS) {
-    const item = document.createElement('div');
-    item.className = 'test-row';
-    item.dataset.panelId = panel.id;
-
-    const label = document.createElement('span');
-    label.className = 'test-row-label';
-    label.textContent = panel.label;
-
-    const value = document.createElement('span');
-    value.className = 'test-row-value';
-    value.textContent = '';
-
-    item.append(label, value);
-    list.append(item);
-    elements.diagnosticRows.push(item);
-    elements.diagnosticValueNodes.set(panel.id, value);
-  }
-
-  card.append(cardHeader, list);
-
-  const detail = document.createElement('div');
-  detail.className = 'test-card';
-
-  const detailHeader = document.createElement('div');
-  detailHeader.className = 'test-card-header';
-  detailHeader.textContent = 'Detail';
-
-  const detailBody = document.createElement('div');
-  detailBody.className = 'test-summary';
-
-  detail.append(detailHeader, detailBody);
-  layout.append(card, detail);
-  shell.append(title, layout);
-
-  const footer = document.createElement('div');
-  footer.className = 'screen-footer';
-  footer.textContent = 'Up / Down: Select   Enter: Refresh Detail   Esc: Back';
-  shell.append(footer);
-
-  app.append(shell);
-  elements.diagnosticDetail = detailBody;
-}
-
-function updateArenaViewerSelection() {
-  const currentArena = availableArenas.find((arena) => arena.id === state.arenaId);
-  elements.arenaTitle.textContent = currentArena?.displayName ?? state.arenaId;
-
-  elements.arenaOptions.forEach((option) => {
-    const isSelected = option.dataset.arenaId === state.arenaId;
-    option.setAttribute('aria-selected', String(isSelected));
-  });
-}
-
-function updateMatchSetupScreen() {
-  for (const field of MATCH_SETUP_FIELDS) {
-    const valueNode = elements.matchSetupValueNodes.get(field.key);
-    let value = state.matchSetup[field.key];
-
-    if (field.key === 'arenaId') {
-      value = availableArenas.find((arena) => arena.id === value)?.displayName ?? value;
+    if (arena.previewImage) {
+      const image = document.createElement('img');
+      image.src = arena.previewImage;
+      image.alt = arena.displayName;
+      card.append(image);
     }
 
-    if (valueNode) {
-      valueNode.textContent = value;
+    const label = document.createElement('h2');
+    label.textContent = arena.displayName;
+    card.append(label);
+    elements.arenaGrid.append(card);
+    elements.arenaCards.push(card);
+  }
+
+  const backCard = document.createElement('button');
+  backCard.type = 'button';
+  backCard.className = 'vpg-arena-card vpg-arena-back-card';
+  backCard.dataset.index = String(elements.arenas.length);
+  backCard.innerHTML = '<h2>Back</h2>';
+  backCard.addEventListener('click', () => showScreen('main-menu'));
+  elements.arenaGrid.append(backCard);
+  elements.arenaCards.push(backCard);
+
+  elements.arenaPage.append(titlebar, elements.arenaGrid);
+  app.append(elements.arenaPage);
+}
+
+function getAvailableArenas() {
+  return Object.entries(arenaModules)
+    .map(([path, data]) => ({
+      id: path.split('/').pop()?.replace(/\.json$/i, '') ?? data.id,
+      displayName: data.displayName ?? data.id,
+      previewImage: data.previewImage,
+    }))
+    .filter((arena) => arena.id && arena.displayName)
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+}
+
+function updateMenu() {
+  const activePageKey = getPageKey();
+  const activePage = getPage(activePageKey);
+  elements.stage.dataset.page = toDomPageId(activePage);
+
+  for (const pageKey of PAGE_KEYS) {
+    const panel = elements.panels.get(pageKey);
+    panel.dataset.active = String(pageKey === activePageKey && state.screen === 'main-menu');
+
+    const selectedIndex = state.itemIndices[pageKey] ?? 0;
+    for (const [index, item] of (elements.menuItems.get(pageKey) ?? []).entries()) {
+      item.dataset.state = index === selectedIndex ? 'active' : 'idle';
+      item.tabIndex = pageKey === activePageKey && index === selectedIndex ? 0 : -1;
     }
   }
 
-  elements.matchSetupRows.forEach((row, index) => {
-    row.dataset.selected = String(index === state.matchSetupFieldIndex);
-  });
-
-  const arenaName = availableArenas.find((arena) => arena.id === state.matchSetup.arenaId)?.displayName
-    ?? state.matchSetup.arenaId;
-  elements.matchSetupSummary.textContent =
-    `${state.matchSetup.matchType} | ${state.matchSetup.playerMode} | ${arenaName} | ` +
-    `${state.matchSetup.rules} | ${state.matchSetup.belt}`;
+  updateInstructionsContent();
 }
 
-function updateDiagnosticsScreen() {
-  DIAGNOSTIC_PANELS.forEach((panel) => {
-    const valueNode = elements.diagnosticValueNodes.get(panel.id);
-    if (valueNode) {
-      valueNode.textContent = panel.getValue();
+function updateInstructionsContent() {
+  const item = getActiveItem();
+  elements.modalTitle.textContent = item.instructions.title;
+  elements.modalBody.textContent = '';
+
+  for (const block of item.instructions.blocks) {
+    if (block.type === 'paragraph') {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = block.text;
+      elements.modalBody.append(paragraph);
     }
-  });
 
-  elements.diagnosticRows.forEach((row, index) => {
-    row.dataset.selected = String(index === state.diagnosticPanelIndex);
-  });
-
-  const panel = DIAGNOSTIC_PANELS[state.diagnosticPanelIndex];
-  elements.diagnosticDetail.innerHTML = panel.getDetails()
-    .map((line) => `<div class="test-summary-line">${line}</div>`)
-    .join('');
-}
-
-function renderScreenVisibility() {
-  for (const screen of app.querySelectorAll('.screen')) {
-    const isActive = screen.dataset.screen === state.screen;
-    screen.dataset.active = String(isActive);
+    if (block.type === 'definitionList') {
+      const list = document.createElement('dl');
+      for (const entry of block.items) {
+        const term = document.createElement('dt');
+        term.textContent = entry.term;
+        const definition = document.createElement('dd');
+        definition.textContent = entry.definition;
+        list.append(term, definition);
+      }
+      elements.modalBody.append(list);
+    }
   }
-
-  canvas.dataset.dimmed = state.screen === 'arena-viewer' ? 'false' : 'true';
 }
 
-function focusActiveScreen() {
-  if (state.screen === 'menu') {
-    window.updateMainMenuSelection?.();
+function setInstructionsOpen(isOpen) {
+  state.instructionsOpen = isOpen;
+  const modalState = isOpen ? 'visible' : 'hidden';
+  elements.backdrop.dataset.state = modalState;
+  elements.modal.dataset.state = modalState;
+}
+
+async function switchPage(direction) {
+  if (state.transitionInProgress) {
+    state.queuedDirection = direction;
     return;
   }
 
-  if (state.screen === 'arena-viewer') {
-    elements.arenaTrigger?.focus();
-    return;
-  }
+  state.transitionInProgress = true;
+  setInstructionsOpen(false);
+  elements.stage.dataset.transition = 'hiding';
+  for (const panel of elements.panels.values()) panel.dataset.active = 'false';
+  await sleep(150);
 
-  if (state.screen === 'test-option-1') {
-    updateMatchSetupScreen();
-    return;
-  }
+  elements.stage.dataset.zoom = 'out';
+  elements.stage.dataset.transition = 'zoom-out';
+  await sleep(400);
 
-  if (state.screen === 'test-option-2') {
-    updateDiagnosticsScreen();
+  state.pageIndex = (state.pageIndex + direction + PAGE_KEYS.length) % PAGE_KEYS.length;
+  elements.stage.dataset.page = toDomPageId(getPage());
+  elements.stage.dataset.transition = 'hold';
+  await sleep(250);
+
+  elements.stage.dataset.zoom = 'in';
+  elements.stage.dataset.transition = 'zoom-in';
+  await sleep(400);
+
+  elements.stage.dataset.transition = 'showing';
+  updateMenu();
+  await sleep(150);
+
+  elements.stage.dataset.transition = 'idle';
+  state.transitionInProgress = false;
+
+  const queuedDirection = state.queuedDirection;
+  state.queuedDirection = 0;
+  if (queuedDirection) {
+    switchPage(queuedDirection);
   }
 }
 
-function showScreen(screenId) {
-  state.screen = screenId;
-  renderScreenVisibility();
-  focusActiveScreen();
+function moveCursor(direction) {
+  const pageKey = getPageKey();
+  const page = getPage(pageKey);
+  const currentIndex = state.itemIndices[pageKey] ?? 0;
+  state.itemIndices[pageKey] = (currentIndex + direction + page.menuItems.length) % page.menuItems.length;
+  updateMenu();
 }
 
-function openMenuOption(optionId) {
-  if (optionId === 'arena-viewer') {
+function openActiveTarget() {
+  const item = getActiveItem();
+  setInstructionsOpen(false);
+
+  if (item.target === 'commissioner.controls') {
+    showScreen('controls');
+    return;
+  }
+
+  if (item.target === 'commissioner.arena_viewer') {
     showScreen('arena-viewer');
-    loadArena(state.arenaId);
     return;
   }
 
-  if (optionId === 'test-option-1') {
-    arenaRenderer.dispose();
-    showScreen('test-option-1');
-    updateMatchSetupScreen();
-    return;
-  }
-
-  if (optionId === 'test-option-2') {
-    arenaRenderer.dispose();
-    showScreen('test-option-2');
-    updateDiagnosticsScreen();
-  }
+  elements.routeStatus.textContent = `Opened ${item.target}`;
+  elements.routeStatus.dataset.state = 'visible';
+  window.setTimeout(() => {
+    elements.routeStatus.dataset.state = 'hidden';
+  }, 1200);
 }
 
-function cycleMatchSetupField(direction) {
-  const field = MATCH_SETUP_FIELDS[state.matchSetupFieldIndex];
-  const currentValue = state.matchSetup[field.key];
-  const options = field.key === 'arenaId'
-    ? availableArenas.map((arena) => arena.id)
-    : field.options;
-  const currentIndex = options.indexOf(currentValue);
-  const nextIndex = (currentIndex + direction + options.length) % options.length;
-  state.matchSetup[field.key] = options[nextIndex];
-  updateMatchSetupScreen();
+function showScreen(screen) {
+  const previousScreen = state.screen;
+  state.screen = screen;
+  const isMainMenu = screen === 'main-menu';
+  elements.stage.dataset.active = String(isMainMenu);
+  elements.controlsPage.dataset.active = String(screen === 'controls');
+  elements.arenaPage.dataset.active = String(screen === 'arena-viewer');
+  canvas.dataset.active = String(screen === 'arena-viewer');
+
+  if (screen === 'arena-viewer') {
+    loadArena(state.arenaId);
+  } else if (previousScreen === 'arena-viewer') {
+    loadToken += 1;
+    arenaRenderer.dispose();
+  }
+
+  setInstructionsOpen(false);
+  updateMenu();
+  updateControlsPage();
+  updateArenaPage();
+}
+
+function updateArenaPage() {
+  for (const [index, card] of elements.arenaCards.entries()) {
+    const isActive = index === state.arenaIndex;
+    const isLoadedArena = index < elements.arenas.length && elements.arenas[index].id === state.arenaId;
+    card.dataset.state = isActive ? 'active' : 'idle';
+    card.dataset.loaded = String(isLoadedArena);
+    card.tabIndex = isActive ? 0 : -1;
+  }
+
+  const currentArena = elements.arenas.find((arena) => arena.id === state.arenaId);
+  if (elements.arenaStatus) {
+    elements.arenaStatus.textContent = currentArena ? `${currentArena.displayName} loaded` : '';
+  }
 }
 
 async function loadArena(arenaId) {
   const token = ++loadToken;
   state.arenaId = sanitizeArenaId(arenaId, availableArenas);
-  updateArenaViewerSelection();
-  arenaRenderer.dispose();
-  elements.arenaStatus.textContent = 'Loading...';
+  const arena = availableArenas.find((candidate) => candidate.id === state.arenaId);
+
+  updateArenaPage();
   updateQuery({ arena: state.arenaId });
+  arenaRenderer.dispose();
+
+  if (elements.arenaStatus) {
+    elements.arenaStatus.textContent = `Loading ${arena?.displayName ?? state.arenaId}...`;
+  }
 
   try {
     await arenaRenderer.init(sceneManager.scene, state.arenaId);
@@ -739,118 +664,277 @@ async function loadArena(arenaId) {
       framePreviewCamera(sceneManager.camera, previewBounds);
     }
 
-    elements.arenaStatus.textContent = `${availableArenas.length} arenas online`;
-    console.log(`ArenaRenderer: loaded arena "${state.arenaId}" successfully`);
-  } catch (err) {
-    elements.arenaStatus.textContent = 'Load failed';
-    console.error(`ArenaRenderer: failed to load arena "${state.arenaId}"`, err);
+    updateArenaPage();
+  } catch (error) {
+    if (elements.arenaStatus) {
+      elements.arenaStatus.textContent = 'Load failed';
+    }
+    console.error(`ArenaRenderer: failed to load arena "${state.arenaId}"`, error);
   }
 }
 
-function handleGlobalKeyboard(event) {
-  if (state.screen === 'menu') {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      state.selectedMenuIndex = (state.selectedMenuIndex + 1) % MENU_OPTIONS.length;
-      window.updateMainMenuSelection?.();
-      return;
-    }
+function updateControlsPage() {
+  const allRows = [...CONTROL_ROWS, ...CONTROL_ACTIONS];
+  for (const [index, row] of allRows.entries()) {
+    const node = elements.controlsRows.get(row.id);
+    if (!node) continue;
 
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      state.selectedMenuIndex = (state.selectedMenuIndex - 1 + MENU_OPTIONS.length) % MENU_OPTIONS.length;
-      window.updateMainMenuSelection?.();
-      return;
-    }
+    node.dataset.state = index === state.controlsIndex ? 'active' : 'idle';
+    node.dataset.listening = String(state.listeningControlId === row.id);
 
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      openMenuOption(MENU_OPTIONS[state.selectedMenuIndex].id);
+    if (state.mappings.bindings[row.id]) {
+      node.querySelector('.vpg-control-binding').textContent =
+        state.listeningControlId === row.id ? 'Press a key...' : state.mappings.bindings[row.id].join(', ');
     }
+  }
+}
 
+function moveControlsCursor(direction) {
+  const rowCount = CONTROL_ROWS.length + CONTROL_ACTIONS.length;
+  state.controlsIndex = (state.controlsIndex + direction + rowCount) % rowCount;
+  updateControlsPage();
+}
+
+function activateControlRow() {
+  const allRows = [...CONTROL_ROWS, ...CONTROL_ACTIONS];
+  const row = allRows[state.controlsIndex];
+  if (state.mappings.bindings[row.id]) {
+    startListening(row.id);
+  } else {
+    runControlAction(row.id);
+  }
+}
+
+function startListening(controlId) {
+  state.listeningControlId = controlId;
+  updateControlsPage();
+}
+
+function setBinding(controlId, keyCode) {
+  state.mappings.bindings[controlId] = [keyCode];
+  state.listeningControlId = null;
+  state.pendingBinding = null;
+  saveControlMappings();
+  updateControlsPage();
+}
+
+function handleNewBinding(event) {
+  if (event.key === 'Escape') {
+    state.listeningControlId = null;
+    updateControlsPage();
     return;
   }
 
-  if (state.screen === 'test-option-1') {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      state.matchSetupFieldIndex = (state.matchSetupFieldIndex + 1) % MATCH_SETUP_FIELDS.length;
-      updateMatchSetupScreen();
-      return;
-    }
+  const keyCode = normalizeKeyCode(event);
+  const conflictId = Object.entries(state.mappings.bindings)
+    .find(([id, bindings]) => id !== state.listeningControlId && bindings.includes(keyCode))?.[0];
 
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      state.matchSetupFieldIndex = (state.matchSetupFieldIndex - 1 + MATCH_SETUP_FIELDS.length)
-        % MATCH_SETUP_FIELDS.length;
-      updateMatchSetupScreen();
-      return;
-    }
-
-    if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      cycleMatchSetupField(1);
-      return;
-    }
-
-    if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      cycleMatchSetupField(-1);
-      return;
-    }
+  if (!conflictId) {
+    setBinding(state.listeningControlId, keyCode);
+    return;
   }
 
-  if (state.screen === 'test-option-2') {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      state.diagnosticPanelIndex = (state.diagnosticPanelIndex + 1) % DIAGNOSTIC_PANELS.length;
-      updateDiagnosticsScreen();
-      return;
-    }
+  state.pendingBinding = { controlId: state.listeningControlId, conflictId, keyCode };
+  state.confirmIndex = 1;
+  elements.confirmDialog.dataset.state = 'visible';
+  updateConfirmDialog();
+}
 
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      state.diagnosticPanelIndex = (state.diagnosticPanelIndex - 1 + DIAGNOSTIC_PANELS.length)
-        % DIAGNOSTIC_PANELS.length;
-      updateDiagnosticsScreen();
-      return;
-    }
+function updateConfirmDialog() {
+  elements.confirmOptions.forEach((option, index) => {
+    option.dataset.state = index === state.confirmIndex ? 'active' : 'idle';
+  });
+}
 
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      updateDiagnosticsScreen();
-      return;
-    }
+function resolveBindingConflict(shouldReplace) {
+  elements.confirmDialog.dataset.state = 'hidden';
+
+  if (!shouldReplace || !state.pendingBinding) {
+    state.pendingBinding = null;
+    updateControlsPage();
+    return;
   }
 
-  if (event.key === 'Escape') {
-    event.preventDefault();
-    if (state.screen === 'arena-viewer') {
-      const dropdown = elements.arenaRoot?.querySelector('.arena-select');
-      const arenaMenuIsOpen = dropdown?.dataset.open === 'true';
+  const { controlId, conflictId, keyCode } = state.pendingBinding;
+  state.mappings.bindings[conflictId] = state.mappings.bindings[conflictId].filter((binding) => binding !== keyCode);
+  setBinding(controlId, keyCode);
+}
 
-      if (arenaMenuIsOpen) {
-        dropdown.dataset.open = 'false';
-        elements.arenaMenu.hidden = true;
-        elements.arenaTrigger?.setAttribute('aria-expanded', 'false');
-        elements.arenaTrigger?.focus();
-        return;
-      }
-    }
+function runControlAction(actionId) {
+  if (actionId === 'reset') {
+    state.mappings = cloneMappings(DEFAULT_CONTROL_MAPPINGS);
+    saveControlMappings();
+    updateControlsPage();
+    return;
+  }
 
-    arenaRenderer.dispose();
-    showScreen('menu');
+  if (actionId === 'export') {
+    const blob = new Blob([`${JSON.stringify(state.mappings, null, 2)}\n`], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'control-mappings.json';
+    anchor.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+
+  if (actionId === 'back') {
+    showScreen('main-menu');
   }
 }
 
-buildMainMenu();
-buildArenaViewer();
-buildMatchSetupScreen();
-buildDiagnosticsScreen();
+function handleMainMenuInput(input, event) {
+  if (state.transitionInProgress && (input === 'left' || input === 'right')) {
+    event.preventDefault();
+    state.queuedDirection = input === 'left' ? -1 : 1;
+    return;
+  }
 
-updateArenaViewerSelection();
-updateMatchSetupScreen();
-updateDiagnosticsScreen();
-showScreen('menu');
+  if (state.transitionInProgress) {
+    return;
+  }
+
+  if (input === 'left' || input === 'right') {
+    event.preventDefault();
+    switchPage(input === 'left' ? -1 : 1);
+    return;
+  }
+
+  if (input === 'up' || input === 'down') {
+    event.preventDefault();
+    moveCursor(input === 'up' ? -1 : 1);
+    return;
+  }
+
+  if (input === 'z') {
+    event.preventDefault();
+    setInstructionsOpen(!state.instructionsOpen);
+    return;
+  }
+
+  if (input === 'a') {
+    event.preventDefault();
+    if (!state.instructionsOpen) openActiveTarget();
+    return;
+  }
+
+  if (input === 'b') {
+    event.preventDefault();
+    setInstructionsOpen(false);
+  }
+}
+
+function handleControlsInput(input, event) {
+  if (elements.confirmDialog.dataset.state === 'visible') {
+    if (input === 'left' || input === 'right') {
+      event.preventDefault();
+      state.confirmIndex = state.confirmIndex === 0 ? 1 : 0;
+      updateConfirmDialog();
+      return;
+    }
+
+    if (input === 'a') {
+      event.preventDefault();
+      resolveBindingConflict(state.confirmIndex === 0);
+      return;
+    }
+
+    if (input === 'b') {
+      event.preventDefault();
+      resolveBindingConflict(false);
+    }
+    return;
+  }
+
+  if (state.listeningControlId) {
+    event.preventDefault();
+    handleNewBinding(event);
+    return;
+  }
+
+  if (input === 'up' || input === 'down') {
+    event.preventDefault();
+    moveControlsCursor(input === 'up' ? -1 : 1);
+    return;
+  }
+
+  if (input === 'a') {
+    event.preventDefault();
+    activateControlRow();
+    return;
+  }
+
+  if (input === 'b') {
+    event.preventDefault();
+    showScreen('main-menu');
+  }
+}
+
+function handleArenaViewerInput(input, event) {
+  const columnCount = getArenaColumnCount();
+  const itemCount = elements.arenaCards.length;
+
+  if (input === 'left' || input === 'right') {
+    event.preventDefault();
+    const direction = input === 'left' ? -1 : 1;
+    state.arenaIndex = (state.arenaIndex + direction + itemCount) % itemCount;
+    updateArenaPage();
+    return;
+  }
+
+  if (input === 'up' || input === 'down') {
+    event.preventDefault();
+    const direction = input === 'up' ? -columnCount : columnCount;
+    state.arenaIndex = (state.arenaIndex + direction + itemCount) % itemCount;
+    updateArenaPage();
+    return;
+  }
+
+  if (input === 'a') {
+    event.preventDefault();
+    if (state.arenaIndex === elements.arenas.length) {
+      showScreen('main-menu');
+      return;
+    }
+
+    loadArena(elements.arenas[state.arenaIndex].id);
+    return;
+  }
+
+  if (input === 'b') {
+    event.preventDefault();
+    showScreen('main-menu');
+  }
+}
+
+function getArenaColumnCount() {
+  if (elements.arenaCards.length < 2) {
+    return 1;
+  }
+
+  const firstTop = elements.arenaCards[0].offsetTop;
+  const firstRowCount = elements.arenaCards.filter((card) => card.offsetTop === firstTop).length;
+  return Math.max(firstRowCount, 1);
+}
+
+function handleGlobalKeyboard(event) {
+  const input = getInput(event);
+
+  if (state.screen === 'main-menu') {
+    handleMainMenuInput(input, event);
+    return;
+  }
+
+  if (state.screen === 'controls') {
+    handleControlsInput(input, event);
+    return;
+  }
+
+  if (state.screen === 'arena-viewer') {
+    handleArenaViewerInput(input, event);
+  }
+}
+
+buildApp();
 document.addEventListener('keydown', handleGlobalKeyboard);
-sceneManager.run();

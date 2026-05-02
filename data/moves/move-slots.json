@@ -1,0 +1,4106 @@
+{
+  "schema_version": 1,
+  "description": "Move slot definitions for the VPG Engine. Each slot is a unique input/state combination that a move can be assigned to.",
+  "field_definitions": {
+    "slot_id": "Unique identifier for this slot. Used to assign moves to slots.",
+    "slot_display_name": "Pretty name for UI display.",
+    "position": "Broad area of the game system.",
+    "category": "Functional grouping within a position (UI-ready title case).",
+    "category_id": "snake_case version of category, for code references.",
+    "group": "Eligibility group; moves reference groups, not individual slots.",
+    "player_state": "Array of player states this slot is valid in (any of these).",
+    "opponent_state": "Array of opponent states this slot is valid against (any of these). 'n/a' means no opponent required.",
+    "range": "Distance modifier: close, mid, any, or n/a.",
+    "requires_special": "True if special meter is required to trigger this slot.",
+    "trigger": "'manual' (player input fires the slot) or 'automatic' (engine fires it from context).",
+    "input": "Human-readable input description, for UI/tooltips.",
+    "input_pattern": "Structured input matcher for the engine. Null for automatic slots.",
+    "input_pattern.buttons": "Buttons that must all be pressed simultaneously. Mutually exclusive with mash_buttons.",
+    "input_pattern.mash_buttons": "Pool of buttons for rapid-tap (mashing) slots. Any press of any pool button counts toward the mash; engine fires the slot when press count exceeds threshold within a time window.",
+    "input_pattern.button_alternatives": "Groups of 'either/or' button options, e.g. [['a','b']] for '[A] or [B]'. Player presses any one button from each group.",
+    "input_pattern.dpad": "Acceptable d-pad directions: array of 'up'/'down'/'left'/'right', or ['any'], or null if d-pad isn't part of the input.",
+    "input_pattern.control_stick": "Acceptable control stick flick directions, same shape as dpad.",
+    "input_pattern.modifier": "'tap' | 'hold' | 'rapid_tap' | null. Distinguishes weak/strong grapples and mash inputs.",
+    "input_pattern.requires_run": "True if [Run] must be held when the input is given.",
+    "input_pattern.release_run": "True if the slot fires on RELEASE of [Run] (not press). Used by turnbuckle flying attacks: requires_run=true + release_run=true together mean 'player ran into corner to climb the turnbuckle, slot fires when [Run] is released to launch the move'.",
+    "setup": "Human-readable description of how to perform the move, for help/training UI."
+  },
+  "slots": [
+    {
+      "slot_id": "apron_kick_to_inside",
+      "slot_display_name": "Apron Kick To Inside",
+      "position": "apron",
+      "category": "Apron Strike",
+      "category_id": "apron_strike",
+      "group": "apron_kick",
+      "player_state": [
+        "on_apron"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] while on the apron toward an opponent inside or outside"
+    },
+    {
+      "slot_id": "apron_kick_to_outside",
+      "slot_display_name": "Apron Kick To Outside",
+      "position": "apron",
+      "category": "Apron Strike",
+      "category_id": "apron_strike",
+      "group": "apron_kick",
+      "player_state": [
+        "on_apron"
+      ],
+      "opponent_state": [
+        "outside_ring"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] while on the apron toward an opponent inside or outside"
+    },
+    {
+      "slot_id": "apron_taunt",
+      "slot_display_name": "Apron Taunt",
+      "position": "apron",
+      "category": "Apron Taunt",
+      "category_id": "apron_taunt",
+      "group": "apron_taunt",
+      "player_state": [
+        "on_apron"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Press [Control Stick] while on the apron"
+    },
+    {
+      "slot_id": "counter_grapple_from_apron_apron",
+      "slot_display_name": "Counter Grapple From Apron Apron",
+      "position": "apron",
+      "category": "Counter Grapple from Apron",
+      "category_id": "counter_grapple_from_apron",
+      "group": "counter_grapple_from_apron_apron",
+      "player_state": [
+        "apron_weak_grapple_from_apron_defending",
+        "apron_strong_grapple_from_apron_defending"
+      ],
+      "opponent_state": [
+        "apron_weak_grapple_from_apron_attacking",
+        "apron_strong_grapple_from_apron_attacking"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "Rapidly tap [A] and [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": "rapid_tap",
+        "requires_run": false,
+        "release_run": false,
+        "mash_buttons": [
+          "a",
+          "b"
+        ]
+      },
+      "setup": "Rapidly tap [A] and [B] while defending a grapple on the apron"
+    },
+    {
+      "slot_id": "flying_attack_from_apron",
+      "slot_display_name": "Flying Attack From Apron",
+      "position": "apron",
+      "category": "Flying Attack from Apron",
+      "category_id": "flying_attack_from_apron",
+      "group": "flying_attack_from_apron",
+      "player_state": [
+        "on_apron"
+      ],
+      "opponent_state": [
+        "outside_ring"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [D-Pad] + [A] while on the apron toward opponent outside"
+    },
+    {
+      "slot_id": "running_flying_attack_from_apron",
+      "slot_display_name": "Running Flying Attack From Apron",
+      "position": "apron",
+      "category": "Flying Attack from Apron",
+      "category_id": "flying_attack_from_apron",
+      "group": "running_flying_attack_from_apron",
+      "player_state": [
+        "running_on_apron"
+      ],
+      "opponent_state": [
+        "outside_ring"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [Run] on the apron then press [A] toward opponent outside"
+    },
+    {
+      "slot_id": "flying_attack_to_ring_laying",
+      "slot_display_name": "Flying Attack To Ring Laying",
+      "position": "apron",
+      "category": "Flying Attack to Ring (Laying)",
+      "category_id": "flying_attack_to_ring_(laying)",
+      "group": "flying_attack_to_ring_laying",
+      "player_state": [
+        "on_apron"
+      ],
+      "opponent_state": [
+        "down_in_ring"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] on the apron toward a downed opponent inside"
+    },
+    {
+      "slot_id": "flying_attack_to_ring_special",
+      "slot_display_name": "Flying Attack To Ring Special",
+      "position": "apron",
+      "category": "Flying Attack to Ring (Special)",
+      "category_id": "flying_attack_to_ring_(special)",
+      "group": "flying_attack_to_ring_special",
+      "player_state": [
+        "on_apron"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away",
+        "down_in_ring"
+      ],
+      "range": "any",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] with special meter on the apron toward an opponent inside"
+    },
+    {
+      "slot_id": "flying_attack_to_ring_standing",
+      "slot_display_name": "Flying Attack To Ring Standing",
+      "position": "apron",
+      "category": "Flying Attack to Ring (Standing)",
+      "category_id": "flying_attack_to_ring_(standing)",
+      "group": "flying_attack_to_ring_standing",
+      "player_state": [
+        "on_apron"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] on the apron toward a standing opponent inside"
+    },
+    {
+      "slot_id": "finisher_from_apron",
+      "slot_display_name": "Finisher From Apron",
+      "position": "apron",
+      "category": "Grapple from Apron",
+      "category_id": "grapple_from_apron",
+      "group": "apron_finisher_from_apron",
+      "player_state": [
+        "apron_strong_grapple_from_apron_attacking"
+      ],
+      "opponent_state": [
+        "apron_strong_grapple_from_apron_defending"
+      ],
+      "range": "n/a",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Press [Control Stick] with special meter while in apron strong grapple"
+    },
+    {
+      "slot_id": "strong_grapple_from_apron",
+      "slot_display_name": "Strong Grapple From Apron",
+      "position": "apron",
+      "category": "Grapple from Apron",
+      "category_id": "grapple_from_apron",
+      "group": "apron_strong_grapple_from_apron",
+      "player_state": [
+        "apron_strong_grapple_from_apron_attacking"
+      ],
+      "opponent_state": [
+        "apron_strong_grapple_from_apron_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A] or [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "button_alternatives": [
+          [
+            "a",
+            "b"
+          ]
+        ],
+        "buttons": []
+      },
+      "setup": "Hold [A] on the apron toward opponent (from apron)"
+    },
+    {
+      "slot_id": "weak_grapple_from_apron",
+      "slot_display_name": "Weak Grapple From Apron",
+      "position": "apron",
+      "category": "Grapple from Apron",
+      "category_id": "grapple_from_apron",
+      "group": "apron_weak_grapple_from_apron",
+      "player_state": [
+        "apron_weak_grapple_from_apron_attacking"
+      ],
+      "opponent_state": [
+        "apron_weak_grapple_from_apron_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A] or [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "button_alternatives": [
+          [
+            "a",
+            "b"
+          ]
+        ],
+        "buttons": []
+      },
+      "setup": "Tap [A] on the apron toward opponent (from apron)"
+    },
+    {
+      "slot_id": "double_team_flying_from_apron_over_top_rope",
+      "slot_display_name": "Double Team Flying From Apron Over Top Rope",
+      "position": "double_team",
+      "category": "Double Team Flying Attack",
+      "category_id": "double_team_flying_attack",
+      "group": "double_team_flying_attack",
+      "player_state": [
+        "on_apron"
+      ],
+      "opponent_state": [
+        "held_on_shoulders"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "automatic",
+      "input": null,
+      "input_pattern": null,
+      "setup": "Automatic \u2014 triggered by partner holding opponent on shoulders"
+    },
+    {
+      "slot_id": "double_team_flying_off_top_turnbuckle",
+      "slot_display_name": "Double Team Flying Off Top Turnbuckle",
+      "position": "double_team",
+      "category": "Double Team Flying Attack",
+      "category_id": "double_team_flying_attack",
+      "group": "double_team_flying_attack",
+      "player_state": [
+        "on_turnbuckle"
+      ],
+      "opponent_state": [
+        "held_on_shoulders"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "automatic",
+      "input": null,
+      "input_pattern": null,
+      "setup": "Automatic \u2014 triggered by partner holding opponent on shoulders"
+    },
+    {
+      "slot_id": "double_team_flying_off_top_turnbuckle_to_outside",
+      "slot_display_name": "Double Team Flying Off Top Turnbuckle To Outside",
+      "position": "double_team",
+      "category": "Double Team Flying Attack",
+      "category_id": "double_team_flying_attack",
+      "group": "double_team_flying_attack",
+      "player_state": [
+        "on_turnbuckle"
+      ],
+      "opponent_state": [
+        "held_on_shoulders"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "automatic",
+      "input": null,
+      "input_pattern": null,
+      "setup": "Automatic \u2014 triggered by partner holding opponent on shoulders"
+    },
+    {
+      "slot_id": "back_double_team_grapple",
+      "slot_display_name": "Back Double Team Grapple",
+      "position": "double_team",
+      "category": "Double Team Grapple",
+      "category_id": "double_team_grapple",
+      "group": "double_team_grapple_back",
+      "player_state": [
+        "double_team_grapple_back_attacking"
+      ],
+      "opponent_state": [
+        "double_team_grapple_back_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] when partner initiates a back double-team grapple"
+    },
+    {
+      "slot_id": "front_double_team_grapple",
+      "slot_display_name": "Front Double Team Grapple",
+      "position": "double_team",
+      "category": "Double Team Grapple",
+      "category_id": "double_team_grapple",
+      "group": "double_team_grapple_front",
+      "player_state": [
+        "double_team_grapple_front_attacking"
+      ],
+      "opponent_state": [
+        "double_team_grapple_front_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] when partner initiates a front double-team grapple"
+    },
+    {
+      "slot_id": "running_double_team_grapple",
+      "slot_display_name": "Running Double Team Grapple",
+      "position": "double_team",
+      "category": "Double Team Grapple",
+      "category_id": "double_team_grapple",
+      "group": "running_double_team_grapple",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "running_toward_opponent"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] while running toward an opponent running toward your partner"
+    },
+    {
+      "slot_id": "sandwich_double_team_grapple",
+      "slot_display_name": "Sandwich Double Team Grapple",
+      "position": "double_team",
+      "category": "Double Team Grapple",
+      "category_id": "double_team_grapple",
+      "group": "double_team_grapple_sandwich",
+      "player_state": [
+        "double_team_grapple_sandwich_attacking"
+      ],
+      "opponent_state": [
+        "double_team_grapple_sandwich_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] when partner initiates a sandwich double-team grapple"
+    },
+    {
+      "slot_id": "back_finisher",
+      "slot_display_name": "Back Finisher",
+      "position": "grappling",
+      "category": "Back Strong Grapple",
+      "category_id": "back_strong_grapple",
+      "group": "back_finisher",
+      "player_state": [
+        "back_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "back_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Hold [A] when behind a standing opponent"
+    },
+    {
+      "slot_id": "back_strong_grapple_1",
+      "slot_display_name": "Back Strong Grapple 1",
+      "position": "grappling",
+      "category": "Back Strong Grapple",
+      "category_id": "back_strong_grapple",
+      "group": "back_strong_grapple",
+      "player_state": [
+        "back_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "back_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [A] when behind a standing opponent"
+    },
+    {
+      "slot_id": "back_strong_grapple_2",
+      "slot_display_name": "Back Strong Grapple 2",
+      "position": "grappling",
+      "category": "Back Strong Grapple",
+      "category_id": "back_strong_grapple",
+      "group": "back_strong_grapple",
+      "player_state": [
+        "back_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "back_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [A] when behind a standing opponent"
+    },
+    {
+      "slot_id": "back_strong_grapple_3",
+      "slot_display_name": "Back Strong Grapple 3",
+      "position": "grappling",
+      "category": "Back Strong Grapple",
+      "category_id": "back_strong_grapple",
+      "group": "back_strong_grapple",
+      "player_state": [
+        "back_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "back_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [A] when behind a standing opponent"
+    },
+    {
+      "slot_id": "back_strong_grapple_4",
+      "slot_display_name": "Back Strong Grapple 4",
+      "position": "grappling",
+      "category": "Back Strong Grapple",
+      "category_id": "back_strong_grapple",
+      "group": "back_strong_grapple",
+      "player_state": [
+        "back_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "back_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [A] when behind a standing opponent"
+    },
+    {
+      "slot_id": "back_weak_grapple_1",
+      "slot_display_name": "Back Weak Grapple 1",
+      "position": "grappling",
+      "category": "Back Weak Grapple",
+      "category_id": "back_weak_grapple",
+      "group": "back_weak_grapple",
+      "player_state": [
+        "back_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "back_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap [A] when behind a standing opponent"
+    },
+    {
+      "slot_id": "back_weak_grapple_2",
+      "slot_display_name": "Back Weak Grapple 2",
+      "position": "grappling",
+      "category": "Back Weak Grapple",
+      "category_id": "back_weak_grapple",
+      "group": "back_weak_grapple",
+      "player_state": [
+        "back_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "back_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap [A] when behind a standing opponent"
+    },
+    {
+      "slot_id": "back_weak_grapple_3",
+      "slot_display_name": "Back Weak Grapple 3",
+      "position": "grappling",
+      "category": "Back Weak Grapple",
+      "category_id": "back_weak_grapple",
+      "group": "back_weak_grapple",
+      "player_state": [
+        "back_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "back_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Tap [A] when behind a standing opponent"
+    },
+    {
+      "slot_id": "back_weak_grapple_4",
+      "slot_display_name": "Back Weak Grapple 4",
+      "position": "grappling",
+      "category": "Back Weak Grapple",
+      "category_id": "back_weak_grapple",
+      "group": "back_weak_grapple",
+      "player_state": [
+        "back_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "back_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Tap [A] when behind a standing opponent"
+    },
+    {
+      "slot_id": "front_finisher",
+      "slot_display_name": "Front Finisher",
+      "position": "grappling",
+      "category": "Front Strong Grapple",
+      "category_id": "front_strong_grapple",
+      "group": "front_finisher",
+      "player_state": [
+        "front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Hold [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_strong_grapple_1",
+      "slot_display_name": "Front Strong Grapple 1",
+      "position": "grappling",
+      "category": "Front Strong Grapple",
+      "category_id": "front_strong_grapple",
+      "group": "front_strong_grapple",
+      "player_state": [
+        "front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_strong_grapple_2",
+      "slot_display_name": "Front Strong Grapple 2",
+      "position": "grappling",
+      "category": "Front Strong Grapple",
+      "category_id": "front_strong_grapple",
+      "group": "front_strong_grapple",
+      "player_state": [
+        "front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Left/Right] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "left",
+          "right"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_strong_grapple_3",
+      "slot_display_name": "Front Strong Grapple 3",
+      "position": "grappling",
+      "category": "Front Strong Grapple",
+      "category_id": "front_strong_grapple",
+      "group": "front_strong_grapple",
+      "player_state": [
+        "front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad Up] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "up"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_strong_grapple_4",
+      "slot_display_name": "Front Strong Grapple 4",
+      "position": "grappling",
+      "category": "Front Strong Grapple",
+      "category_id": "front_strong_grapple",
+      "group": "front_strong_grapple",
+      "player_state": [
+        "front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad Down] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "down"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_strong_grapple_5",
+      "slot_display_name": "Front Strong Grapple 5",
+      "position": "grappling",
+      "category": "Front Strong Grapple",
+      "category_id": "front_strong_grapple",
+      "group": "front_strong_grapple",
+      "player_state": [
+        "front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_strong_grapple_6",
+      "slot_display_name": "Front Strong Grapple 6",
+      "position": "grappling",
+      "category": "Front Strong Grapple",
+      "category_id": "front_strong_grapple",
+      "group": "front_strong_grapple",
+      "player_state": [
+        "front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Left/Right] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "left",
+          "right"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_strong_grapple_7",
+      "slot_display_name": "Front Strong Grapple 7",
+      "position": "grappling",
+      "category": "Front Strong Grapple",
+      "category_id": "front_strong_grapple",
+      "group": "front_strong_grapple",
+      "player_state": [
+        "front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad Up] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "up"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_strong_grapple_8",
+      "slot_display_name": "Front Strong Grapple 8",
+      "position": "grappling",
+      "category": "Front Strong Grapple",
+      "category_id": "front_strong_grapple",
+      "group": "front_strong_grapple",
+      "player_state": [
+        "front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad Down] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "down"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_weak_grapple_1",
+      "slot_display_name": "Front Weak Grapple 1",
+      "position": "grappling",
+      "category": "Front Weak Grapple",
+      "category_id": "front_weak_grapple",
+      "group": "front_weak_grapple_a",
+      "player_state": [
+        "front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_weak_grapple_2",
+      "slot_display_name": "Front Weak Grapple 2",
+      "position": "grappling",
+      "category": "Front Weak Grapple",
+      "category_id": "front_weak_grapple",
+      "group": "front_weak_grapple_a",
+      "player_state": [
+        "front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Left/Right] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "left",
+          "right"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_weak_grapple_3",
+      "slot_display_name": "Front Weak Grapple 3",
+      "position": "grappling",
+      "category": "Front Weak Grapple",
+      "category_id": "front_weak_grapple",
+      "group": "front_weak_grapple_a",
+      "player_state": [
+        "front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad Up] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "up"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_weak_grapple_4",
+      "slot_display_name": "Front Weak Grapple 4",
+      "position": "grappling",
+      "category": "Front Weak Grapple",
+      "category_id": "front_weak_grapple",
+      "group": "front_weak_grapple_a",
+      "player_state": [
+        "front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad Down] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "down"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_weak_grapple_5",
+      "slot_display_name": "Front Weak Grapple 5",
+      "position": "grappling",
+      "category": "Front Weak Grapple",
+      "category_id": "front_weak_grapple",
+      "group": "front_weak_grapple_b",
+      "player_state": [
+        "front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Tap [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_weak_grapple_6",
+      "slot_display_name": "Front Weak Grapple 6",
+      "position": "grappling",
+      "category": "Front Weak Grapple",
+      "category_id": "front_weak_grapple",
+      "group": "front_weak_grapple_b",
+      "player_state": [
+        "front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Left/Right] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "left",
+          "right"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Tap [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_weak_grapple_7",
+      "slot_display_name": "Front Weak Grapple 7",
+      "position": "grappling",
+      "category": "Front Weak Grapple",
+      "category_id": "front_weak_grapple",
+      "group": "front_weak_grapple_b",
+      "player_state": [
+        "front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad Up] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "up"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Tap [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "front_weak_grapple_8",
+      "slot_display_name": "Front Weak Grapple 8",
+      "position": "grappling",
+      "category": "Front Weak Grapple",
+      "category_id": "front_weak_grapple",
+      "group": "front_weak_grapple_b",
+      "player_state": [
+        "front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad Down] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "down"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Tap [A] in front of standing opponent"
+    },
+    {
+      "slot_id": "back_strong_grapple_counter",
+      "slot_display_name": "Back Strong Grapple Counter",
+      "position": "grappling",
+      "category": "Grapple Reversal",
+      "category_id": "grapple_reversal",
+      "group": "back_strong_grapple_counter",
+      "player_state": [
+        "back_strong_grapple_defending"
+      ],
+      "opponent_state": [
+        "back_strong_grapple_attacking"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[R]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "r"
+        ]
+      },
+      "setup": "Press [R] while defending a back strong grapple"
+    },
+    {
+      "slot_id": "back_weak_grapple_counter",
+      "slot_display_name": "Back Weak Grapple Counter",
+      "position": "grappling",
+      "category": "Grapple Reversal",
+      "category_id": "grapple_reversal",
+      "group": "back_weak_grapple_counter",
+      "player_state": [
+        "back_weak_grapple_defending"
+      ],
+      "opponent_state": [
+        "back_weak_grapple_attacking"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[R]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "r"
+        ]
+      },
+      "setup": "Press [R] while defending a back weak grapple"
+    },
+    {
+      "slot_id": "ground_strike_facing_down",
+      "slot_display_name": "Ground Strike Facing Down",
+      "position": "ground",
+      "category": "Ground Striking",
+      "category_id": "ground_striking",
+      "group": "ground_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_down"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] close to a downed opponent"
+    },
+    {
+      "slot_id": "ground_strike_facing_up",
+      "slot_display_name": "Ground Strike Facing Up",
+      "position": "ground",
+      "category": "Ground Striking",
+      "category_id": "ground_striking",
+      "group": "ground_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_up"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] close to a downed opponent"
+    },
+    {
+      "slot_id": "ground_strike_kneeling_all_fours",
+      "slot_display_name": "Ground Strike Kneeling All Fours",
+      "position": "ground",
+      "category": "Ground Striking",
+      "category_id": "ground_striking",
+      "group": "ground_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "kneeling_all_fours"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] close to a downed opponent"
+    },
+    {
+      "slot_id": "ground_strike_sitting_up",
+      "slot_display_name": "Ground Strike Sitting Up",
+      "position": "ground",
+      "category": "Ground Striking",
+      "category_id": "ground_striking",
+      "group": "ground_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "sitting_up"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] close to a downed opponent"
+    },
+    {
+      "slot_id": "lower_body_finisher_facing_down",
+      "slot_display_name": "Lower Body Finisher Facing Down",
+      "position": "ground",
+      "category": "Lower Body Finisher",
+      "category_id": "lower_body_finisher",
+      "group": "lower_body_finisher",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_down"
+      ],
+      "range": "close",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] with special meter close to a downed opponent (lower body position)"
+    },
+    {
+      "slot_id": "lower_body_finisher_facing_up",
+      "slot_display_name": "Lower Body Finisher Facing Up",
+      "position": "ground",
+      "category": "Lower Body Finisher",
+      "category_id": "lower_body_finisher",
+      "group": "lower_body_finisher",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_up"
+      ],
+      "range": "close",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] with special meter close to a downed opponent (lower body position)"
+    },
+    {
+      "slot_id": "lower_body_submission_facing_down",
+      "slot_display_name": "Lower Body Submission Facing Down",
+      "position": "ground",
+      "category": "Lower Body Submission",
+      "category_id": "lower_body_submission",
+      "group": "lower_body_submission",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_down"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] close to a downed opponent (lower body position)"
+    },
+    {
+      "slot_id": "lower_body_submission_facing_up",
+      "slot_display_name": "Lower Body Submission Facing Up",
+      "position": "ground",
+      "category": "Lower Body Submission",
+      "category_id": "lower_body_submission",
+      "group": "lower_body_submission",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_up"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] close to a downed opponent (lower body position)"
+    },
+    {
+      "slot_id": "upper_body_finisher_facing_down",
+      "slot_display_name": "Upper Body Finisher Facing Down",
+      "position": "ground",
+      "category": "Upper Body Finisher",
+      "category_id": "upper_body_finisher",
+      "group": "upper_body_finisher",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_down"
+      ],
+      "range": "close",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] with special meter close to a downed opponent (upper body position)"
+    },
+    {
+      "slot_id": "upper_body_finisher_facing_up",
+      "slot_display_name": "Upper Body Finisher Facing Up",
+      "position": "ground",
+      "category": "Upper Body Finisher",
+      "category_id": "upper_body_finisher",
+      "group": "upper_body_finisher",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_up"
+      ],
+      "range": "close",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] with special meter close to a downed opponent (upper body position)"
+    },
+    {
+      "slot_id": "upper_body_submission_facing_down",
+      "slot_display_name": "Upper Body Submission Facing Down",
+      "position": "ground",
+      "category": "Upper Body Submission",
+      "category_id": "upper_body_submission",
+      "group": "upper_body_submission",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_down"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] close to a downed opponent (upper body position)"
+    },
+    {
+      "slot_id": "upper_body_submission_facing_up",
+      "slot_display_name": "Upper Body Submission Facing Up",
+      "position": "ground",
+      "category": "Upper Body Submission",
+      "category_id": "upper_body_submission",
+      "group": "upper_body_submission",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_facing_up"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] close to a downed opponent (upper body position)"
+    },
+    {
+      "slot_id": "upper_body_submission_kneeling_all_fours",
+      "slot_display_name": "Upper Body Submission Kneeling All Fours",
+      "position": "ground",
+      "category": "Upper Body Submission",
+      "category_id": "upper_body_submission",
+      "group": "upper_body_submission",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "kneeling_all_fours"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] close to a downed opponent (upper body position)"
+    },
+    {
+      "slot_id": "upper_body_submission_sitting_up",
+      "slot_display_name": "Upper Body Submission Sitting Up",
+      "position": "ground",
+      "category": "Upper Body Submission",
+      "category_id": "upper_body_submission",
+      "group": "upper_body_submission",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "sitting_up"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] close to a downed opponent (upper body position)"
+    },
+    {
+      "slot_id": "irish_whip_finisher",
+      "slot_display_name": "Irish Whip Finisher",
+      "position": "irish_whip",
+      "category": "Irish Whip Grapple (Strong)",
+      "category_id": "irish_whip_grapple_(strong)",
+      "group": "irish_whip_finisher",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "running_toward_from_strong_whip"
+      ],
+      "range": "any",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Press [Control Stick] with special meter while opponent returns from a strong Irish whip"
+    },
+    {
+      "slot_id": "strong_irish_whip_grapple_1",
+      "slot_display_name": "Strong Irish Whip Grapple 1",
+      "position": "irish_whip",
+      "category": "Irish Whip Grapple (Strong)",
+      "category_id": "irish_whip_grapple_(strong)",
+      "group": "strong_irish_whip_grapple",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "running_toward_from_strong_whip"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "Tap [A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": "tap",
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap or hold [A] while opponent returns from a strong Irish whip"
+    },
+    {
+      "slot_id": "strong_irish_whip_grapple_2",
+      "slot_display_name": "Strong Irish Whip Grapple 2",
+      "position": "irish_whip",
+      "category": "Irish Whip Grapple (Strong)",
+      "category_id": "irish_whip_grapple_(strong)",
+      "group": "strong_irish_whip_grapple",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "running_toward_from_strong_whip"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "Hold [A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": "hold",
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap or hold [A] while opponent returns from a strong Irish whip"
+    },
+    {
+      "slot_id": "weak_irish_whip_grapple_1",
+      "slot_display_name": "Weak Irish Whip Grapple 1",
+      "position": "irish_whip",
+      "category": "Irish Whip Grapple (Weak)",
+      "category_id": "irish_whip_grapple_(weak)",
+      "group": "weak_irish_whip_grapple",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "running_toward_from_weak_whip"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "Tap [A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": "tap",
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap or hold [A] while opponent returns from a weak Irish whip"
+    },
+    {
+      "slot_id": "weak_irish_whip_grapple_2",
+      "slot_display_name": "Weak Irish Whip Grapple 2",
+      "position": "irish_whip",
+      "category": "Irish Whip Grapple (Weak)",
+      "category_id": "irish_whip_grapple_(weak)",
+      "group": "weak_irish_whip_grapple",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "running_toward_from_weak_whip"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "Hold [A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": "hold",
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap or hold [A] while opponent returns from a weak Irish whip"
+    },
+    {
+      "slot_id": "irish_whip_strike",
+      "slot_display_name": "Irish Whip Strike",
+      "position": "irish_whip",
+      "category": "Irish Whip Strike",
+      "category_id": "irish_whip_strike",
+      "group": "irish_whip_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "running_toward_opponent"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] while opponent runs toward you"
+    },
+    {
+      "slot_id": "flying_attack_to_outside",
+      "slot_display_name": "Flying Attack To Outside",
+      "position": "ringside",
+      "category": "Flying Attack to Outside",
+      "category_id": "flying_attack_to_outside",
+      "group": "flying_attack_to_outside",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "outside_ring"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [D-Pad] + [A] at the ropes toward an opponent outside"
+    },
+    {
+      "slot_id": "running_diving_attack_1",
+      "slot_display_name": "Running Diving Attack 1",
+      "position": "ringside",
+      "category": "Flying Attack to Outside",
+      "category_id": "flying_attack_to_outside",
+      "group": "running_diving_attack",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "outside_ring"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [Run] toward the ropes with an opponent outside, then press [A] or [D-Pad] + [A]"
+    },
+    {
+      "slot_id": "running_diving_attack_2",
+      "slot_display_name": "Running Diving Attack 2",
+      "position": "ringside",
+      "category": "Flying Attack to Outside",
+      "category_id": "flying_attack_to_outside",
+      "group": "running_diving_attack",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "outside_ring"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [Run] toward the ropes with an opponent outside, then press [A] or [D-Pad] + [A]"
+    },
+    {
+      "slot_id": "counter_grapple_from_apron",
+      "slot_display_name": "Counter Grapple From Apron",
+      "position": "ringside",
+      "category": "Grapple to Apron",
+      "category_id": "grapple_to_apron",
+      "group": "counter_grapple_from_apron_inside",
+      "player_state": [
+        "apron_weak_grapple_from_inside_defending",
+        "apron_strong_grapple_from_inside_defending"
+      ],
+      "opponent_state": [
+        "apron_weak_grapple_from_inside_attacking",
+        "apron_strong_grapple_from_inside_attacking"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "Rapidly tap [A] and [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": "rapid_tap",
+        "requires_run": false,
+        "release_run": false,
+        "mash_buttons": [
+          "a",
+          "b"
+        ]
+      },
+      "setup": "Rapidly tap [A] and [B] while defending a grapple from inside"
+    },
+    {
+      "slot_id": "special_grapple_to_apron",
+      "slot_display_name": "Special Grapple To Apron",
+      "position": "ringside",
+      "category": "Grapple to Apron",
+      "category_id": "grapple_to_apron",
+      "group": "apron_special_grapple_from_inside",
+      "player_state": [
+        "apron_strong_grapple_from_inside_attacking"
+      ],
+      "opponent_state": [
+        "apron_strong_grapple_from_inside_defending"
+      ],
+      "range": "n/a",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Press [Control Stick] with special meter toward opponent on the apron (from inside)"
+    },
+    {
+      "slot_id": "strong_grapple_to_apron",
+      "slot_display_name": "Strong Grapple To Apron",
+      "position": "ringside",
+      "category": "Grapple to Apron",
+      "category_id": "grapple_to_apron",
+      "group": "apron_strong_grapple_from_inside",
+      "player_state": [
+        "apron_strong_grapple_from_inside_attacking"
+      ],
+      "opponent_state": [
+        "apron_strong_grapple_from_inside_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A] or [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "button_alternatives": [
+          [
+            "a",
+            "b"
+          ]
+        ],
+        "buttons": []
+      },
+      "setup": "Hold [A] toward opponent on the apron (from inside)"
+    },
+    {
+      "slot_id": "weak_grapple_to_apron",
+      "slot_display_name": "Weak Grapple To Apron",
+      "position": "ringside",
+      "category": "Grapple to Apron",
+      "category_id": "grapple_to_apron",
+      "group": "apron_weak_grapple_from_inside",
+      "player_state": [
+        "apron_weak_grapple_from_inside_attacking"
+      ],
+      "opponent_state": [
+        "apron_weak_grapple_from_inside_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A] or [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "button_alternatives": [
+          [
+            "a",
+            "b"
+          ]
+        ],
+        "buttons": []
+      },
+      "setup": "Tap [A] toward opponent on the apron (from inside)"
+    },
+    {
+      "slot_id": "rebound_flying_attack",
+      "slot_display_name": "Rebound Flying Attack",
+      "position": "ringside",
+      "category": "Rebound Flying Attack",
+      "category_id": "rebound_flying_attack",
+      "group": "rebound_flying_attack",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] while running (rebounding off ropes) toward a standing opponent"
+    },
+    {
+      "slot_id": "springboard_attack_to_inside",
+      "slot_display_name": "Springboard Attack To Inside",
+      "position": "ringside",
+      "category": "Rope Inside Attack",
+      "category_id": "rope_inside_attack",
+      "group": "springboard_attack",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "down_in_ring"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [A]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [D-Pad] + [A] at the ropes toward a downed opponent inside"
+    },
+    {
+      "slot_id": "running_diving_taunt",
+      "slot_display_name": "Running Diving Taunt",
+      "position": "ringside",
+      "category": "Running Diving Taunt",
+      "category_id": "running_diving_taunt",
+      "group": "running_diving_taunt",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Hold [Run] toward the ropes then press [Control Stick]"
+    },
+    {
+      "slot_id": "evasion",
+      "slot_display_name": "Evasion",
+      "position": "running",
+      "category": "Evasion",
+      "category_id": "evasion",
+      "group": "evasion",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [R]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "r"
+        ]
+      },
+      "setup": "Hold [Run] then press [R]"
+    },
+    {
+      "slot_id": "run_back_grapple",
+      "slot_display_name": "Run Back Grapple",
+      "position": "running",
+      "category": "Running Grapple",
+      "category_id": "running_grapple",
+      "group": "run_back_grapple",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [Run] then press [A] into a standing opponent facing away"
+    },
+    {
+      "slot_id": "run_front_grapple",
+      "slot_display_name": "Run Front Grapple",
+      "position": "running",
+      "category": "Running Grapple",
+      "category_id": "running_grapple",
+      "group": "run_front_grapple",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "standing_facing_player"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [Run] then press [A] into a standing opponent facing you"
+    },
+    {
+      "slot_id": "run_ground_strike_facing_down",
+      "slot_display_name": "Run Ground Strike Facing Down",
+      "position": "running",
+      "category": "Running Ground Strike",
+      "category_id": "running_ground_strike",
+      "group": "run_ground_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "down_facing_down"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [Run] then press [B] toward a downed opponent"
+    },
+    {
+      "slot_id": "run_ground_strike_facing_up",
+      "slot_display_name": "Run Ground Strike Facing Up",
+      "position": "running",
+      "category": "Running Ground Strike",
+      "category_id": "running_ground_strike",
+      "group": "run_ground_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "down_facing_up"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [Run] then press [B] toward a downed opponent"
+    },
+    {
+      "slot_id": "run_ground_strike_kneeling_all_fours",
+      "slot_display_name": "Run Ground Strike Kneeling All Fours",
+      "position": "running",
+      "category": "Running Ground Strike",
+      "category_id": "running_ground_strike",
+      "group": "run_ground_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "kneeling_all_fours"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [Run] then press [B] toward a downed opponent"
+    },
+    {
+      "slot_id": "run_ground_strike_sitting_up",
+      "slot_display_name": "Run Ground Strike Sitting Up",
+      "position": "running",
+      "category": "Running Ground Strike",
+      "category_id": "running_ground_strike",
+      "group": "run_ground_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "sitting_up"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [Run] then press [B] toward a downed opponent"
+    },
+    {
+      "slot_id": "strong_running_strike_1",
+      "slot_display_name": "Strong Running Strike 1",
+      "position": "running",
+      "category": "Running Strike",
+      "category_id": "running_strike",
+      "group": "strong_running_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [Run] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [D-Pad] + [Run] then press [B] or [A+B] toward a standing opponent"
+    },
+    {
+      "slot_id": "strong_running_strike_2",
+      "slot_display_name": "Strong Running Strike 2",
+      "position": "running",
+      "category": "Running Strike",
+      "category_id": "running_strike",
+      "group": "strong_running_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [Run] + [A + B]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "a",
+          "b"
+        ]
+      },
+      "setup": "Hold [D-Pad] + [Run] then press [B] or [A+B] toward a standing opponent"
+    },
+    {
+      "slot_id": "weak_running_strike_1",
+      "slot_display_name": "Weak Running Strike 1",
+      "position": "running",
+      "category": "Running Strike",
+      "category_id": "running_strike",
+      "group": "weak_running_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [Run] then press [B] or [A+B] toward a standing opponent"
+    },
+    {
+      "slot_id": "weak_running_strike_2",
+      "slot_display_name": "Weak Running Strike 2",
+      "position": "running",
+      "category": "Running Strike",
+      "category_id": "running_strike",
+      "group": "weak_running_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [A + B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "a",
+          "b"
+        ]
+      },
+      "setup": "Hold [Run] then press [B] or [A+B] toward a standing opponent"
+    },
+    {
+      "slot_id": "counter_kick_1",
+      "slot_display_name": "Counter Kick 1",
+      "position": "standing",
+      "category": "Counter Attack",
+      "category_id": "counter_attack",
+      "group": "counter_kick",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "throwing_kick"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[R] + [A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "r",
+          "a"
+        ]
+      },
+      "setup": "Press [R] + [A] or [R] + [B] during opponent's kick animation"
+    },
+    {
+      "slot_id": "counter_kick_2",
+      "slot_display_name": "Counter Kick 2",
+      "position": "standing",
+      "category": "Counter Attack",
+      "category_id": "counter_attack",
+      "group": "counter_kick",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "throwing_kick"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[R] + [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "r",
+          "b"
+        ]
+      },
+      "setup": "Press [R] + [A] or [R] + [B] during opponent's kick animation"
+    },
+    {
+      "slot_id": "counter_punch",
+      "slot_display_name": "Counter Punch",
+      "position": "standing",
+      "category": "Counter Attack",
+      "category_id": "counter_attack",
+      "group": "counter_punch",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "throwing_punch"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[R]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "r"
+        ]
+      },
+      "setup": "Press [R] during opponent's punch animation"
+    },
+    {
+      "slot_id": "special_counter_kick",
+      "slot_display_name": "Special Counter Kick",
+      "position": "standing",
+      "category": "Counter Attack",
+      "category_id": "counter_attack",
+      "group": "special_counter_kick",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "throwing_kick"
+      ],
+      "range": "any",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[R] + [A/B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "r"
+        ],
+        "button_alternatives": [
+          [
+            "a",
+            "b"
+          ]
+        ]
+      },
+      "setup": "Press [R] + [A] or [B] with special meter during opponent's kick animation"
+    },
+    {
+      "slot_id": "special_counter_punch",
+      "slot_display_name": "Special Counter Punch",
+      "position": "standing",
+      "category": "Counter Attack",
+      "category_id": "counter_attack",
+      "group": "special_counter_punch",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "throwing_punch"
+      ],
+      "range": "any",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[R]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "r"
+        ]
+      },
+      "setup": "Press [R] with special meter during opponent's punch animation"
+    },
+    {
+      "slot_id": "ducking_strike",
+      "slot_display_name": "Ducking Strike",
+      "position": "standing",
+      "category": "Recovering Strike",
+      "category_id": "recovering_strike",
+      "group": "ducking_strike",
+      "player_state": [
+        "getting_up"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] while getting up"
+    },
+    {
+      "slot_id": "strong_strike_1",
+      "slot_display_name": "Strong Strike 1",
+      "position": "standing",
+      "category": "Strong Striking",
+      "category_id": "strong_striking",
+      "group": "strong_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] at any range from a standing opponent (strong strike threshold)"
+    },
+    {
+      "slot_id": "strong_strike_2",
+      "slot_display_name": "Strong Strike 2",
+      "position": "standing",
+      "category": "Strong Striking",
+      "category_id": "strong_striking",
+      "group": "strong_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] at any range from a standing opponent (strong strike threshold)"
+    },
+    {
+      "slot_id": "strong_strike_3",
+      "slot_display_name": "Strong Strike 3",
+      "position": "standing",
+      "category": "Strong Striking",
+      "category_id": "strong_striking",
+      "group": "strong_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A + B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a",
+          "b"
+        ]
+      },
+      "setup": "Press [B] at any range from a standing opponent (strong strike threshold)"
+    },
+    {
+      "slot_id": "walking_style",
+      "slot_display_name": "Walking Style",
+      "position": "standing",
+      "category": "Walking Style",
+      "category_id": "walking_style",
+      "group": "walking_style",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Move with [D-Pad] while standing"
+    },
+    {
+      "slot_id": "weak_arm_strike_1",
+      "slot_display_name": "Weak Arm Strike 1",
+      "position": "standing",
+      "category": "Weak Striking",
+      "category_id": "weak_striking",
+      "group": "weak_arm_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] close to a standing opponent"
+    },
+    {
+      "slot_id": "weak_arm_strike_2",
+      "slot_display_name": "Weak Arm Strike 2",
+      "position": "standing",
+      "category": "Weak Striking",
+      "category_id": "weak_striking",
+      "group": "weak_arm_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] close to a standing opponent"
+    },
+    {
+      "slot_id": "weak_leg_strike_1",
+      "slot_display_name": "Weak Leg Strike 1",
+      "position": "standing",
+      "category": "Weak Striking",
+      "category_id": "weak_striking",
+      "group": "weak_leg_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "mid",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] at mid range from a standing opponent"
+    },
+    {
+      "slot_id": "weak_leg_strike_2",
+      "slot_display_name": "Weak Leg Strike 2",
+      "position": "standing",
+      "category": "Weak Striking",
+      "category_id": "weak_striking",
+      "group": "weak_leg_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "mid",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] at mid range from a standing opponent"
+    },
+    {
+      "slot_id": "celebration_taunt",
+      "slot_display_name": "Celebration Taunt",
+      "position": "taunt",
+      "category": "Taunt",
+      "category_id": "taunt",
+      "group": "celebration_taunt",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "defeated"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "automatic",
+      "input": "Automatic",
+      "input_pattern": null,
+      "setup": "Automatic on match end"
+    },
+    {
+      "slot_id": "ducking_taunt",
+      "slot_display_name": "Ducking Taunt",
+      "position": "taunt",
+      "category": "Taunt",
+      "category_id": "taunt",
+      "group": "ducking_taunt",
+      "player_state": [
+        "ducking"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Control Stick Down]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "down"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Flick [Control Stick] down while ducking"
+    },
+    {
+      "slot_id": "entryway_taunt",
+      "slot_display_name": "Entryway Taunt",
+      "position": "taunt",
+      "category": "Taunt",
+      "category_id": "taunt",
+      "group": "entryway_taunt",
+      "player_state": [
+        "entering"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "automatic",
+      "input": "Automatic",
+      "input_pattern": null,
+      "setup": "Automatic during entrance sequence"
+    },
+    {
+      "slot_id": "special_taunt",
+      "slot_display_name": "Special Taunt",
+      "position": "taunt",
+      "category": "Taunt",
+      "category_id": "taunt",
+      "group": "special_taunt",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[Control Stick Up/Left/Right]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "up",
+          "left",
+          "right"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Flick [Control Stick] up, left, or right with special meter while standing"
+    },
+    {
+      "slot_id": "taunt_1",
+      "slot_display_name": "Taunt 1",
+      "position": "taunt",
+      "category": "Taunt",
+      "category_id": "taunt",
+      "group": "taunt",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Control Stick Up]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "up"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Flick [Control Stick] up, left, or right while standing"
+    },
+    {
+      "slot_id": "taunt_2",
+      "slot_display_name": "Taunt 2",
+      "position": "taunt",
+      "category": "Taunt",
+      "category_id": "taunt",
+      "group": "taunt",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Control Stick Left]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "left"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Flick [Control Stick] up, left, or right while standing"
+    },
+    {
+      "slot_id": "taunt_3",
+      "slot_display_name": "Taunt 3",
+      "position": "taunt",
+      "category": "Taunt",
+      "category_id": "taunt",
+      "group": "taunt",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Control Stick Right]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "right"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Flick [Control Stick] up, left, or right while standing"
+    },
+    {
+      "slot_id": "turnbuckle_back_finisher",
+      "slot_display_name": "Turnbuckle Back Finisher",
+      "position": "turnbuckle",
+      "category": "Back Turnbuckle Grapple",
+      "category_id": "back_turnbuckle_grapple",
+      "group": "turnbuckle_back_finisher",
+      "player_state": [
+        "turnbuckle_back_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_back_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Hold [A] behind a cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_back_strong_grapple_1",
+      "slot_display_name": "Turnbuckle Back Strong Grapple 1",
+      "position": "turnbuckle",
+      "category": "Back Turnbuckle Grapple",
+      "category_id": "back_turnbuckle_grapple",
+      "group": "turnbuckle_back_strong_grapple",
+      "player_state": [
+        "turnbuckle_back_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_back_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [A] behind a cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_back_strong_grapple_2",
+      "slot_display_name": "Turnbuckle Back Strong Grapple 2",
+      "position": "turnbuckle",
+      "category": "Back Turnbuckle Grapple",
+      "category_id": "back_turnbuckle_grapple",
+      "group": "turnbuckle_back_strong_grapple",
+      "player_state": [
+        "turnbuckle_back_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_back_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [A] behind a cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_back_weak_grapple_1",
+      "slot_display_name": "Turnbuckle Back Weak Grapple 1",
+      "position": "turnbuckle",
+      "category": "Back Turnbuckle Grapple",
+      "category_id": "back_turnbuckle_grapple",
+      "group": "turnbuckle_back_weak_grapple",
+      "player_state": [
+        "turnbuckle_back_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_back_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap [A] behind a cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_back_weak_grapple_2",
+      "slot_display_name": "Turnbuckle Back Weak Grapple 2",
+      "position": "turnbuckle",
+      "category": "Back Turnbuckle Grapple",
+      "category_id": "back_turnbuckle_grapple",
+      "group": "turnbuckle_back_weak_grapple",
+      "player_state": [
+        "turnbuckle_back_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_back_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Tap [A] behind a cornered opponent"
+    },
+    {
+      "slot_id": "irish_whip_to_corner_counter",
+      "slot_display_name": "Irish Whip To Corner Counter",
+      "position": "turnbuckle",
+      "category": "Corner Counter",
+      "category_id": "corner_counter",
+      "group": "corner_counter",
+      "player_state": [
+        "at_turnbuckle"
+      ],
+      "opponent_state": [
+        "standing_facing_player"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "Rapidly tap [R], [A], [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": "rapid_tap",
+        "requires_run": false,
+        "release_run": false,
+        "mash_buttons": [
+          "r",
+          "a",
+          "b"
+        ]
+      },
+      "setup": "Rapidly tap [R], [A], [B] when Irish whipped into the corner"
+    },
+    {
+      "slot_id": "flying_top_turnbuckle_laying_opponent",
+      "slot_display_name": "Flying Top Turnbuckle Laying Opponent",
+      "position": "turnbuckle",
+      "category": "Flying Attack (Laying)",
+      "category_id": "flying_attack_(laying)",
+      "group": "flying_top_turnbuckle_laying",
+      "player_state": [
+        "on_turnbuckle"
+      ],
+      "opponent_state": [
+        "down_in_ring"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [Run] into corner, release [Run]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": true,
+        "buttons": []
+      },
+      "setup": "Climb turnbuckle via [D-Pad] + [Run], release [Run] toward a downed opponent"
+    },
+    {
+      "slot_id": "flying_top_turnbuckle_laying_opponent_special",
+      "slot_display_name": "Flying Top Turnbuckle Laying Opponent Special",
+      "position": "turnbuckle",
+      "category": "Flying Attack (Laying)",
+      "category_id": "flying_attack_(laying)",
+      "group": "flying_top_turnbuckle_laying_special",
+      "player_state": [
+        "on_turnbuckle"
+      ],
+      "opponent_state": [
+        "down_in_ring",
+        "down_outside_ring"
+      ],
+      "range": "n/a",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[D-Pad] + [Run] into corner, release [Run]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": true,
+        "buttons": []
+      },
+      "setup": "Climb turnbuckle via [D-Pad] + [Run] with special meter, release [Run] toward downed opponent"
+    },
+    {
+      "slot_id": "flying_top_turnbuckle_laying_opponent_to_outside",
+      "slot_display_name": "Flying Top Turnbuckle Laying Opponent To Outside",
+      "position": "turnbuckle",
+      "category": "Flying Attack (Laying)",
+      "category_id": "flying_attack_(laying)",
+      "group": "flying_top_turnbuckle_laying_to_outside",
+      "player_state": [
+        "on_turnbuckle"
+      ],
+      "opponent_state": [
+        "down_outside_ring"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [Run] into corner, release [Run]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": true,
+        "buttons": []
+      },
+      "setup": "Climb turnbuckle via [D-Pad] + [Run], release [Run] toward downed opponent outside"
+    },
+    {
+      "slot_id": "flying_second_turnbuckle_laying_opponent",
+      "slot_display_name": "Flying Second Turnbuckle Laying Opponent",
+      "position": "turnbuckle",
+      "category": "Flying Attack (Second Rope)",
+      "category_id": "flying_attack_(second_rope)",
+      "group": "flying_second_turnbuckle",
+      "player_state": [
+        "at_turnbuckle"
+      ],
+      "opponent_state": [
+        "down_in_ring"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Stand at turnbuckle, press [A] toward a downed nearby opponent"
+    },
+    {
+      "slot_id": "flying_top_turnbuckle_standing_opponent",
+      "slot_display_name": "Flying Top Turnbuckle Standing Opponent",
+      "position": "turnbuckle",
+      "category": "Flying Attack (Standing)",
+      "category_id": "flying_attack_(standing)",
+      "group": "flying_top_turnbuckle_standing",
+      "player_state": [
+        "on_turnbuckle"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [Run] into corner, release [Run]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": true,
+        "buttons": []
+      },
+      "setup": "Climb turnbuckle via [D-Pad] + [Run], release [Run] toward a standing opponent"
+    },
+    {
+      "slot_id": "flying_top_turnbuckle_standing_opponent_special",
+      "slot_display_name": "Flying Top Turnbuckle Standing Opponent Special",
+      "position": "turnbuckle",
+      "category": "Flying Attack (Standing)",
+      "category_id": "flying_attack_(standing)",
+      "group": "flying_top_turnbuckle_standing_special",
+      "player_state": [
+        "on_turnbuckle"
+      ],
+      "opponent_state": [
+        "standing_facing_player",
+        "standing_facing_away",
+        "outside_ring"
+      ],
+      "range": "n/a",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[D-Pad] + [Run] into corner, release [Run]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": true,
+        "buttons": []
+      },
+      "setup": "Climb turnbuckle via [D-Pad] + [Run] with special meter, release [Run]"
+    },
+    {
+      "slot_id": "flying_top_turnbuckle_standing_opponent_to_outside",
+      "slot_display_name": "Flying Top Turnbuckle Standing Opponent To Outside",
+      "position": "turnbuckle",
+      "category": "Flying Attack (Standing)",
+      "category_id": "flying_attack_(standing)",
+      "group": "flying_top_turnbuckle_standing_to_outside",
+      "player_state": [
+        "on_turnbuckle"
+      ],
+      "opponent_state": [
+        "outside_ring"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [Run] into corner, release [Run]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": true,
+        "buttons": []
+      },
+      "setup": "Climb turnbuckle via [D-Pad] + [Run], release [Run] toward opponent outside ring"
+    },
+    {
+      "slot_id": "back_flying_move_counter",
+      "slot_display_name": "Back Flying Move Counter",
+      "position": "turnbuckle",
+      "category": "Flying Move Counter",
+      "category_id": "flying_move_counter",
+      "group": "flying_move_counter",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "on_turnbuckle_facing_away"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] close to an opponent on the turnbuckle"
+    },
+    {
+      "slot_id": "front_flying_move_counter",
+      "slot_display_name": "Front Flying Move Counter",
+      "position": "turnbuckle",
+      "category": "Flying Move Counter",
+      "category_id": "flying_move_counter",
+      "group": "flying_move_counter",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "on_turnbuckle_facing_player"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Press [A] close to an opponent on the turnbuckle"
+    },
+    {
+      "slot_id": "turnbuckle_front_finisher",
+      "slot_display_name": "Turnbuckle Front Finisher",
+      "position": "turnbuckle",
+      "category": "Front Turnbuckle Grapple",
+      "category_id": "front_turnbuckle_grapple",
+      "group": "turnbuckle_front_finisher",
+      "player_state": [
+        "turnbuckle_front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": true,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Hold [A] in front of a cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_front_strong_grapple_1",
+      "slot_display_name": "Turnbuckle Front Strong Grapple 1",
+      "position": "turnbuckle",
+      "category": "Front Turnbuckle Grapple",
+      "category_id": "front_turnbuckle_grapple",
+      "group": "turnbuckle_front_strong_grapple",
+      "player_state": [
+        "turnbuckle_front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Hold [A] in front of a cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_front_strong_grapple_2",
+      "slot_display_name": "Turnbuckle Front Strong Grapple 2",
+      "position": "turnbuckle",
+      "category": "Front Turnbuckle Grapple",
+      "category_id": "front_turnbuckle_grapple",
+      "group": "turnbuckle_front_strong_grapple",
+      "player_state": [
+        "turnbuckle_front_strong_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_front_strong_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [A] in front of a cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_front_weak_grapple_1",
+      "slot_display_name": "Turnbuckle Front Weak Grapple 1",
+      "position": "turnbuckle",
+      "category": "Front Turnbuckle Grapple",
+      "category_id": "front_turnbuckle_grapple",
+      "group": "turnbuckle_front_weak_grapple",
+      "player_state": [
+        "turnbuckle_front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[A]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "a"
+        ]
+      },
+      "setup": "Tap [A] in front of a cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_front_weak_grapple_2",
+      "slot_display_name": "Turnbuckle Front Weak Grapple 2",
+      "position": "turnbuckle",
+      "category": "Front Turnbuckle Grapple",
+      "category_id": "front_turnbuckle_grapple",
+      "group": "turnbuckle_front_weak_grapple",
+      "player_state": [
+        "turnbuckle_front_weak_grapple_attacking"
+      ],
+      "opponent_state": [
+        "turnbuckle_front_weak_grapple_defending"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Tap [A] in front of a cornered opponent"
+    },
+    {
+      "slot_id": "running_tree_of_woe_strike",
+      "slot_display_name": "Running Tree Of Woe Strike",
+      "position": "turnbuckle",
+      "category": "Tree of Woe",
+      "category_id": "tree_of_woe",
+      "group": "running_tree_of_woe_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "tree_of_woe"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [Run] then press [B] toward a tree-of-woe opponent"
+    },
+    {
+      "slot_id": "tree_of_woe_strike_1",
+      "slot_display_name": "Tree Of Woe Strike 1",
+      "position": "turnbuckle",
+      "category": "Tree of Woe",
+      "category_id": "tree_of_woe",
+      "group": "tree_of_woe_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "tree_of_woe"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] or [D-Pad] + [B] close to a tree-of-woe opponent"
+    },
+    {
+      "slot_id": "tree_of_woe_strike_2",
+      "slot_display_name": "Tree Of Woe Strike 2",
+      "position": "turnbuckle",
+      "category": "Tree of Woe",
+      "category_id": "tree_of_woe",
+      "group": "tree_of_woe_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "tree_of_woe"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] or [D-Pad] + [B] close to a tree-of-woe opponent"
+    },
+    {
+      "slot_id": "running_turnbuckle_strike_1",
+      "slot_display_name": "Running Turnbuckle Strike 1",
+      "position": "turnbuckle",
+      "category": "Turnbuckle Strikes",
+      "category_id": "turnbuckle_strikes",
+      "group": "running_turnbuckle_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "at_turnbuckle_facing_out"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Hold [Run] then press [B] or [A+B] toward a cornered opponent"
+    },
+    {
+      "slot_id": "running_turnbuckle_strike_2",
+      "slot_display_name": "Running Turnbuckle Strike 2",
+      "position": "turnbuckle",
+      "category": "Turnbuckle Strikes",
+      "category_id": "turnbuckle_strikes",
+      "group": "running_turnbuckle_strike",
+      "player_state": [
+        "running"
+      ],
+      "opponent_state": [
+        "at_turnbuckle_facing_out"
+      ],
+      "range": "any",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Run] + [A + B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": true,
+        "release_run": false,
+        "buttons": [
+          "a",
+          "b"
+        ]
+      },
+      "setup": "Hold [Run] then press [B] or [A+B] toward a cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_strike_1",
+      "slot_display_name": "Turnbuckle Strike 1",
+      "position": "turnbuckle",
+      "category": "Turnbuckle Strikes",
+      "category_id": "turnbuckle_strikes",
+      "group": "turnbuckle_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "at_turnbuckle_facing_out"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[B]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] or [D-Pad] + [B] close to cornered opponent"
+    },
+    {
+      "slot_id": "turnbuckle_strike_2",
+      "slot_display_name": "Turnbuckle Strike 2",
+      "position": "turnbuckle",
+      "category": "Turnbuckle Strikes",
+      "category_id": "turnbuckle_strikes",
+      "group": "turnbuckle_strike",
+      "player_state": [
+        "standing"
+      ],
+      "opponent_state": [
+        "at_turnbuckle_facing_out"
+      ],
+      "range": "close",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [B]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": null,
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": [
+          "b"
+        ]
+      },
+      "setup": "Press [B] or [D-Pad] + [B] close to cornered opponent"
+    },
+    {
+      "slot_id": "corner_taunt",
+      "slot_display_name": "Corner Taunt",
+      "position": "turnbuckle",
+      "category": "Turnbuckle Taunt",
+      "category_id": "turnbuckle_taunt",
+      "group": "corner_taunt",
+      "player_state": [
+        "at_turnbuckle"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[D-Pad] + [Control Stick]",
+      "input_pattern": {
+        "dpad": [
+          "any"
+        ],
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Press [D-Pad] + [Control Stick] while standing at a turnbuckle"
+    },
+    {
+      "slot_id": "top_rope_taunt",
+      "slot_display_name": "Top Rope Taunt",
+      "position": "turnbuckle",
+      "category": "Turnbuckle Taunt",
+      "category_id": "turnbuckle_taunt",
+      "group": "top_rope_taunt",
+      "player_state": [
+        "on_turnbuckle"
+      ],
+      "opponent_state": [
+        "n/a"
+      ],
+      "range": "n/a",
+      "requires_special": false,
+      "trigger": "manual",
+      "input": "[Control Stick]",
+      "input_pattern": {
+        "dpad": null,
+        "control_stick": [
+          "any"
+        ],
+        "modifier": null,
+        "requires_run": false,
+        "release_run": false,
+        "buttons": []
+      },
+      "setup": "Press [Control Stick] while on the top rope"
+    }
+  ]
+}
