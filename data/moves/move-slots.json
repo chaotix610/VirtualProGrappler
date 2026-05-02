@@ -211,7 +211,7 @@
       "slot_display_name": "Flying Attack To Ring Laying",
       "position": "apron",
       "category": "Flying Attack to Ring (Laying)",
-      "category_id": "flying_attack_to_ring_(laying)",
+      "category_id": "flying_attack_to_ring_laying",
       "group": "flying_attack_to_ring_laying",
       "player_state": [
         "on_apron"
@@ -240,7 +240,7 @@
       "slot_display_name": "Flying Attack To Ring Special",
       "position": "apron",
       "category": "Flying Attack to Ring (Special)",
-      "category_id": "flying_attack_to_ring_(special)",
+      "category_id": "flying_attack_to_ring_special",
       "group": "flying_attack_to_ring_special",
       "player_state": [
         "on_apron"
@@ -271,7 +271,7 @@
       "slot_display_name": "Flying Attack To Ring Standing",
       "position": "apron",
       "category": "Flying Attack to Ring (Standing)",
-      "category_id": "flying_attack_to_ring_(standing)",
+      "category_id": "flying_attack_to_ring_standing",
       "group": "flying_attack_to_ring_standing",
       "player_state": [
         "on_apron"
@@ -1826,7 +1826,7 @@
       "slot_display_name": "Irish Whip Finisher",
       "position": "irish_whip",
       "category": "Irish Whip Grapple (Strong)",
-      "category_id": "irish_whip_grapple_(strong)",
+      "category_id": "irish_whip_grapple_strong",
       "group": "irish_whip_finisher",
       "player_state": [
         "standing"
@@ -1855,7 +1855,7 @@
       "slot_display_name": "Strong Irish Whip Grapple 1",
       "position": "irish_whip",
       "category": "Irish Whip Grapple (Strong)",
-      "category_id": "irish_whip_grapple_(strong)",
+      "category_id": "irish_whip_grapple_strong",
       "group": "strong_irish_whip_grapple",
       "player_state": [
         "standing"
@@ -1884,7 +1884,7 @@
       "slot_display_name": "Strong Irish Whip Grapple 2",
       "position": "irish_whip",
       "category": "Irish Whip Grapple (Strong)",
-      "category_id": "irish_whip_grapple_(strong)",
+      "category_id": "irish_whip_grapple_strong",
       "group": "strong_irish_whip_grapple",
       "player_state": [
         "standing"
@@ -1913,7 +1913,7 @@
       "slot_display_name": "Weak Irish Whip Grapple 1",
       "position": "irish_whip",
       "category": "Irish Whip Grapple (Weak)",
-      "category_id": "irish_whip_grapple_(weak)",
+      "category_id": "irish_whip_grapple_weak",
       "group": "weak_irish_whip_grapple",
       "player_state": [
         "standing"
@@ -1942,7 +1942,7 @@
       "slot_display_name": "Weak Irish Whip Grapple 2",
       "position": "irish_whip",
       "category": "Irish Whip Grapple (Weak)",
-      "category_id": "irish_whip_grapple_(weak)",
+      "category_id": "irish_whip_grapple_weak",
       "group": "weak_irish_whip_grapple",
       "player_state": [
         "standing"
@@ -3429,7 +3429,7 @@
       "slot_display_name": "Flying Top Turnbuckle Laying Opponent",
       "position": "turnbuckle",
       "category": "Flying Attack (Laying)",
-      "category_id": "flying_attack_(laying)",
+      "category_id": "flying_attack_laying",
       "group": "flying_top_turnbuckle_laying",
       "player_state": [
         "on_turnbuckle"
@@ -3458,7 +3458,7 @@
       "slot_display_name": "Flying Top Turnbuckle Laying Opponent Special",
       "position": "turnbuckle",
       "category": "Flying Attack (Laying)",
-      "category_id": "flying_attack_(laying)",
+      "category_id": "flying_attack_laying",
       "group": "flying_top_turnbuckle_laying_special",
       "player_state": [
         "on_turnbuckle"
@@ -3488,7 +3488,7 @@
       "slot_display_name": "Flying Top Turnbuckle Laying Opponent To Outside",
       "position": "turnbuckle",
       "category": "Flying Attack (Laying)",
-      "category_id": "flying_attack_(laying)",
+      "category_id": "flying_attack_laying",
       "group": "flying_top_turnbuckle_laying_to_outside",
       "player_state": [
         "on_turnbuckle"
@@ -3517,7 +3517,7 @@
       "slot_display_name": "Flying Second Turnbuckle Laying Opponent",
       "position": "turnbuckle",
       "category": "Flying Attack (Second Rope)",
-      "category_id": "flying_attack_(second_rope)",
+      "category_id": "flying_attack_second_rope",
       "group": "flying_second_turnbuckle",
       "player_state": [
         "at_turnbuckle"
@@ -3546,7 +3546,7 @@
       "slot_display_name": "Flying Top Turnbuckle Standing Opponent",
       "position": "turnbuckle",
       "category": "Flying Attack (Standing)",
-      "category_id": "flying_attack_(standing)",
+      "category_id": "flying_attack_standing",
       "group": "flying_top_turnbuckle_standing",
       "player_state": [
         "on_turnbuckle"
@@ -3576,7 +3576,7 @@
       "slot_display_name": "Flying Top Turnbuckle Standing Opponent Special",
       "position": "turnbuckle",
       "category": "Flying Attack (Standing)",
-      "category_id": "flying_attack_(standing)",
+      "category_id": "flying_attack_standing",
       "group": "flying_top_turnbuckle_standing_special",
       "player_state": [
         "on_turnbuckle"
@@ -3607,7 +3607,7 @@
       "slot_display_name": "Flying Top Turnbuckle Standing Opponent To Outside",
       "position": "turnbuckle",
       "category": "Flying Attack (Standing)",
-      "category_id": "flying_attack_(standing)",
+      "category_id": "flying_attack_standing",
       "group": "flying_top_turnbuckle_standing_to_outside",
       "player_state": [
         "on_turnbuckle"

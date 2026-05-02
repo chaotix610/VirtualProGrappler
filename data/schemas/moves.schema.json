@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vpg-engine.local/schemas/moves.schema.json",
+  "title": "VPG Engine — Moves",
+  "description": "Schema for the move catalog. Each move references one or more groups in move-slots.json to declare which slots it's eligible for.",
+  "type": "object",
+  "required": ["schema_version", "moves"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Increment when the schema shape changes in a breaking way.",
+      "type": "integer",
+      "const": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "field_definitions": {
+      "description": "Human-readable documentation of each field. Not validated structurally.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "moves": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/move" }
+    }
+  },
+
+  "$defs": {
+
+    "snake_case_id": {
+      "description": "snake_case identifier: lowercase letters, digits, and underscores; must start with a letter.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+
+    "move_id": {
+      "description": "Move identifier. Looser than other ids — allows leading digits (e.g. '450_splash', '10_punch') because real wrestling moves use them. Must be lowercase, digits, and underscores only.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_]*$"
+    },
+
+    "position": {
+      "description": "Must mirror the position enum in move-slots.schema.json.",
+      "type": "string",
+      "enum": [
+        "grappling",
+        "standing",
+        "running",
+        "ground",
+        "turnbuckle",
+        "ringside",
+        "apron",
+        "irish_whip",
+        "taunt",
+        "double_team"
+      ]
+    },
+
+    "power": {
+      "description": "Power grade S (highest) through G (lowest), or null for moves that do no damage (taunts, evasion).",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "enum": ["S", "A", "B", "C", "D", "E", "F", "G"]
+        }
+      ]
+    },
+
+    "feature": {
+      "description": "'pin' for moves ending in a pin attempt, 'submit' for submission attempts, null for neither.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "enum": ["pin", "submit"]
+        }
+      ]
+    },
+
+    "move": {
+      "type": "object",
+      "required": [
+        "move_id",
+        "name",
+        "position",
+        "groups",
+        "power",
+        "ko",
+        "bleed",
+        "feature"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "move_id": { "$ref": "#/$defs/move_id" },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": { "$ref": "#/$defs/position" },
+        "groups": {
+          "description": "References to group ids from move-slots.json. Cross-file integrity is validated separately.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/snake_case_id" }
+        },
+        "power": { "$ref": "#/$defs/power" },
+        "ko": { "type": "boolean" },
+        "bleed": { "type": "boolean" },
+        "feature": { "$ref": "#/$defs/feature" }
+      }
+    }
+  }
+}

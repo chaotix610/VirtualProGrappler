@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vpg-engine.local/schemas/move-slots.schema.json",
+  "title": "VPG Engine — Move Slots",
+  "description": "Schema for the move slot catalog. Each slot is a unique combination of player state, opponent state, range, and input that a move can be assigned to.",
+  "type": "object",
+  "required": ["schema_version", "slots"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Increment when the schema shape changes in a breaking way.",
+      "type": "integer",
+      "const": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "field_definitions": {
+      "description": "Human-readable documentation of each field. Not validated structurally.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "slots": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/slot" }
+    }
+  },
+
+  "$defs": {
+
+    "slot_id_string": {
+      "description": "snake_case identifier: lowercase letters, digits, and underscores.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+
+    "state_value": {
+      "description": "A snake_case state name, or 'n/a' to indicate no state requirement.",
+      "type": "string",
+      "pattern": "^([a-z][a-z0-9_]*|n/a)$"
+    },
+
+    "button": {
+      "description": "A single controller button.",
+      "type": "string",
+      "enum": ["a", "b", "r"]
+    },
+
+    "direction": {
+      "type": "string",
+      "enum": ["up", "down", "left", "right", "any"]
+    },
+
+    "direction_array_or_null": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/direction" }
+        }
+      ]
+    },
+
+    "input_pattern": {
+      "description": "Structured input matcher. Shape varies based on modifier — see conditional rules.",
+      "type": "object",
+      "required": ["dpad", "control_stick", "modifier", "requires_run", "release_run"],
+      "additionalProperties": false,
+      "properties": {
+        "buttons": {
+          "description": "Buttons that must all be pressed simultaneously. Mutually exclusive with mash_buttons.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/button" }
+        },
+        "mash_buttons": {
+          "description": "Pool of buttons for rapid-tap slots. Any press of any pool button counts toward the mash.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/button" }
+        },
+        "button_alternatives": {
+          "description": "Groups of either-or button options. Each inner array is one 'choose any one' group.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/button" }
+          }
+        },
+        "dpad": { "$ref": "#/$defs/direction_array_or_null" },
+        "control_stick": { "$ref": "#/$defs/direction_array_or_null" },
+        "modifier": {
+          "type": ["string", "null"],
+          "enum": ["tap", "hold", "rapid_tap", null]
+        },
+        "requires_run": { "type": "boolean" },
+        "release_run": { "type": "boolean" }
+      },
+
+      "allOf": [
+        {
+          "description": "rapid_tap slots use mash_buttons; non-rapid-tap slots use buttons.",
+          "if": {
+            "properties": { "modifier": { "const": "rapid_tap" } },
+            "required": ["modifier"]
+          },
+          "then": {
+            "required": ["mash_buttons"],
+            "not": { "required": ["buttons"] }
+          },
+          "else": {
+            "required": ["buttons"],
+            "not": { "required": ["mash_buttons"] }
+          }
+        },
+        {
+          "description": "release_run requires requires_run to also be true (you can only release something you're holding).",
+          "if": {
+            "properties": { "release_run": { "const": true } },
+            "required": ["release_run"]
+          },
+          "then": {
+            "properties": { "requires_run": { "const": true } }
+          }
+        },
+        {
+          "description": "A slot must define some way to be triggered: at least one of buttons, mash_buttons, button_alternatives, dpad, control_stick, or release_run must be non-empty/true.",
+          "anyOf": [
+            { "properties": { "buttons": { "type": "array", "minItems": 1 } }, "required": ["buttons"] },
+            { "required": ["mash_buttons"] },
+            { "required": ["button_alternatives"] },
+            { "properties": { "dpad": { "type": "array" } }, "required": ["dpad"] },
+            { "properties": { "control_stick": { "type": "array" } }, "required": ["control_stick"] },
+            { "properties": { "release_run": { "const": true } }, "required": ["release_run"] }
+          ]
+        }
+      ]
+    },
+
+    "slot": {
+      "type": "object",
+      "required": [
+        "slot_id",
+        "slot_display_name",
+        "position",
+        "category",
+        "category_id",
+        "group",
+        "player_state",
+        "opponent_state",
+        "range",
+        "requires_special",
+        "trigger",
+        "input",
+        "input_pattern",
+        "setup"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "slot_id": { "$ref": "#/$defs/slot_id_string" },
+        "slot_display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "type": "string",
+          "enum": [
+            "grappling",
+            "standing",
+            "running",
+            "ground",
+            "turnbuckle",
+            "ringside",
+            "apron",
+            "irish_whip",
+            "taunt",
+            "double_team"
+          ]
+        },
+        "category": {
+          "description": "Title-case display version of category (UI-ready).",
+          "type": "string",
+          "minLength": 1
+        },
+        "category_id": { "$ref": "#/$defs/slot_id_string" },
+        "group": { "$ref": "#/$defs/slot_id_string" },
+        "player_state": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/state_value" }
+        },
+        "opponent_state": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/state_value" }
+        },
+        "range": {
+          "type": "string",
+          "enum": ["close", "mid", "any", "n/a"]
+        },
+        "requires_special": { "type": "boolean" },
+        "trigger": {
+          "type": "string",
+          "enum": ["manual", "automatic"]
+        },
+        "input": {
+          "description": "Human-readable input description, or null for automatic slots.",
+          "type": ["string", "null"]
+        },
+        "input_pattern": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/input_pattern" }
+          ]
+        },
+        "setup": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+
+      "allOf": [
+        {
+          "description": "Manual slots must have an input_pattern and a non-null input string. Automatic slots must have null input_pattern.",
+          "if": {
+            "properties": { "trigger": { "const": "manual" } },
+            "required": ["trigger"]
+          },
+          "then": {
+            "properties": {
+              "input": { "type": "string", "minLength": 1 },
+              "input_pattern": { "$ref": "#/$defs/input_pattern" }
+            }
+          },
+          "else": {
+            "properties": {
+              "input_pattern": { "type": "null" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

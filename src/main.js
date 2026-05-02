@@ -17,6 +17,10 @@ const DEFAULT_CONTROL_MAPPINGS = {
     dpadDown: ['ArrowDown'],
     dpadLeft: ['ArrowLeft'],
     dpadRight: ['ArrowRight'],
+    controlStickUp: ['KeyW'],
+    controlStickDown: ['KeyS'],
+    controlStickLeft: ['KeyA'],
+    controlStickRight: ['KeyD'],
     a: ['Enter'],
     b: ['Escape'],
     z: ['KeyZ'],
@@ -31,20 +35,24 @@ const DEFAULT_CONTROL_MAPPINGS = {
 };
 
 const CONTROL_ROWS = [
-  { id: 'dpadUp', label: 'D-Pad Up' },
-  { id: 'dpadDown', label: 'D-Pad Down' },
-  { id: 'dpadLeft', label: 'D-Pad Left' },
-  { id: 'dpadRight', label: 'D-Pad Right' },
-  { id: 'a', label: 'A' },
-  { id: 'b', label: 'B' },
+  { id: 'dpadUp', label: 'D-Pad Up', image: 'assets/textures/ui/button_dpad_up.png' },
+  { id: 'dpadDown', label: 'D-Pad Down', image: 'assets/textures/ui/button_dpad_down.png' },
+  { id: 'dpadLeft', label: 'D-Pad Left', image: 'assets/textures/ui/button_dpad_left.png' },
+  { id: 'dpadRight', label: 'D-Pad Right', image: 'assets/textures/ui/button_dpad_right.png' },
+  { id: 'controlStickUp', label: 'Control Stick Up', image: 'assets/textures/ui/control_stick_up.png' },
+  { id: 'controlStickDown', label: 'Control Stick Down', image: 'assets/textures/ui/control_stick_down.png' },
+  { id: 'controlStickLeft', label: 'Control Stick Left', image: 'assets/textures/ui/control_stick_left.png' },
+  { id: 'controlStickRight', label: 'Control Stick Right', image: 'assets/textures/ui/control_stick_right.png' },
+  { id: 'cUp', label: 'C-Up', image: 'assets/textures/ui/button_c_up.png' },
+  { id: 'cDown', label: 'C-Down', image: 'assets/textures/ui/button_c_down.png' },
+  { id: 'cLeft', label: 'C-Left', image: 'assets/textures/ui/button_c_left.png' },
+  { id: 'cRight', label: 'C-Right', image: 'assets/textures/ui/button_c_right.png' },
+  { id: 'a', label: 'A', image: 'assets/textures/ui/button_a.png' },
+  { id: 'b', label: 'B', image: 'assets/textures/ui/button_b.png' },
   { id: 'z', label: 'Z', image: 'assets/textures/ui/button_z.png' },
+  { id: 'start', label: 'Start', image: 'assets/textures/ui/button_start.png' },
   { id: 'l', label: 'L', image: 'assets/textures/ui/button_l.png' },
   { id: 'r', label: 'R', image: 'assets/textures/ui/button_r.png' },
-  { id: 'start', label: 'Start' },
-  { id: 'cUp', label: 'C-Up' },
-  { id: 'cDown', label: 'C-Down' },
-  { id: 'cLeft', label: 'C-Left' },
-  { id: 'cRight', label: 'C-Right' },
 ];
 
 const CONTROL_ACTIONS = [
@@ -54,7 +62,8 @@ const CONTROL_ACTIONS = [
 ];
 
 const LOCAL_STORAGE_KEY = 'vpg-control-mappings';
-const PAGE_TRANSITION_MS = 1350;
+const ARENA_VIEW_ROTATION_STEP = Math.PI / 48;
+const ARENA_VIEW_ZOOM_STEP = 1.2;
 const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
 const app = document.getElementById('app');
@@ -81,6 +90,7 @@ const state = {
   pageIndex: 0,
   arenaIndex: Math.max(availableArenas.findIndex((arena) => arena.id === initialArenaId), 0),
   arenaId: initialArenaId,
+  arenaSceneOpen: false,
   itemIndices: Object.fromEntries(PAGE_KEYS.map((pageKey) => [pageKey, 0])),
   instructionsOpen: false,
   transitionInProgress: false,
@@ -106,9 +116,13 @@ const elements = {
   confirmDialog: null,
   confirmOptions: [],
   arenaPage: null,
-  arenaGrid: null,
+  arenaList: null,
+  arenaPreview: null,
+  arenaPreviewImage: null,
+  arenaPreviewTitle: null,
+  arenaPreviewCopy: null,
   arenaStatus: null,
-  arenaCards: [],
+  arenaItems: [],
   arenas: [],
 };
 
@@ -187,7 +201,16 @@ function loadControlMappings() {
   try {
     const stored = window.localStorage.getItem(LOCAL_STORAGE_KEY);
     if (stored) {
-      return { ...cloneMappings(DEFAULT_CONTROL_MAPPINGS), ...JSON.parse(stored) };
+      const parsed = JSON.parse(stored);
+      const defaults = cloneMappings(DEFAULT_CONTROL_MAPPINGS);
+      return {
+        ...defaults,
+        ...parsed,
+        bindings: {
+          ...defaults.bindings,
+          ...parsed.bindings,
+        },
+      };
     }
   } catch (error) {
     console.warn('Unable to load stored control mappings.', error);
@@ -210,6 +233,14 @@ function getInput(event) {
   if (matchesBinding(event, 'dpadDown')) return 'down';
   if (matchesBinding(event, 'dpadLeft') || matchesBinding(event, 'l')) return 'left';
   if (matchesBinding(event, 'dpadRight') || matchesBinding(event, 'r')) return 'right';
+  if (matchesBinding(event, 'controlStickUp')) return 'stickUp';
+  if (matchesBinding(event, 'controlStickDown')) return 'stickDown';
+  if (matchesBinding(event, 'controlStickLeft')) return 'stickLeft';
+  if (matchesBinding(event, 'controlStickRight')) return 'stickRight';
+  if (matchesBinding(event, 'cUp')) return 'cUp';
+  if (matchesBinding(event, 'cDown')) return 'cDown';
+  if (matchesBinding(event, 'cLeft')) return 'cLeft';
+  if (matchesBinding(event, 'cRight')) return 'cRight';
   if (matchesBinding(event, 'a')) return 'a';
   if (matchesBinding(event, 'b')) return 'b';
   if (matchesBinding(event, 'z')) return 'z';
@@ -415,6 +446,7 @@ function buildArenaPage() {
   elements.arenaPage = document.createElement('section');
   elements.arenaPage.className = 'vpg-subscreen vpg-arena-page';
   elements.arenaPage.dataset.active = 'false';
+  elements.arenaPage.dataset.mode = 'select';
 
   const titlebar = document.createElement('div');
   titlebar.className = 'vpg-menu-titlebar vpg-text-titlebar';
@@ -425,46 +457,59 @@ function buildArenaPage() {
   elements.arenaStatus.className = 'vpg-arena-status';
   titlebar.append(title, elements.arenaStatus);
 
-  elements.arenaGrid = document.createElement('div');
-  elements.arenaGrid.className = 'vpg-arena-grid';
+  const layout = document.createElement('div');
+  layout.className = 'vpg-arena-select-layout';
+
+  elements.arenaList = document.createElement('div');
+  elements.arenaList.className = 'vpg-arena-list';
 
   elements.arenas = availableArenas;
 
   for (const [index, arena] of elements.arenas.entries()) {
-    const card = document.createElement('button');
-    card.type = 'button';
-    card.className = 'vpg-arena-card';
-    card.dataset.index = String(index);
-    card.addEventListener('click', () => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'vpg-menu-item vpg-arena-menu-item';
+    item.dataset.index = String(index);
+    item.textContent = arena.displayName;
+    item.addEventListener('click', () => {
       state.arenaIndex = index;
       updateArenaPage();
-      loadArena(arena.id);
     });
-
-    if (arena.previewImage) {
-      const image = document.createElement('img');
-      image.src = arena.previewImage;
-      image.alt = arena.displayName;
-      card.append(image);
-    }
-
-    const label = document.createElement('h2');
-    label.textContent = arena.displayName;
-    card.append(label);
-    elements.arenaGrid.append(card);
-    elements.arenaCards.push(card);
+    item.addEventListener('dblclick', () => loadArena(arena.id));
+    elements.arenaList.append(item);
+    elements.arenaItems.push(item);
   }
 
-  const backCard = document.createElement('button');
-  backCard.type = 'button';
-  backCard.className = 'vpg-arena-card vpg-arena-back-card';
-  backCard.dataset.index = String(elements.arenas.length);
-  backCard.innerHTML = '<h2>Back</h2>';
-  backCard.addEventListener('click', () => showScreen('main-menu'));
-  elements.arenaGrid.append(backCard);
-  elements.arenaCards.push(backCard);
+  const backItem = document.createElement('button');
+  backItem.type = 'button';
+  backItem.className = 'vpg-menu-item vpg-arena-menu-item';
+  backItem.dataset.index = String(elements.arenas.length);
+  backItem.textContent = 'Back';
+  backItem.addEventListener('click', () => showScreen('main-menu'));
+  elements.arenaList.append(backItem);
+  elements.arenaItems.push(backItem);
 
-  elements.arenaPage.append(titlebar, elements.arenaGrid);
+  elements.arenaPreview = document.createElement('div');
+  elements.arenaPreview.className = 'vpg-arena-preview';
+
+  elements.arenaPreviewImage = document.createElement('img');
+  elements.arenaPreviewImage.className = 'vpg-arena-preview-image';
+
+  elements.arenaPreviewTitle = document.createElement('h2');
+  elements.arenaPreviewTitle.className = 'vpg-arena-preview-title';
+
+  elements.arenaPreviewCopy = document.createElement('p');
+  elements.arenaPreviewCopy.className = 'vpg-arena-preview-copy';
+
+  elements.arenaPreview.append(
+    elements.arenaPreviewImage,
+    elements.arenaPreviewTitle,
+    elements.arenaPreviewCopy,
+  );
+
+  layout.append(elements.arenaList, elements.arenaPreview);
+
+  elements.arenaPage.append(titlebar, layout);
   app.append(elements.arenaPage);
 }
 
@@ -549,12 +594,9 @@ async function switchPage(direction) {
 
   state.pageIndex = (state.pageIndex + direction + PAGE_KEYS.length) % PAGE_KEYS.length;
   elements.stage.dataset.page = toDomPageId(getPage());
-  elements.stage.dataset.transition = 'hold';
-  await sleep(250);
-
   elements.stage.dataset.zoom = 'in';
   elements.stage.dataset.transition = 'zoom-in';
-  await sleep(400);
+  await sleep(420);
 
   elements.stage.dataset.transition = 'showing';
   updateMenu();
@@ -606,13 +648,13 @@ function showScreen(screen) {
   elements.stage.dataset.active = String(isMainMenu);
   elements.controlsPage.dataset.active = String(screen === 'controls');
   elements.arenaPage.dataset.active = String(screen === 'arena-viewer');
-  canvas.dataset.active = String(screen === 'arena-viewer');
+  canvas.dataset.active = String(screen === 'arena-viewer' && state.arenaSceneOpen);
 
   if (screen === 'arena-viewer') {
-    loadArena(state.arenaId);
+    state.arenaSceneOpen = false;
+    canvas.dataset.active = 'false';
   } else if (previousScreen === 'arena-viewer') {
-    loadToken += 1;
-    arenaRenderer.dispose();
+    closeArenaScene();
   }
 
   setInstructionsOpen(false);
@@ -622,23 +664,54 @@ function showScreen(screen) {
 }
 
 function updateArenaPage() {
-  for (const [index, card] of elements.arenaCards.entries()) {
+  const selectedArena = elements.arenas[state.arenaIndex];
+  const isBackSelected = state.arenaIndex === elements.arenas.length;
+
+  for (const [index, item] of elements.arenaItems.entries()) {
     const isActive = index === state.arenaIndex;
     const isLoadedArena = index < elements.arenas.length && elements.arenas[index].id === state.arenaId;
-    card.dataset.state = isActive ? 'active' : 'idle';
-    card.dataset.loaded = String(isLoadedArena);
-    card.tabIndex = isActive ? 0 : -1;
+    item.dataset.state = isActive ? 'active' : 'idle';
+    item.dataset.loaded = String(isLoadedArena);
+    item.tabIndex = isActive ? 0 : -1;
+  }
+
+  if (elements.arenaPage) {
+    elements.arenaPage.dataset.mode = state.arenaSceneOpen ? 'scene' : 'select';
+  }
+
+  if (elements.arenaPreview) {
+    elements.arenaPreview.dataset.empty = String(isBackSelected || !selectedArena?.previewImage);
+  }
+
+  if (elements.arenaPreviewImage && selectedArena?.previewImage) {
+    elements.arenaPreviewImage.src = selectedArena.previewImage;
+    elements.arenaPreviewImage.alt = selectedArena.displayName;
+  } else if (elements.arenaPreviewImage) {
+    elements.arenaPreviewImage.removeAttribute('src');
+    elements.arenaPreviewImage.alt = '';
+  }
+
+  if (elements.arenaPreviewTitle) {
+    elements.arenaPreviewTitle.textContent = isBackSelected ? 'Back' : selectedArena?.displayName ?? '';
+  }
+
+  if (elements.arenaPreviewCopy) {
+    elements.arenaPreviewCopy.textContent = '';
   }
 
   const currentArena = elements.arenas.find((arena) => arena.id === state.arenaId);
   if (elements.arenaStatus) {
-    elements.arenaStatus.textContent = currentArena ? `${currentArena.displayName} loaded` : '';
+    elements.arenaStatus.textContent = state.arenaSceneOpen && currentArena
+      ? `${currentArena.displayName} loaded`
+      : 'Select Arena';
   }
 }
 
 async function loadArena(arenaId) {
   const token = ++loadToken;
   state.arenaId = sanitizeArenaId(arenaId, availableArenas);
+  state.arenaSceneOpen = true;
+  canvas.dataset.active = 'true';
   const arena = availableArenas.find((candidate) => candidate.id === state.arenaId);
 
   updateArenaPage();
@@ -671,6 +744,14 @@ async function loadArena(arenaId) {
     }
     console.error(`ArenaRenderer: failed to load arena "${state.arenaId}"`, error);
   }
+}
+
+function closeArenaScene() {
+  loadToken += 1;
+  arenaRenderer.dispose();
+  state.arenaSceneOpen = false;
+  canvas.dataset.active = 'false';
+  updateArenaPage();
 }
 
 function updateControlsPage() {
@@ -872,20 +953,32 @@ function handleControlsInput(input, event) {
 }
 
 function handleArenaViewerInput(input, event) {
-  const columnCount = getArenaColumnCount();
-  const itemCount = elements.arenaCards.length;
+  if (state.arenaSceneOpen) {
+    if (input === 'b') {
+      event.preventDefault();
+      closeArenaScene();
+      return;
+    }
 
-  if (input === 'left' || input === 'right') {
-    event.preventDefault();
-    const direction = input === 'left' ? -1 : 1;
-    state.arenaIndex = (state.arenaIndex + direction + itemCount) % itemCount;
-    updateArenaPage();
+    if (
+      input === 'stickUp'
+      || input === 'stickDown'
+      || input === 'stickLeft'
+      || input === 'stickRight'
+      || input === 'cUp'
+      || input === 'cDown'
+    ) {
+      event.preventDefault();
+      moveArenaCamera(input);
+    }
     return;
   }
 
-  if (input === 'up' || input === 'down') {
+  const itemCount = elements.arenaItems.length;
+
+  if (input === 'up' || input === 'down' || input === 'left' || input === 'right') {
     event.preventDefault();
-    const direction = input === 'up' ? -columnCount : columnCount;
+    const direction = input === 'up' || input === 'left' ? -1 : 1;
     state.arenaIndex = (state.arenaIndex + direction + itemCount) % itemCount;
     updateArenaPage();
     return;
@@ -908,14 +1001,43 @@ function handleArenaViewerInput(input, event) {
   }
 }
 
-function getArenaColumnCount() {
-  if (elements.arenaCards.length < 2) {
-    return 1;
+function moveArenaCamera(input) {
+  const camera = sceneManager.camera;
+
+  if (input === 'stickUp') {
+    camera.beta = clampCameraValue(camera.beta + ARENA_VIEW_ROTATION_STEP, camera.lowerBetaLimit, camera.upperBetaLimit);
+    return;
   }
 
-  const firstTop = elements.arenaCards[0].offsetTop;
-  const firstRowCount = elements.arenaCards.filter((card) => card.offsetTop === firstTop).length;
-  return Math.max(firstRowCount, 1);
+  if (input === 'stickDown') {
+    camera.beta = clampCameraValue(camera.beta - ARENA_VIEW_ROTATION_STEP, camera.lowerBetaLimit, camera.upperBetaLimit);
+    return;
+  }
+
+  if (input === 'stickLeft') {
+    camera.alpha -= ARENA_VIEW_ROTATION_STEP;
+    return;
+  }
+
+  if (input === 'stickRight') {
+    camera.alpha += ARENA_VIEW_ROTATION_STEP;
+    return;
+  }
+
+  if (input === 'cUp') {
+    camera.radius = clampCameraValue(camera.radius - ARENA_VIEW_ZOOM_STEP, camera.lowerRadiusLimit, camera.upperRadiusLimit);
+    return;
+  }
+
+  if (input === 'cDown') {
+    camera.radius = clampCameraValue(camera.radius + ARENA_VIEW_ZOOM_STEP, camera.lowerRadiusLimit, camera.upperRadiusLimit);
+  }
+}
+
+function clampCameraValue(value, lowerLimit, upperLimit) {
+  const lower = lowerLimit ?? -Infinity;
+  const upper = upperLimit ?? Infinity;
+  return Math.min(Math.max(value, lower), upper);
 }
 
 function handleGlobalKeyboard(event) {

@@ -1,0 +1,2 @@
+import{a4 as l,a5 as i,a1 as r}from"./index-CFSa8zgv.js";class s extends l{constructor(a){super(a),this.config=a,this.value=this.registerDataOutput("value",i,a.initialValue)}_updateOutputs(a){const e=this.config.variable;a.hasVariable(e)&&this.value.setValue(a.getVariable(e),a)}serialize(a){super.serialize(a),a.config.variable=this.config.variable}getClassName(){return"FlowGraphGetVariableBlock"}}r("FlowGraphGetVariableBlock",s);export{s as FlowGraphGetVariableBlock};
+//# sourceMappingURL=flowGraphGetVariableBlock-BARFUkwv.js.map
