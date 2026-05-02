@@ -1,2 +1,0 @@
-import{af as t,a5 as e,a1 as i}from"./index-BSc5uCLs.js";class o extends t{constructor(a){super(a),this.animationToPause=this.registerDataInput("animationToPause",e)}_execute(a){this.animationToPause.getValue(a).pause(),this.out._activateSignal(a)}getClassName(){return"FlowGraphPauseAnimationBlock"}}i("FlowGraphPauseAnimationBlock",o);export{o as FlowGraphPauseAnimationBlock};
-//# sourceMappingURL=flowGraphPauseAnimationBlock-C_f-AkFq.js.map

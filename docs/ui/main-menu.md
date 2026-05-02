@@ -2,7 +2,7 @@
 
 The main menu consists of THREE primary screens navigated horizontally (D-Pad left/right, L/R):
 
-They are `Single Play`, `Multi Play`, and `Commissioner`.
+They are `Multi Play`, `Single Play`, and `Commissioner`.
 
 ## Multi Play
 
@@ -251,6 +251,10 @@ Selecting this option takes you to a variation of the `Superstar Select` menu, c
 ##### Clone a Superstar
 
 Selecting this option takes you to the `Superstar Select` menu, with the ability to copy a character from one slot to another.
+
+#### Arena Viewer
+
+#### Controller Configuration
 
 ---
 

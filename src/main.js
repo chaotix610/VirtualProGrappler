@@ -16,12 +16,84 @@ const MENU_OPTIONS = [
   {
     id: 'test-option-1',
     label: 'Test Option 1',
-    description: 'Sample match card data and menu-state styling sandbox.',
+    description: 'Prototype a match setup flow with keyboard-driven rules and arena picks.',
   },
   {
     id: 'test-option-2',
     label: 'Test Option 2',
-    description: 'Sample system diagnostics and arena package summary view.',
+    description: 'Inspect arena package diagnostics, renderer state, and asset readiness.',
+  },
+];
+
+const MATCH_SETUP_FIELDS = [
+  {
+    key: 'matchType',
+    label: 'Match Type',
+    options: ['Single', 'Tag', 'Triple Threat', 'Ladder'],
+  },
+  {
+    key: 'playerMode',
+    label: 'Player Mode',
+    options: ['1P vs CPU', '1P vs 2P', 'Watch'],
+  },
+  {
+    key: 'arenaId',
+    label: 'Arena',
+    options: [],
+  },
+  {
+    key: 'rules',
+    label: 'Rules',
+    options: ['Normal', 'Hardcore', 'No DQ', 'Iron Man'],
+  },
+  {
+    key: 'belt',
+    label: 'Belt',
+    options: ['Non Title', 'World Title', 'Intercontinental', 'Tag Titles'],
+  },
+];
+
+const DIAGNOSTIC_PANELS = [
+  {
+    id: 'arena-files',
+    label: 'Arena Files',
+    getValue: () => `${availableArenas.length} loaded`,
+    getDetails: () => [
+      `JSON source: data/arenas`,
+      `Available arenas: ${availableArenas.map((arena) => arena.displayName).join(', ')}`,
+      'Arena list is populated from the current repo data files at startup.',
+    ],
+  },
+  {
+    id: 'renderer',
+    label: 'Renderer',
+    getValue: () => 'Babylon 9.x',
+    getDetails: () => [
+      'SceneManager boots the scene, camera, and environment lighting.',
+      'ArenaRenderer assembles the ring plus modular arena parts from JSON.',
+      `Preview framing target: ${getPreviewFrameTargetFromQuery()}`,
+    ],
+  },
+  {
+    id: 'asset-kit',
+    label: 'Asset Kit',
+    getValue: () => '4 core GLBs',
+    getDetails: () => [
+      'Ring: ring-standard.glb',
+      'Floor: arena-floor.glb',
+      'Barricade: barricade.glb',
+      'Steps: ring-steps-positioned.glb',
+    ],
+  },
+  {
+    id: 'controls',
+    label: 'Controls',
+    getValue: () => 'Keyboard Ready',
+    getDetails: () => [
+      'Main Menu: Up / Down, Enter',
+      'Arena Viewer: Enter to open list, Esc to back out',
+      'Prototype screens: Up / Down to move, Left / Right to adjust',
+    ],
   },
 ];
 
@@ -120,6 +192,15 @@ const state = {
   screen: 'menu',
   selectedMenuIndex: 0,
   arenaId: initialArenaId,
+  matchSetupFieldIndex: 0,
+  diagnosticPanelIndex: 0,
+  matchSetup: {
+    matchType: 'Single',
+    playerMode: '1P vs CPU',
+    arenaId: initialArenaId,
+    rules: 'Normal',
+    belt: 'Non Title',
+  },
 };
 
 const elements = {
@@ -130,6 +211,12 @@ const elements = {
   arenaRoot: null,
   arenaTitle: null,
   arenaStatus: null,
+  matchSetupRows: [],
+  matchSetupValueNodes: new Map(),
+  matchSetupSummary: null,
+  diagnosticRows: [],
+  diagnosticValueNodes: new Map(),
+  diagnosticDetail: null,
 };
 
 function buildMainMenu() {
@@ -375,50 +462,136 @@ function buildArenaViewer() {
   elements.arenaStatus = status;
 }
 
-function buildTestScreen(screenId, titleText, cardTitle, rows) {
+function buildMatchSetupScreen() {
   const shell = document.createElement('section');
   shell.className = 'screen test-screen';
-  shell.dataset.screen = screenId;
+  shell.dataset.screen = 'test-option-1';
 
   const title = document.createElement('h1');
   title.className = 'viewer-title';
-  title.textContent = titleText;
+  title.textContent = 'Test Option 1';
+
+  const layout = document.createElement('div');
+  layout.className = 'test-layout';
 
   const card = document.createElement('div');
   card.className = 'test-card';
 
   const cardHeader = document.createElement('div');
   cardHeader.className = 'test-card-header';
-  cardHeader.textContent = cardTitle;
+  cardHeader.textContent = 'Match Setup Prototype';
 
   const list = document.createElement('div');
   list.className = 'test-list';
 
-  for (const row of rows) {
+  for (const field of MATCH_SETUP_FIELDS) {
     const item = document.createElement('div');
     item.className = 'test-row';
+    item.dataset.fieldKey = field.key;
 
     const label = document.createElement('span');
     label.className = 'test-row-label';
-    label.textContent = row.label;
+    label.textContent = field.label;
 
     const value = document.createElement('span');
     value.className = 'test-row-value';
-    value.textContent = row.value;
+    value.textContent = '';
 
     item.append(label, value);
     list.append(item);
+    elements.matchSetupRows.push(item);
+    elements.matchSetupValueNodes.set(field.key, value);
   }
 
   card.append(cardHeader, list);
-  shell.append(title, card);
+
+  const summary = document.createElement('div');
+  summary.className = 'test-card';
+
+  const summaryHeader = document.createElement('div');
+  summaryHeader.className = 'test-card-header';
+  summaryHeader.textContent = 'Current Card';
+
+  const summaryText = document.createElement('div');
+  summaryText.className = 'test-summary';
+
+  summary.append(summaryHeader, summaryText);
+  layout.append(card, summary);
+  shell.append(title, layout);
 
   const footer = document.createElement('div');
   footer.className = 'screen-footer';
-  footer.textContent = 'Esc: Back to Main Menu';
+  footer.textContent = 'Up / Down: Select   Left / Right: Change   Esc: Back';
   shell.append(footer);
 
   app.append(shell);
+  elements.matchSetupSummary = summaryText;
+}
+
+function buildDiagnosticsScreen() {
+  const shell = document.createElement('section');
+  shell.className = 'screen test-screen';
+  shell.dataset.screen = 'test-option-2';
+
+  const title = document.createElement('h1');
+  title.className = 'viewer-title';
+  title.textContent = 'Test Option 2';
+
+  const layout = document.createElement('div');
+  layout.className = 'test-layout';
+
+  const card = document.createElement('div');
+  card.className = 'test-card';
+
+  const cardHeader = document.createElement('div');
+  cardHeader.className = 'test-card-header';
+  cardHeader.textContent = 'Diagnostics';
+
+  const list = document.createElement('div');
+  list.className = 'test-list';
+
+  for (const panel of DIAGNOSTIC_PANELS) {
+    const item = document.createElement('div');
+    item.className = 'test-row';
+    item.dataset.panelId = panel.id;
+
+    const label = document.createElement('span');
+    label.className = 'test-row-label';
+    label.textContent = panel.label;
+
+    const value = document.createElement('span');
+    value.className = 'test-row-value';
+    value.textContent = '';
+
+    item.append(label, value);
+    list.append(item);
+    elements.diagnosticRows.push(item);
+    elements.diagnosticValueNodes.set(panel.id, value);
+  }
+
+  card.append(cardHeader, list);
+
+  const detail = document.createElement('div');
+  detail.className = 'test-card';
+
+  const detailHeader = document.createElement('div');
+  detailHeader.className = 'test-card-header';
+  detailHeader.textContent = 'Detail';
+
+  const detailBody = document.createElement('div');
+  detailBody.className = 'test-summary';
+
+  detail.append(detailHeader, detailBody);
+  layout.append(card, detail);
+  shell.append(title, layout);
+
+  const footer = document.createElement('div');
+  footer.className = 'screen-footer';
+  footer.textContent = 'Up / Down: Select   Enter: Refresh Detail   Esc: Back';
+  shell.append(footer);
+
+  app.append(shell);
+  elements.diagnosticDetail = detailBody;
 }
 
 function updateArenaViewerSelection() {
@@ -429,6 +602,49 @@ function updateArenaViewerSelection() {
     const isSelected = option.dataset.arenaId === state.arenaId;
     option.setAttribute('aria-selected', String(isSelected));
   });
+}
+
+function updateMatchSetupScreen() {
+  for (const field of MATCH_SETUP_FIELDS) {
+    const valueNode = elements.matchSetupValueNodes.get(field.key);
+    let value = state.matchSetup[field.key];
+
+    if (field.key === 'arenaId') {
+      value = availableArenas.find((arena) => arena.id === value)?.displayName ?? value;
+    }
+
+    if (valueNode) {
+      valueNode.textContent = value;
+    }
+  }
+
+  elements.matchSetupRows.forEach((row, index) => {
+    row.dataset.selected = String(index === state.matchSetupFieldIndex);
+  });
+
+  const arenaName = availableArenas.find((arena) => arena.id === state.matchSetup.arenaId)?.displayName
+    ?? state.matchSetup.arenaId;
+  elements.matchSetupSummary.textContent =
+    `${state.matchSetup.matchType} | ${state.matchSetup.playerMode} | ${arenaName} | ` +
+    `${state.matchSetup.rules} | ${state.matchSetup.belt}`;
+}
+
+function updateDiagnosticsScreen() {
+  DIAGNOSTIC_PANELS.forEach((panel) => {
+    const valueNode = elements.diagnosticValueNodes.get(panel.id);
+    if (valueNode) {
+      valueNode.textContent = panel.getValue();
+    }
+  });
+
+  elements.diagnosticRows.forEach((row, index) => {
+    row.dataset.selected = String(index === state.diagnosticPanelIndex);
+  });
+
+  const panel = DIAGNOSTIC_PANELS[state.diagnosticPanelIndex];
+  elements.diagnosticDetail.innerHTML = panel.getDetails()
+    .map((line) => `<div class="test-summary-line">${line}</div>`)
+    .join('');
 }
 
 function renderScreenVisibility() {
@@ -447,19 +663,17 @@ function focusActiveScreen() {
   }
 
   if (state.screen === 'arena-viewer') {
-    const arenaMenuIsOpen = elements.arenaRoot
-      ?.querySelector('.arena-select')
-      ?.dataset.open === 'true';
-
-    if (arenaMenuIsOpen && event.key === 'Escape') {
-      elements.arenaMenu.hidden = true;
-      elements.arenaTrigger?.setAttribute('aria-expanded', 'false');
-      elements.arenaRoot.querySelector('.arena-select').dataset.open = 'false';
-      elements.arenaTrigger?.focus();
-      return;
-    }
-
     elements.arenaTrigger?.focus();
+    return;
+  }
+
+  if (state.screen === 'test-option-1') {
+    updateMatchSetupScreen();
+    return;
+  }
+
+  if (state.screen === 'test-option-2') {
+    updateDiagnosticsScreen();
   }
 }
 
@@ -479,13 +693,27 @@ function openMenuOption(optionId) {
   if (optionId === 'test-option-1') {
     arenaRenderer.dispose();
     showScreen('test-option-1');
+    updateMatchSetupScreen();
     return;
   }
 
   if (optionId === 'test-option-2') {
     arenaRenderer.dispose();
     showScreen('test-option-2');
+    updateDiagnosticsScreen();
   }
+}
+
+function cycleMatchSetupField(direction) {
+  const field = MATCH_SETUP_FIELDS[state.matchSetupFieldIndex];
+  const currentValue = state.matchSetup[field.key];
+  const options = field.key === 'arenaId'
+    ? availableArenas.map((arena) => arena.id)
+    : field.options;
+  const currentIndex = options.indexOf(currentValue);
+  const nextIndex = (currentIndex + direction + options.length) % options.length;
+  state.matchSetup[field.key] = options[nextIndex];
+  updateMatchSetupScreen();
 }
 
 async function loadArena(arenaId) {
@@ -543,6 +771,58 @@ function handleGlobalKeyboard(event) {
     return;
   }
 
+  if (state.screen === 'test-option-1') {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      state.matchSetupFieldIndex = (state.matchSetupFieldIndex + 1) % MATCH_SETUP_FIELDS.length;
+      updateMatchSetupScreen();
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      state.matchSetupFieldIndex = (state.matchSetupFieldIndex - 1 + MATCH_SETUP_FIELDS.length)
+        % MATCH_SETUP_FIELDS.length;
+      updateMatchSetupScreen();
+      return;
+    }
+
+    if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      cycleMatchSetupField(1);
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      cycleMatchSetupField(-1);
+      return;
+    }
+  }
+
+  if (state.screen === 'test-option-2') {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      state.diagnosticPanelIndex = (state.diagnosticPanelIndex + 1) % DIAGNOSTIC_PANELS.length;
+      updateDiagnosticsScreen();
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      state.diagnosticPanelIndex = (state.diagnosticPanelIndex - 1 + DIAGNOSTIC_PANELS.length)
+        % DIAGNOSTIC_PANELS.length;
+      updateDiagnosticsScreen();
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      updateDiagnosticsScreen();
+      return;
+    }
+  }
+
   if (event.key === 'Escape') {
     event.preventDefault();
     if (state.screen === 'arena-viewer') {
@@ -565,30 +845,12 @@ function handleGlobalKeyboard(event) {
 
 buildMainMenu();
 buildArenaViewer();
-buildTestScreen(
-  'test-option-1',
-  'Test Option 1',
-  'Sample Match Card',
-  [
-    { label: 'Opening Match', value: 'The Patriot vs. Vader' },
-    { label: 'Midcard Feature', value: 'Shamrock vs. Owen Hart' },
-    { label: 'Main Event', value: 'Austin vs. Undertaker' },
-    { label: 'Arena Mood', value: 'Packed house, red pyro, high heat' },
-  ]
-);
-buildTestScreen(
-  'test-option-2',
-  'Test Option 2',
-  'Sample Diagnostics',
-  [
-    { label: 'Arena Files', value: String(availableArenas.length) },
-    { label: 'Ring Package', value: 'ring-standard.glb ready' },
-    { label: 'Floor Package', value: 'arena-floor.glb linked' },
-    { label: 'Preview State', value: 'Keyboard navigation enabled' },
-  ]
-);
+buildMatchSetupScreen();
+buildDiagnosticsScreen();
 
 updateArenaViewerSelection();
+updateMatchSetupScreen();
+updateDiagnosticsScreen();
 showScreen('menu');
 document.addEventListener('keydown', handleGlobalKeyboard);
 sceneManager.run();

@@ -1,6 +1,7 @@
 {
   "id": "raw",
   "displayName": "RAW is WAR",
+  "previewImage": "assets/textures/arena/previews/preview-rawiswar.png",
   "arenaParts": [
     "assets/glb/arena/arena-floor.glb",
     "assets/glb/arena/barricade.glb",

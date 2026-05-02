@@ -1,0 +1,24 @@
+{
+  "id": "mondaynitro",
+  "displayName": "Monday Nitro",
+  "previewImage": "assets/textures/arena/previews/preview-mondaynitro.png",
+  "arenaParts": [
+    "assets/glb/arena/arena-floor.glb",
+    "assets/glb/arena/barricade.glb",
+    "assets/glb/arena/ring-steps-positioned.glb"
+  ],
+  "arenaOverrides": {
+    "mat_floor_cut_4x8": "assets/textures/arena/floor_mat_1.png",
+    "mat_floor_8x8": "assets/textures/arena/floor_mat_1-double.png",
+    "Material_1": "assets/textures/arena/floor_mat_1-double.png"
+  },
+  "ringOverrides": {
+    "mat_canvas": "assets/textures/ring/shared/canvas.png",
+    "mat_apron": "assets/textures/ring/apron_raw.png",
+    "mat_rope_top": "assets/textures/ring/shared/rope.png",
+    "mat_rope_middle": "assets/textures/ring/shared/rope.png",
+    "mat_rope_bottom": "assets/textures/ring/shared/rope.png",
+    "ropeColor": "#000000",
+    "ropeColorOpacity": 0.4
+  }
+}
