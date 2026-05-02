@@ -74,169 +74,194 @@ Every wrestler is a JSON file. Every move is a JSON entry. Every mechanic — da
 
 ## Folder Structure
 
+
 ```
-virtual-pro-grappler/
-│
+├── assets
+│   ├── artwork
+│   │   ├── arena1.png
+│   │   ├── mainbg.jpg
+│   │   ├── vpg-box-art.png
+│   │   └── vpg-logo.png
+│   ├── audio
+│   │   ├── music
+│   │   └── sfx
+│   ├── glb
+│   │   ├── arena
+│   │   │   ├── arena-floor.glb
+│   │   │   ├── arena.glb
+│   │   │   ├── barricade.glb
+│   │   │   └── ring-steps-positioned.glb
+│   │   ├── characters
+│   │   │   ├── base_mesh_male_01.glb
+│   │   │   └── base_mesh_male_02.glb
+│   │   └── ring
+│   │       ├── ring-standard-1.glb
+│   │       └── ring-standard.glb
+│   ├── models
+│   │   └── blender
+│   │       ├── arena
+│   │       │   ├── arena.blend
+│   │       │   ├── arena-floor.blend
+│   │       │   ├── arena-floor.blend1
+│   │       │   ├── ring-steps.blend
+│   │       │   └── ring-steps.blend1
+│   │       ├── characters
+│   │       │   ├── base_mesh_male_01.blend
+│   │       │   ├── base_mesh_male_02.blend
+│   │       │   └── base_mesh_male_03.blend
+│   │       └── ring
+│   │           └── ring-standard.blend
+│   ├── schema
+│   │   └── ring-steps.json
+│   ├── textures
+│   │   ├── arena
+│   │   │   ├── floor_mat_1-double.png
+│   │   │   ├── floor_mat_1-double-rotate_90.png
+│   │   │   ├── floor_mat_1.png
+│   │   │   ├── floor_mat-ne_corner.png
+│   │   │   ├── floor_mat-nw_corner.png
+│   │   │   ├── previews
+│   │   │   │   ├── preview-budokan.png
+│   │   │   │   ├── preview-kingofthering.png
+│   │   │   │   ├── preview-mondaynitro.png
+│   │   │   │   ├── preview-nomercy.png
+│   │   │   │   ├── preview-rawiswar.png
+│   │   │   │   ├── preview-royalrumble.png
+│   │   │   │   ├── preview-smackdown.png
+│   │   │   │   ├── preview-summerslam.png
+│   │   │   │   ├── preview-survivorseries.png
+│   │   │   │   └── preview-wrestlemania.png
+│   │   │   └── texture.png
+│   │   ├── characters
+│   │   │   └── shared
+│   │   ├── ring
+│   │   │   ├── apron_raw.png
+│   │   │   ├── canvas.png
+│   │   │   ├── canvas_raw.png
+│   │   │   └── shared
+│   │   │       ├── canvas.png
+│   │   │       ├── post.png
+│   │   │       ├── rope-2.png
+│   │   │       ├── rope.png
+│   │   │       ├── steps.png
+│   │   │       ├── turnbuckle-bolt-cover.png
+│   │   │       ├── turnbuckle-bolt.png
+│   │   │       └── turnbuckle.png
+│   │   └── ui
+│   │       ├── button_l.png
+│   │       ├── button_r.png
+│   │       ├── button_z.png
+│   │       ├── fonts
+│   │       │   └── xfiles.ttf
+│   │       ├── heading_commissioner.png
+│   │       ├── heading_multiplay.png
+│   │       ├── heading_singleplay.png
+│   │       └── mainmenu_bg.png
+│   └── ui
+├── data
+│   ├── AGENT.md
+│   ├── arenas
+│   │   ├── budokan.json
+│   │   ├── kingofthering.json
+│   │   ├── mondaynitro.json
+│   │   ├── nomercy.json
+│   │   ├── raw.json
+│   │   ├── royalrumble.json
+│   │   ├── smackdown.json
+│   │   ├── summerslam.json
+│   │   ├── survivorseries.json
+│   │   └── wrestlemania.json
+│   ├── characters
+│   ├── moves
+│   │   ├── grapples
+│   │   ├── strikes
+│   │   ├── submissions
+│   ├── README.md
+│   └── schemas
+│       ├── main-menu-schema.json
+│       ├── move-slots.json
+│       ├── move-database.json
+│       └── move-slots-1.json
+├── dist
+│   ├── assets
+|   |       └──TOO MANY TO LIST IN README
+│   └── index.html
+├── docs
+│   ├── environment
+│   │   └── arena-floor.md
+│   ├── mechanics
+│   │   ├── HSFM Blueprint.md
+│   │   ├── move-damage.md
+│   │   ├── move-database.md
+│   │   ├── move-slot-overview.md
+│   │   ├── move-slots.md
+│   │   ├── Parameters.md
+│   │   └── REVERSALS.md
+│   └── ui
+│       ├── character-options.md
+│       ├── main-menu
+│       │   ├── commissioner.png
+│       │   ├── mainmenu-bg.png
+│       │   ├── main-menu-prompt.md
+│       │   ├── multiplay-exhibition-arena.png
+│       │   ├── multiplay-exhibition-match.png
+│       │   ├── multiplay-exhibition-player-single.png
+│       │   ├── multiplay-exhibition-player-tag.png
+│       │   ├── multiplay-exhibition-player-triplethreat.png
+│       │   ├── multiplay-exhibition-rules
+│       │   ├── multi-play.png
+│       │   ├── multiplay-title.png
+│       │   ├── preview-kingofthering.png
+│       │   ├── preview-nomercy.png
+│       │   ├── preview-rawiswar.png
+│       │   ├── preview-royalrumble.png
+│       │   ├── preview-smackdown.png
+│       │   ├── preview-summerslam.png
+│       │   ├── preview-survivorseries.png
+│       │   ├── preview-wrestlemania.png
+│       │   ├── single-play.png
+│       │   ├── title-commissioner.png
+│       │   └── title-singleplay.png
+│       ├── main-menu.md
+│       └── superstar-select.md
 ├── index.html
+├── LICENSE
+├── main-menu-prototype.html
+├── node_modules
+|   (TOO MUCH TO LIST IN README)
 ├── package.json
+├── package-lock.json
+├── public
+├── README.md
+├── src
+│   ├── characters
+│   ├── combat
+│   ├── data
+│   │   └── DataLoader.js
+│   ├── engine
+│   ├── fsm
+│   │   ├── regions
+│   │   └── states
+│   ├── main.js
+│   ├── match
+│   ├── renderer
+│   │   ├── ArenaRenderer.js
+│   │   ├── MaterialManager.js
+│   │   └── SceneManager.js
+│   ├── ui
+│   └── utils
+├── tests
+│   ├── combat
+│   ├── data
+│   │   └── DataLoader.test.js
+│   ├── fsm
+│   └── renderer
+│       ├── ArenaRenderer.test.js
+│       └── MaterialManager.test.js
 ├── vite.config.js
-├── vitest.config.js
-│
-├── public/
-│   └── favicon.ico
-│
-├── assets/
-│   ├── models/                     # Source files (NOT imported by engine)
-│   │   └── blender/                # .blend source files (for rig validation)
-│   │       ├── characters/
-│   │       └── ring/
-│   │       └── arena/
-│   │
-│   ├── glb/                        # Exported GLBs (consumed by engine)
-│   │   ├── characters/
-│   │   │   ├── rock.glb
-│   │   │   ├── austin.glb
-│   │   │   └── caw_template.glb
-│   │   ├── ring/
-│   │   │   └── ring_standard.glb
-│   │   └── arenas/
-│   │       ├── raw.glb
-│   │       ├── smackdown.glb
-│   │       └── wrestlemania.glb
-│   │
-│   ├── textures/
-│   │   ├── characters/
-│   │   │   ├── rock/
-│   │   │   │   ├── attire_1_body.png
-│   │   │   │   ├── attire_1_face.png
-│   │   │   │   └── attire_2_body.png
-│   │   │   └── shared/
-│   │   │       └── skin_base.png
-│   │   ├── ring/
-│   │   │   ├── canvas_raw.png
-│   │   │   └── canvas_smackdown.png
-│   │   └── ui/
-│   │       ├── healthbar.png
-│   │       ├── spirit_pips.png
-│   │       └── fonts/
-│   │           └── n64_font.png
-│   │
-│   └── audio/
-│       ├── sfx/
-│       │   ├── punch_01.wav
-│       │   ├── crowd_cheer.wav
-│       │   └── ...
-│       └── music/
-│           ├── theme_rock.mp3
-│           └── ...
-│
-├── data/
-│   ├── schemas/                    # JSON Schema definitions (validation)
-│   │   ├── character.schema.json
-│   │   ├── move.schema.json
-│   │   ├── move-slots.schema.json
-│   │   └── arena.schema.json
-│   │
-│   ├── move-slots.json             # Canonical slot → input mapping (from move-slots.md)
-│   │
-│   ├── moves/                      # Individual move entries
-│   │   ├── grapples/
-│   │   │   ├── rock_bottom.json
-│   │   │   ├── stunner.json
-│   │   │   └── suplex_vertical.json
-│   │   ├── strikes/
-│   │   │   ├── punch_jab.json
-│   │   │   └── big_boot.json
-│   │   └── submissions/
-│   │       ├── sharpshooter.json
-│   │       └── figure_four.json
-│   │
-│   ├── characters/                 # Per-wrestler data packages
-│   │   ├── rock.json
-│   │   ├── austin.json
-│   │   └── _template.json
-│   │
-│   └── arenas/
-│       ├── raw.json
-│       └── wrestlemania.json
-│
-├── src/
-│   ├── main.js                     # Entry point — bootstraps engine
-│   │
-│   ├── engine/
-│   │   ├── GameEngine.js           # Master game loop (fixed 60fps timestep)
-│   │   ├── InputBuffer.js          # Frame-timestamped input capture + tap/hold detection
-│   │   ├── FrameClock.js           # Deterministic frame counter
-│   │   └── TokenManager.js         # Atomic activeMoveToken per fighter
-│   │
-│   ├── renderer/
-│   │   ├── SceneManager.js         # Babylon.js scene, camera, lighting setup
-│   │   ├── CharacterRenderer.js    # GLB load, skeleton, animation group control
-│   │   ├── ArenaRenderer.js        # Arena GLB + texture swap (canvas per event)
-│   │   ├── MaterialManager.js      # Per-part texture application from JSON manifest
-│   │   └── N64PostProcess.js       # Post-processing: dither, color reduction, scanlines
-│   │
-│   ├── fsm/
-│   │   ├── HFSM.js                 # Hierarchical FSM base (State, HFSM classes)
-│   │   ├── states/
-│   │   │   ├── NeutralState.js     # Idle, Moving, Running, Evading
-│   │   │   ├── EngagementState.js  # GrappleInitiation, GrappleHold, ExecutingMove
-│   │   │   ├── DamageState.js      # HitStun, Knockdown, Rising, RecoveringAttack
-│   │   │   └── GroundedState.js    # Prone, Submission, Pinning
-│   │   └── regions/
-│   │       ├── SpecialMeterRegion.js   # Orthogonal: spirit tracking, isSpecialActive
-│   │       └── InteractionRegion.js    # Orthogonal: distance, facing angle flags
-│   │
-│   ├── combat/
-│   │   ├── SlotResolver.js         # Input + context → move slot ID (+ finisher override)
-│   │   ├── MoveInstance.js         # Live move execution object (frame counter, hitboxes)
-│   │   ├── DamageCalculator.js     # Factors 1–4 from move-damage.md
-│   │   ├── ReversalSystem.js       # Full AKI reversal probability (REVERSALS.md)
-│   │   ├── JointStaminaTracker.js  # 5-limb stamina pools (move-damage.md §2)
-│   │   ├── HealthTracker.js        # Current + Max health (move-damage.md §1)
-│   │   ├── SubmissionEscape.js     # Wrench minigame + submission skill matrix
-│   │   └── PinSystem.js            # Kickout window + pin logic
-│   │
-│   ├── characters/
-│   │   ├── Fighter.js              # Composite fighter: FSM + regions + health + renderer ref
-│   │   ├── CharacterLoader.js      # Loads character JSON → Fighter instance
-│   │   └── CAWManager.js           # Create-A-Wrestler: slot management, save/load
-│   │
-│   ├── match/
-│   │   ├── MatchRules.js           # Rules object: time limit, count-out, DQ, bloodshed...
-│   │   ├── MatchController.js      # Referee logic, win conditions, interference
-│   │   ├── RingBounds.js           # Ring geometry, ropes, apron, outside zones
-│   │   └── CountOutTimer.js        # Count-out tracking per fighter
-│   │
-│   ├── ui/
-│   │   ├── HUD.js                  # Health bars, spirit pips, timer (canvas-based)
-│   │   ├── MainMenu.js             # Main menu screen (Single/Multi/Commissioner)
-│   │   ├── SuperstarSelect.js      # Grid-based roster browser (superstar-select.md)
-│   │   ├── MatchSetup.js           # Match/Player/Arena/Rules/Belt pages
-│   │   ├── CharacterOptions.js     # Edit Superstar — character-options.md fields
-│   │   └── MoveEditor.js           # Assign moves to slots UI
-│   │
-│   ├── data/
-│   │   ├── DataLoader.js           # Async JSON fetch + schema validation
-│   │   ├── MoveRegistry.js         # Indexed move lookup by ID
-│   │   └── RosterRegistry.js       # Stable pages + slot management
-│   │
-│   └── utils/
-│       ├── MathUtils.js            # Integer floor helpers used in damage formulas
-│       ├── RNGSystem.js            # Deterministic seeded RNG (reversals, interference)
-│       └── DebugOverlay.js         # Frame counter, FSM state, hitbox visualiser
-│
-└── tests/
-    ├── combat/
-    │   ├── DamageCalculator.test.js
-    │   ├── ReversalSystem.test.js
-    │   └── JointStamina.test.js
-    ├── fsm/
-    │   ├── HFSM.test.js
-    │   └── SlotResolver.test.js
-    └── data/
-        └── CharacterLoader.test.js
+└── vitest.config.js
 ```
+
 
 ---
 
