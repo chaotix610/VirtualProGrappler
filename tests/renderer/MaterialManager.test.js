@@ -168,6 +168,16 @@ describe('MaterialManager', () => {
       expect(mat.diffuseColor.g).toBe(0);
       expect(mat.diffuseColor.b).toBe(1);
     });
+
+    it('sets material alpha from an rgba() colour', () => {
+      const mat = mockMaterial('mat_rope_top');
+      mgr.setMaterialColor(mat, 'rgba(255, 0, 0, 0.4)');
+
+      expect(mat.albedoColor.r).toBe(1);
+      expect(mat.albedoColor.g).toBe(0);
+      expect(mat.albedoColor.b).toBe(0);
+      expect(mat.alpha).toBe(0.4);
+    });
   });
 
   // ─ applyRingOverrides ──────────────────────────────────────────
@@ -277,7 +287,7 @@ describe('MaterialManager', () => {
         mat_rope_top: null,
         mat_rope_middle: null,
         mat_rope_bottom: null,
-        ropeColor: '#FF0000',
+        ropeColor: 'rgba(255, 0, 0, 0.4)',
       };
 
       const colorSpy = vi.spyOn(mgr, 'setMaterialColor');
@@ -288,7 +298,81 @@ describe('MaterialManager', () => {
       expect(clearSpy).toHaveBeenCalledTimes(3);
       expect(colorSpy).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'mat_rope_top' }),
-        '#FF0000'
+        'rgba(255, 0, 0, 0.4)'
+      );
+    });
+
+    it('allows top, middle, and bottom rope materials to use independent colours', async () => {
+      const meshes = [
+        mockMultiMesh(['mat_rope_top', 'mat_rope_middle', 'mat_rope_bottom']),
+      ];
+      const scene = mockScene();
+
+      const overrides = {
+        mat_rope_top: null,
+        mat_rope_middle: null,
+        mat_rope_bottom: null,
+        ropeTopColor: 'rgba(255, 0, 0, 0.4)',
+        ropeMiddleColor: 'rgba(255, 255, 255, 0.4)',
+        ropeBottomColor: 'rgba(0, 0, 255, 0.4)',
+      };
+
+      await mgr.applyRingOverrides(meshes, overrides, scene);
+
+      const [top, middle, bottom] = meshes[0].material.subMaterials;
+      expect(top.albedoColor).toEqual({ r: 1, g: 0, b: 0 });
+      expect(top.alpha).toBe(0.4);
+      expect(middle.albedoColor).toEqual({ r: 1, g: 1, b: 1 });
+      expect(middle.alpha).toBe(0.4);
+      expect(bottom.albedoColor).toEqual({ r: 0, g: 0, b: 1 });
+      expect(bottom.alpha).toBe(0.4);
+    });
+
+    it('applies postColor and turnbucklePadColor to named ring materials', async () => {
+      const meshes = [mockMesh('mat_post'), mockMesh('mat_turnbuckle')];
+      const scene = mockScene();
+
+      await mgr.applyRingOverrides(
+        meshes,
+        {
+          postColor: '#111111',
+          turnbucklePadColor: '#00FF00',
+        },
+        scene
+      );
+
+      expect(meshes[0].material.albedoTexture).toBeNull();
+      expect(meshes[0].material.albedoColor.r).toBeCloseTo(17 / 255);
+      expect(meshes[0].material.albedoColor.g).toBeCloseTo(17 / 255);
+      expect(meshes[0].material.albedoColor.b).toBeCloseTo(17 / 255);
+
+      expect(meshes[1].material.albedoTexture).toBeNull();
+      expect(meshes[1].material.albedoColor.r).toBe(0);
+      expect(meshes[1].material.albedoColor.g).toBe(1);
+      expect(meshes[1].material.albedoColor.b).toBe(0);
+    });
+
+    it('uses canvasColor with the canvas texture overlay', async () => {
+      const meshes = [mockMesh('mat_canvas')];
+      const scene = mockScene();
+      const overlaySpy = vi.spyOn(mgr, '_applyRopeTextureWithColorOverlay')
+        .mockResolvedValue();
+
+      await mgr.applyRingOverrides(
+        meshes,
+        {
+          mat_canvas: 'assets/textures/ring/shared/canvas.png',
+          canvasColor: 'rgba(0, 0, 255, 0.15)',
+        },
+        scene
+      );
+
+      expect(overlaySpy).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'mat_canvas' }),
+        'assets/textures/ring/shared/canvas.png',
+        'rgba(0, 0, 255, 0.15)',
+        scene,
+        undefined
       );
     });
 
@@ -306,8 +390,7 @@ describe('MaterialManager', () => {
           mat_rope_top: 'assets/textures/ring/shared/rope.png',
           mat_rope_middle: 'assets/textures/ring/shared/rope.png',
           mat_rope_bottom: 'assets/textures/ring/shared/rope.png',
-          ropeColor: '#FF0000',
-          ropeColorOpacity: 0.4,
+          ropeColor: 'rgba(255, 0, 0, 0.4)',
         },
         scene
       );
@@ -316,8 +399,51 @@ describe('MaterialManager', () => {
       expect(overlaySpy).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'mat_rope_top' }),
         'assets/textures/ring/shared/rope.png',
-        '#FF0000',
-        0.4,
+        'rgba(255, 0, 0, 0.4)',
+        scene,
+        undefined
+      );
+    });
+
+    it('passes independent rope colours into texture overlays', async () => {
+      const meshes = [
+        mockMultiMesh(['mat_rope_top', 'mat_rope_middle', 'mat_rope_bottom']),
+      ];
+      const scene = mockScene();
+      const overlaySpy = vi.spyOn(mgr, '_applyRopeTextureWithColorOverlay')
+        .mockResolvedValue();
+
+      await mgr.applyRingOverrides(
+        meshes,
+        {
+          mat_rope_top: 'assets/textures/ring/shared/rope.png',
+          mat_rope_middle: 'assets/textures/ring/shared/rope.png',
+          mat_rope_bottom: 'assets/textures/ring/shared/rope.png',
+          ropeTopColor: 'rgba(255, 0, 0, 0.4)',
+          ropeMiddleColor: 'rgba(255, 255, 255, 0.4)',
+          ropeBottomColor: 'rgba(0, 0, 255, 0.4)',
+        },
+        scene
+      );
+
+      expect(overlaySpy).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'mat_rope_top' }),
+        'assets/textures/ring/shared/rope.png',
+        'rgba(255, 0, 0, 0.4)',
+        scene,
+        undefined
+      );
+      expect(overlaySpy).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'mat_rope_middle' }),
+        'assets/textures/ring/shared/rope.png',
+        'rgba(255, 255, 255, 0.4)',
+        scene,
+        undefined
+      );
+      expect(overlaySpy).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'mat_rope_bottom' }),
+        'assets/textures/ring/shared/rope.png',
+        'rgba(0, 0, 255, 0.4)',
         scene,
         undefined
       );
@@ -350,7 +476,10 @@ describe('MaterialManager', () => {
         mockNamedMesh('canvas'),
         mockNamedMesh('apron-west'),
         mockNamedMesh('rope-east-top'),
+        mockNamedMesh('rope-east-middle'),
+        mockNamedMesh('rope-east-bottom'),
         mockNamedMesh('ring-post-ne'),
+        mockNamedMesh('turnbuckle-pad-ne-top'),
         mockNamedMesh('turnbuckle-bolt-cover-ne-top'),
       ];
       const scene = mockScene();
@@ -362,17 +491,30 @@ describe('MaterialManager', () => {
           mat_apron: 'assets/textures/ring/apron_raw.png',
           mat_rope_top: null,
           mat_turnbuckle_bolt_cover: 'assets/textures/ring/shared/turnbuckle-bolt-cover.png',
-          ropeColor: '#FF0000',
+          ropeTopColor: 'rgba(255, 0, 0, 0.4)',
+          ropeMiddleColor: 'rgba(255, 255, 255, 0.4)',
+          ropeBottomColor: 'rgba(0, 0, 255, 0.4)',
+          postColor: '#111111',
+          turnbucklePadColor: '#00FF00',
         },
         scene
       );
 
       expect(meshes[0].material.albedoTexture.url).toBe('assets/textures/ring/canvas_raw.png');
       expect(meshes[1].material.albedoTexture.url).toBe('assets/textures/ring/apron_raw.png');
-      // rope-east-top gets the shared rope texture with wrapU=1 via fallback
-      expect(meshes[2].material.albedoTexture.url).toBe('assets/textures/ring/shared/rope.png');
-      expect(meshes[3].material.albedoTexture.url).toBe('assets/textures/ring/shared/post.png');
-      expect(meshes[4].material.albedoTexture.url).toBe(
+      expect(meshes[2].material.albedoTexture).toBeNull();
+      expect(meshes[2].material.albedoColor.r).toBe(1);
+      expect(meshes[3].material.albedoTexture).toBeNull();
+      expect(meshes[3].material.albedoColor.r).toBe(1);
+      expect(meshes[3].material.albedoColor.g).toBe(1);
+      expect(meshes[3].material.albedoColor.b).toBe(1);
+      expect(meshes[4].material.albedoTexture).toBeNull();
+      expect(meshes[4].material.albedoColor.b).toBe(1);
+      expect(meshes[5].material.albedoTexture).toBeNull();
+      expect(meshes[5].material.albedoColor.r).toBeCloseTo(17 / 255);
+      expect(meshes[6].material.albedoTexture).toBeNull();
+      expect(meshes[6].material.albedoColor.g).toBe(1);
+      expect(meshes[7].material.albedoTexture.url).toBe(
         'assets/textures/ring/shared/turnbuckle-bolt-cover.png'
       );
     });

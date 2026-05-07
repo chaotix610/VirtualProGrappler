@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vpg-engine.local/schemas/arenas.schema.json",
+  "title": "VPG Engine — Arena",
+  "description": "Schema for one arena definition file in data/arenas/*.json.",
+  "type": "object",
+  "required": ["id", "displayName"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schema_version": {
+      "description": "Optional arena schema version. Current version is 1.",
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "$ref": "#/$defs/arena_id"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "previewImage": {
+      "$ref": "#/$defs/asset_path"
+    },
+    "arenaGlb": {
+      "description": "Legacy single arena GLB field. Prefer arenaParts for new data.",
+      "$ref": "#/$defs/asset_path"
+    },
+    "arenaParts": {
+      "description": "Environment GLB parts to load around the ring.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/arena_part"
+      }
+    },
+    "arenaOverrides": {
+      "description": "Texture overrides for arena/environment materials. Keys are material names.",
+      "$ref": "#/$defs/material_overrides"
+    },
+    "ringOverrides": {
+      "description": "Texture and color overrides for the ring GLB.",
+      "$ref": "#/$defs/ring_overrides"
+    }
+  },
+  "allOf": [
+    {
+      "anyOf": [
+        { "required": ["arenaParts"] },
+        { "required": ["arenaGlb"] }
+      ]
+    }
+  ],
+  "$defs": {
+    "arena_id": {
+      "description": "Arena identifier matching its file name without extension.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "asset_path": {
+      "description": "Project-relative asset path.",
+      "type": "string",
+      "minLength": 1
+    },
+    "css_color": {
+      "description": "CSS color accepted by the renderer: #RGB, #RRGGBB, rgb(...), or rgba(...).",
+      "type": "string",
+      "pattern": "^(#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})|rgba?\\(\\s*(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\\s*,\\s*(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})\\s*,\\s*(25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})(\\s*,\\s*(0|1|0?\\.\\d+))?\\s*\\))$"
+    },
+    "position": {
+      "description": "World-space offset for an arena part.",
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "number"
+      }
+    },
+    "arena_part": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/asset_path"
+        },
+        {
+          "type": "object",
+          "required": ["glb"],
+          "additionalProperties": false,
+          "properties": {
+            "glb": {
+              "$ref": "#/$defs/asset_path"
+            },
+            "position": {
+              "$ref": "#/$defs/position"
+            }
+          }
+        }
+      ]
+    },
+    "material_override_value": {
+      "description": "A texture path string, or null to keep/clear based on renderer-specific behavior.",
+      "oneOf": [
+        { "$ref": "#/$defs/asset_path" },
+        { "type": "null" }
+      ]
+    },
+    "material_overrides": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/material_override_value"
+      }
+    },
+    "ring_overrides": {
+      "type": "object",
+      "properties": {
+        "mat_canvas": { "$ref": "#/$defs/material_override_value" },
+        "mat_apron": { "$ref": "#/$defs/material_override_value" },
+        "mat_rope_top": { "$ref": "#/$defs/material_override_value" },
+        "mat_rope_middle": { "$ref": "#/$defs/material_override_value" },
+        "mat_rope_bottom": { "$ref": "#/$defs/material_override_value" },
+        "mat_turnbuckle": { "$ref": "#/$defs/material_override_value" },
+        "mat_turnbuckle_cover": { "$ref": "#/$defs/material_override_value" },
+        "mat_turnbuckle_bolt_cover": { "$ref": "#/$defs/material_override_value" },
+        "mat_turnbuckle_bolt_1": { "$ref": "#/$defs/material_override_value" },
+        "mat_turnbuckle_bolt_2": { "$ref": "#/$defs/material_override_value" },
+        "canvasColor": { "$ref": "#/$defs/css_color" },
+        "ropeColor": { "$ref": "#/$defs/css_color" },
+        "ropeTopColor": { "$ref": "#/$defs/css_color" },
+        "ropeMiddleColor": { "$ref": "#/$defs/css_color" },
+        "ropeBottomColor": { "$ref": "#/$defs/css_color" },
+        "postColor": { "$ref": "#/$defs/css_color" },
+        "turnbucklePadColor": { "$ref": "#/$defs/css_color" }
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/material_override_value"
+      }
+    }
+  }
+}

@@ -58,9 +58,15 @@ export class MaterialManager {
    *   - a PNG path string  → applied as the diffuse texture
    *   - `null`             → skipped (material keeps its current look)
    *
-   * The special key `"ropeColor"` is a hex colour string. When a rope material
-   * override is a texture path, the colour is composited over it at `ropeColorOpacity`
-   * (default 0.4). When the override value is `null`, the colour is applied directly.
+   * Special colour keys:
+   *   - `"ropeColor"` is a fallback colour for all rope materials.
+   *   - `"ropeTopColor"`, `"ropeMiddleColor"`, and `"ropeBottomColor"` override
+   *     the top, middle, and bottom rope colours independently.
+   *   - Rope colours may be hex, rgb(), or rgba() CSS colour strings.
+   *     Use rgba() when the colour should be composited transparently over
+   *     the rope texture.
+   *   - `"postColor"` tints/colours ring post materials.
+   *   - `"turnbucklePadColor"` tints/colours turnbuckle pad materials.
    *
    * @param {object[]} meshes         — array of Babylon mesh objects from the loaded GLB
    * @param {object}   overrides      — `ringOverrides` object from the arena JSON
@@ -78,13 +84,20 @@ export class MaterialManager {
     const materialMap = this._buildMaterialMap(meshes);
     const matchedMaterials = new Set();
 
-    const ropeColor = overrides.ropeColor ?? null;
-    const ropeColorOpacity = overrides.ropeColorOpacity ?? 0.4;
     const ropeMaterials = ['mat_rope_top', 'mat_rope_middle', 'mat_rope_bottom'];
+    const metadataKeys = new Set([
+      'ropeColor',
+      'ropeTopColor',
+      'ropeMiddleColor',
+      'ropeBottomColor',
+      'canvasColor',
+      'postColor',
+      'turnbucklePadColor',
+    ]);
 
     for (const [matName, value] of Object.entries(overrides)) {
       // Metadata keys — not material names
-      if (matName === 'ropeColor' || matName === 'ropeColorOpacity') continue;
+      if (metadataKeys.has(matName)) continue;
 
       const resolvedName = this._resolveMaterialName(matName, materialMap);
       const material = resolvedName ? materialMap.get(resolvedName) : null;
@@ -95,28 +108,46 @@ export class MaterialManager {
       matchedMaterials.add(matName);
 
       if (typeof value === 'string' && value.length > 0) {
-        if (ropeMaterials.includes(matName) && ropeColor) {
+        const materialRopeColor = this._getRopeColorForMaterial(matName, overrides);
+        if (ropeMaterials.includes(matName) && materialRopeColor) {
           await this._applyRopeTextureWithColorOverlay(
             material,
             value,
-            ropeColor,
-            ropeColorOpacity,
+            materialRopeColor,
+            scene,
+            TextureClass
+          );
+        } else if (matName === 'mat_canvas' && overrides.canvasColor) {
+          await this._applyRopeTextureWithColorOverlay(
+            material,
+            value,
+            overrides.canvasColor,
             scene,
             TextureClass
           );
         } else {
           this.swapTexture(material, value, scene, TextureClass);
         }
-      } else if (value === null && ropeMaterials.includes(matName) && ropeColor) {
+      } else if (value === null && ropeMaterials.includes(matName)) {
+        const materialRopeColor = this._getRopeColorForMaterial(matName, overrides);
+        if (!materialRopeColor) {
+          continue;
+        }
+
         // Null texture on a rope material — remove any baked GLB texture and apply the rope colour.
         this.clearMaterialTexture(material);
-        this.setMaterialColor(material, ropeColor);
+        this.setMaterialColor(material, materialRopeColor);
+      } else if (value === null && matName === 'mat_canvas' && overrides.canvasColor) {
+        this.clearMaterialTexture(material);
+        this.setMaterialColor(material, overrides.canvasColor);
       }
       // value === null on a non-rope material: leave the material as-is.
     }
 
+    this._applyRingColorOverridesByMaterial(materialMap, overrides);
+
     const unmatchedOverrides = Object.keys(overrides).filter((key) => {
-      return key !== 'ropeColor' && key !== 'ropeColorOpacity' && !matchedMaterials.has(key);
+      return !metadataKeys.has(key) && !matchedMaterials.has(key);
     });
 
     if (unmatchedOverrides.length > 0) {
@@ -165,13 +196,13 @@ export class MaterialManager {
   }
 
   /**
-   * Set a material's base / diffuse colour from a CSS hex string.
+   * Set a material's base / diffuse colour from a CSS colour string.
    *
    * @param {object} material — Babylon.js material instance
-   * @param {string} hexColor — e.g. "#FF0000"
+   * @param {string} cssColor — e.g. "#FF0000", "rgb(255,0,0)", or "rgba(255,0,0,0.4)"
    */
-  setMaterialColor(material, hexColor) {
-    const { r, g, b } = this._hexToRgb(hexColor);
+  setMaterialColor(material, cssColor) {
+    const { r, g, b, a } = this._cssColorToRgba(cssColor);
 
     if ('albedoColor' in material) {
       // PBR material
@@ -183,6 +214,10 @@ export class MaterialManager {
       material.diffuseColor.r = r;
       material.diffuseColor.g = g;
       material.diffuseColor.b = b;
+    }
+
+    if (a < 1 || 'alpha' in material) {
+      material.alpha = a;
     }
   }
 
@@ -202,23 +237,22 @@ export class MaterialManager {
   // ── private helpers ─────────────────────────────────────────────
 
   /**
-   * Load a rope texture, composite the arena colour over it at the given opacity,
-   * and assign the result to the material.
+   * Load a rope texture, composite the arena colour over it, and assign the
+   * result to the material.
    *
    * Compositing is done on an HTML Canvas (normal SourceOver alpha blend):
-   *   final = texture * (1 - opacity) + ropeColor * opacity
+   *   final = source texture + cssColor fill
    *
    * Falls back to a solid colour if the image fails to load.
    *
    * @param {object}   material
    * @param {string}   texturePath
-   * @param {string}   hexColor
-   * @param {number}   opacity      — 0–1, fraction of colour over the texture
+   * @param {string}   cssColor
    * @param {object}   scene
    * @param {Function} [TextureClass]
    * @returns {Promise<void>}
    */
-  async _applyRopeTextureWithColorOverlay(material, texturePath, hexColor, opacity, scene, TextureClass) {
+  async _applyRopeTextureWithColorOverlay(material, texturePath, cssColor, scene, TextureClass) {
     return new Promise((resolve) => {
       const img = new Image();
 
@@ -230,10 +264,8 @@ export class MaterialManager {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
 
-        ctx.globalAlpha = opacity;
-        ctx.fillStyle = hexColor;
+        ctx.fillStyle = cssColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.globalAlpha = 1.0;
 
         const dataUrl = canvas.toDataURL('image/png');
 
@@ -261,7 +293,7 @@ export class MaterialManager {
           `MaterialManager: failed to load rope texture "${texturePath}" for colour overlay ` +
           `— applying solid colour instead.`
         );
-        this.setMaterialColor(material, hexColor);
+        this.setMaterialColor(material, cssColor);
         resolve();
       };
 
@@ -295,7 +327,17 @@ export class MaterialManager {
 
       if (meshName === 'canvas' || meshName === 'ring-platform') {
         const platformTexture = overrides.mat_canvas ?? 'assets/textures/ring/shared/canvas.png';
-        this.swapTexture(material, platformTexture, scene, TextureClass);
+        if (overrides.canvasColor) {
+          await this._applyRopeTextureWithColorOverlay(
+            material,
+            platformTexture,
+            overrides.canvasColor,
+            scene,
+            TextureClass
+          );
+        } else {
+          this.swapTexture(material, platformTexture, scene, TextureClass);
+        }
 
         if (meshName === 'ring-platform' && overrides.mat_apron && !warnedAboutSharedPlatform) {
           console.warn(
@@ -314,20 +356,40 @@ export class MaterialManager {
       }
 
       if (meshName.startsWith('rope-')) {
-        this.swapTexture(
-          material, 'assets/textures/ring/shared/rope.png', scene, TextureClass
-        );
+        const meshRopeColor = this._getRopeColorForMesh(meshName, overrides);
+        if (meshRopeColor && (
+          overrides.ropeTopColor
+          || overrides.ropeMiddleColor
+          || overrides.ropeBottomColor
+        )) {
+          this.clearMaterialTexture(material);
+          this.setMaterialColor(material, meshRopeColor);
+        } else {
+          this.swapTexture(
+            material, 'assets/textures/ring/shared/rope.png', scene, TextureClass
+          );
+        }
         continue;
       }
 
       if (meshName.startsWith('ring-post-')) {
-        this.swapTexture(material, 'assets/textures/ring/shared/post.png', scene, TextureClass);
+        if (overrides.postColor) {
+          this.clearMaterialTexture(material);
+          this.setMaterialColor(material, overrides.postColor);
+        } else {
+          this.swapTexture(material, 'assets/textures/ring/shared/post.png', scene, TextureClass);
+        }
         continue;
       }
 
       if (meshName.startsWith('turnbuckle-pad-')) {
-        const padTexture = overrides.mat_turnbuckle ?? 'assets/textures/ring/shared/turnbuckle.png';
-        this.swapTexture(material, padTexture, scene, TextureClass);
+        if (overrides.turnbucklePadColor) {
+          this.clearMaterialTexture(material);
+          this.setMaterialColor(material, overrides.turnbucklePadColor);
+        } else {
+          const padTexture = overrides.mat_turnbuckle ?? 'assets/textures/ring/shared/turnbuckle.png';
+          this.swapTexture(material, padTexture, scene, TextureClass);
+        }
         continue;
       }
 
@@ -363,6 +425,78 @@ export class MaterialManager {
       }
     }
 
+  }
+
+  /**
+   * Resolve the effective colour for a named rope material.
+   *
+   * @param {string} matName
+   * @param {object} overrides
+   * @returns {string|null}
+   */
+  _getRopeColorForMaterial(matName, overrides) {
+    const colorsByMaterial = {
+      mat_rope_top: overrides.ropeTopColor,
+      mat_rope_middle: overrides.ropeMiddleColor,
+      mat_rope_bottom: overrides.ropeBottomColor,
+    };
+
+    return colorsByMaterial[matName] ?? overrides.ropeColor ?? null;
+  }
+
+  /**
+   * Resolve the effective colour for fallback rope mesh names such as
+   * `rope-east-top`, `rope-west-middle`, or `rope-south-bottom`.
+   *
+   * @param {string} meshName
+   * @param {object} overrides
+   * @returns {string|null}
+   */
+  _getRopeColorForMesh(meshName, overrides) {
+    if (meshName.includes('-top')) {
+      return overrides.ropeTopColor ?? overrides.ropeColor ?? null;
+    }
+
+    if (meshName.includes('-middle')) {
+      return overrides.ropeMiddleColor ?? overrides.ropeColor ?? null;
+    }
+
+    if (meshName.includes('-bottom')) {
+      return overrides.ropeBottomColor ?? overrides.ropeColor ?? null;
+    }
+
+    return overrides.ropeColor ?? null;
+  }
+
+  /**
+   * Apply colour-only ring overrides to named GLB materials.
+   *
+   * @param {Map<string, object>} materialMap
+   * @param {object} overrides
+   */
+  _applyRingColorOverridesByMaterial(materialMap, overrides) {
+    const colorTargets = [
+      ['postColor', ['mat_post']],
+      ['turnbucklePadColor', ['mat_turnbuckle']],
+    ];
+
+    for (const [overrideKey, materialNames] of colorTargets) {
+      const color = overrides[overrideKey];
+      if (typeof color !== 'string' || color.length === 0) {
+        continue;
+      }
+
+      for (const matName of materialNames) {
+        const resolvedName = this._resolveMaterialName(matName, materialMap);
+        const material = resolvedName ? materialMap.get(resolvedName) : null;
+        if (!material) {
+          continue;
+        }
+
+        this.clearMaterialTexture(material);
+        this.setMaterialColor(material, color);
+      }
+    }
   }
 
   /**
@@ -470,5 +604,54 @@ export class MaterialManager {
       g: ((n >> 8) & 0xff) / 255,
       b: (n & 0xff) / 255,
     };
+  }
+
+  /**
+   * Parse a CSS colour string into normalised 0-1 RGBA floats.
+   *
+   * Supported forms: "#RGB", "#RRGGBB", "rgb(r,g,b)", "rgba(r,g,b,a)".
+   *
+   * @param {string} color
+   * @returns {{ r: number, g: number, b: number, a: number }}
+   */
+  _cssColorToRgba(color) {
+    if (typeof color !== 'string') {
+      return { r: 1, g: 1, b: 1, a: 1 };
+    }
+
+    const trimmed = color.trim();
+    if (trimmed.startsWith('#') || /^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(trimmed)) {
+      return { ...this._hexToRgb(trimmed), a: 1 };
+    }
+
+    const match = trimmed.match(/^rgba?\(([^)]+)\)$/i);
+    if (!match) {
+      return { r: 1, g: 1, b: 1, a: 1 };
+    }
+
+    const [r = 255, g = 255, b = 255, a = 1] = match[1]
+      .split(',')
+      .map((part) => Number(part.trim()));
+
+    return {
+      r: this._clamp01(r / 255),
+      g: this._clamp01(g / 255),
+      b: this._clamp01(b / 255),
+      a: this._clamp01(a),
+    };
+  }
+
+  /**
+   * Clamp a number to the 0-1 range.
+   *
+   * @param {number} value
+   * @returns {number}
+   */
+  _clamp01(value) {
+    if (!Number.isFinite(value)) {
+      return 1;
+    }
+
+    return Math.min(Math.max(value, 0), 1);
   }
 }
