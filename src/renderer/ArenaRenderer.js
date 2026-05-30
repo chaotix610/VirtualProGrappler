@@ -1,5 +1,5 @@
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader.js';
-import { Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { Quaternion, Vector3 } from '@babylonjs/core/Maths/math.vector.js';
 import { Texture } from '@babylonjs/core/Materials/Textures/texture.js';
 
 // Ensure the glTF / GLB loader plugin is registered.
@@ -9,6 +9,24 @@ import { loadJSON } from '../data/DataLoader.js';
 import { MaterialManager } from './MaterialManager.js';
 
 const RING_GLB_PATH = 'assets/glb/ring/ring-standard.glb';
+const RING_STEPS_GLB_PATH = 'assets/glb/arena/ring-steps.glb';
+
+// Local-frame TRS values lifted verbatim from the two `ring-steps` nodes inside
+// ring-with-steps.glb. Overriding the loaded node's TRS with these values
+// reproduces the exact placement seen in that reference scene (steps butted up
+// against the ring at the NE and SW corners, treads facing outward).
+const RING_STEPS_PLACEMENTS = [
+  {
+    corner: 'ne',
+    position: [3.7936058044433594, 0.675000011920929, -3.80749249458313],
+    rotation: [0.27059805393218994, 0.6532813310623169, -0.6532816290855408, 0.2705979645252228],
+  },
+  {
+    corner: 'sw',
+    position: [-3.5595788955688477, 0.675000011920929, 3.2128915786743164],
+    rotation: [0.6532816290855408, -0.27059799432754517, 0.2705981135368347, 0.6532813310623169],
+  },
+];
 
 /**
  * ArenaRenderer — loads a ring GLB plus zero or more arena environment GLBs,
@@ -30,6 +48,9 @@ export class ArenaRenderer {
 
     /** @type {object[]} all meshes loaded for the ring GLB */
     this.ringMeshes = [];
+
+    /** @type {object[]} meshes loaded for the NE/SW ring-steps instances */
+    this.ringStepsMeshes = [];
 
     /** @type {object[]} all meshes loaded for the arena GLBs */
     this.arenaMeshes = [];
@@ -69,12 +90,31 @@ export class ArenaRenderer {
       ringRoot.position = new Vector3(0, 0, 0);
     }
 
-    // 3. Load the arena environment GLBs (if specified) ──────────
+    // 3. Load NE + SW ring-steps instances ───────────────────────
+    for (const placement of this._ringStepsPlacements()) {
+      try {
+        const stepsResult = await SceneLoader.ImportMeshAsync(
+          '',
+          '',
+          RING_STEPS_GLB_PATH,
+          scene
+        );
+        this._applyRingStepsTransform(stepsResult.meshes, placement);
+        this.ringStepsMeshes.push(...stepsResult.meshes);
+      } catch (err) {
+        console.warn(
+          `ArenaRenderer: failed to load ring-steps GLB "${RING_STEPS_GLB_PATH}" ` +
+          `for ${placement.corner} corner.\n${err.message}`
+        );
+      }
+    }
+
+    // 4. Load the arena environment GLBs (if specified) ──────────
     const arenaParts = this._getArenaPartDefs(this.arenaData);
     for (const part of arenaParts) {
       try {
         const arenaResult = await SceneLoader.ImportMeshAsync('', '', part.glb, scene);
-        this._applyPartOffset(arenaResult.meshes, part.position);
+        this._applyPartTransform(arenaResult.meshes, part);
         this.arenaMeshes.push(...arenaResult.meshes);
       } catch (err) {
         console.warn(
@@ -84,7 +124,7 @@ export class ArenaRenderer {
       }
     }
 
-    // 4. Apply material overrides from arena JSON ────────────────
+    // 5. Apply material overrides from arena JSON ────────────────
     if (this.arenaData.ringOverrides) {
       await this.materialManager.applyRingOverrides(
         this.ringMeshes,
@@ -110,9 +150,11 @@ export class ArenaRenderer {
    */
   dispose() {
     this._disposeMeshes(this.ringMeshes);
+    this._disposeMeshes(this.ringStepsMeshes);
     this._disposeMeshes(this.arenaMeshes);
 
     this.ringMeshes = [];
+    this.ringStepsMeshes = [];
     this.arenaMeshes = [];
     this.arenaData = null;
     this.scene = null;
@@ -133,7 +175,11 @@ export class ArenaRenderer {
    * @returns {{ min: Vector3, max: Vector3, center: Vector3, size: Vector3 } | null}
    */
   getArenaBounds() {
-    return this._calculateBounds([...this.ringMeshes, ...this.arenaMeshes]);
+    return this._calculateBounds([
+      ...this.ringMeshes,
+      ...this.ringStepsMeshes,
+      ...this.arenaMeshes,
+    ]);
   }
 
   // ── private helpers ─────────────────────────────────────────────
@@ -195,7 +241,7 @@ export class ArenaRenderer {
    * single-file field for backward compatibility.
    *
    * @param {object|null} arenaData
-   * @returns {{ glb: string, position: Vector3 }[]}
+   * @returns {{ glb: string, position: Vector3, rotation: Vector3 }[]}
    */
   _getArenaPartDefs(arenaData) {
     if (!arenaData || typeof arenaData !== 'object') {
@@ -209,7 +255,7 @@ export class ArenaRenderer {
     }
 
     if (typeof arenaData.arenaGlb === 'string' && arenaData.arenaGlb.length > 0) {
-      return [{ glb: arenaData.arenaGlb, position: Vector3.Zero() }];
+      return [{ glb: arenaData.arenaGlb, position: Vector3.Zero(), rotation: Vector3.Zero() }];
     }
 
     return [];
@@ -221,13 +267,14 @@ export class ArenaRenderer {
    * Accepted forms:
    *   - `"assets/glb/arena/floor.glb"`
    *   - `{ "glb": "assets/glb/arena/floor.glb", "position": [0, 0, 0] }`
+   *   - `{ "glb": "assets/glb/arena/steps.glb", "position": [4, 0, -4], "rotation": [0, 3.141593, 0] }`
    *
    * @param {string|object|null} part
-   * @returns {{ glb: string, position: Vector3 }|null}
+   * @returns {{ glb: string, position: Vector3, rotation: Vector3 }|null}
    */
   _normalizeArenaPart(part) {
     if (typeof part === 'string' && part.length > 0) {
-      return { glb: part, position: Vector3.Zero() };
+      return { glb: part, position: Vector3.Zero(), rotation: Vector3.Zero() };
     }
 
     if (!part || typeof part !== 'object') {
@@ -241,30 +288,103 @@ export class ArenaRenderer {
     return {
       glb: part.glb,
       position: this._toVector3(part.position),
+      rotation: this._toVector3(part.rotation),
     };
   }
 
   /**
-   * Apply a world-space offset to each root-level mesh in an imported part.
+   * Apply world-space placement to each root-level mesh in an imported part.
    *
    * We preserve the authored relative transforms inside the GLB and simply
-   * shift the part as a whole when a placement offset is provided.
+   * transform the part as a whole when placement data is provided.
    *
    * @param {object[]} meshes
-   * @param {Vector3} offset
+   * @param {{ position: Vector3, rotation: Vector3 }} part
    */
-  _applyPartOffset(meshes, offset) {
-    if (!offset || (offset.x === 0 && offset.y === 0 && offset.z === 0)) {
+  _applyPartTransform(meshes, part) {
+    if (!part) {
       return;
     }
+
+    const { position, rotation } = part;
 
     for (const mesh of meshes) {
       if (!mesh || mesh.parent || !mesh.position?.addInPlace) {
         continue;
       }
 
-      mesh.position.addInPlace(offset);
+      if (rotation && (rotation.x !== 0 || rotation.y !== 0 || rotation.z !== 0)) {
+        if (mesh.rotationQuaternion) {
+          const placementRotation = Quaternion.RotationYawPitchRoll(
+            rotation.y,
+            rotation.x,
+            rotation.z
+          );
+          mesh.rotationQuaternion = placementRotation.multiply(mesh.rotationQuaternion);
+        } else if (mesh.rotation?.addInPlace) {
+          mesh.rotation.addInPlace(rotation);
+        }
+      }
+
+      if (position && (position.x !== 0 || position.y !== 0 || position.z !== 0)) {
+        mesh.position.addInPlace(position);
+      }
     }
+  }
+
+  /**
+   * Materialize the static ring-steps placement table into Vector3/Quaternion
+   * pairs. Two placements are always returned: one for the NE corner and one
+   * for the SW corner.
+   *
+   * @returns {{ corner: string, position: Vector3, rotation: Quaternion }[]}
+   */
+  _ringStepsPlacements() {
+    return RING_STEPS_PLACEMENTS.map((p) => ({
+      corner: p.corner,
+      position: new Vector3(p.position[0], p.position[1], p.position[2]),
+      rotation: new Quaternion(p.rotation[0], p.rotation[1], p.rotation[2], p.rotation[3]),
+    }));
+  }
+
+  /**
+   * Override the local TRS of an imported ring-steps mesh so its world-space
+   * placement matches the corresponding node inside ring-with-steps.glb.
+   *
+   * The standalone ring-steps.glb has its own baked node TRS; we replace it
+   * (rather than add to it) because the placement values were authored in the
+   * same local frame as ring-with-steps.glb and both files go through the same
+   * Babylon importer axis conversion.
+   *
+   * @param {object[]} meshes
+   * @param {{ position: Vector3, rotation: Quaternion }} placement
+   */
+  _applyRingStepsTransform(meshes, placement) {
+    const target = meshes.find((m) => m && m.name === 'ring-steps');
+    if (!target || !placement) {
+      return;
+    }
+
+    if (target.position?.set) {
+      target.position.set(placement.position.x, placement.position.y, placement.position.z);
+    } else {
+      target.position = placement.position.clone();
+    }
+
+    target.rotationQuaternion = placement.rotation.clone();
+  }
+
+  /**
+   * Apply a world-space offset to each root-level mesh in an imported part.
+   *
+   * @param {object[]} meshes
+   * @param {Vector3} offset
+   */
+  _applyPartOffset(meshes, offset) {
+    this._applyPartTransform(meshes, {
+      position: offset,
+      rotation: Vector3.Zero(),
+    });
   }
 
   /**

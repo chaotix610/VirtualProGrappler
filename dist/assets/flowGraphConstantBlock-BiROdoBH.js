@@ -1,0 +1,2 @@
+import{a8 as s,aI as e,aJ as u,R as o}from"./index-C3G0Z6z7.js";class l extends s{constructor(t){super(t),this.config=t,this.output=this.registerDataOutput("output",e(t.value))}_updateOutputs(t){this.output.setValue(this.config.value,t)}getClassName(){return"FlowGraphConstantBlock"}serialize(t={},a=u){super.serialize(t),a("value",this.config.value,t.config)}}o("FlowGraphConstantBlock",l);export{l as FlowGraphConstantBlock};
+//# sourceMappingURL=flowGraphConstantBlock-BiROdoBH.js.map

@@ -1,0 +1,152 @@
+{
+  "metadata": {
+    "name": "ring_standard",
+    "version": "1.0",
+    "asset": "assets/glb/ring/ring-standard.glb",
+    "units": "generic",
+    "description": "Standard low-poly wrestling ring with canvas, apron panels, four posts, three rope levels, turnbuckle pads, bolt covers, and bolts."
+  },
+  "coordinate_system": {
+    "origin": "authored GLB scene origin",
+    "axes": {
+      "x": "left to right across the ring",
+      "y": "height, bottom to top",
+      "z": "front to back across the ring"
+    }
+  },
+  "bounds": {
+    "min": [-3.3197, 0.1563, -3.708],
+    "max": [3.5328, 3.4582, 3.1468],
+    "size": [6.8524, 3.3018, 6.8548],
+    "center": [0.1065, 1.8073, -0.2806]
+  },
+  "dimensions": {
+    "footprint_width_x": 6.8524,
+    "footprint_depth_z": 6.8548,
+    "overall_height_y": 3.3018,
+    "canvas_size_xz": [6.7853, 6.7853],
+    "canvas_height_y": 1.7527,
+    "post_height_y": 1.6963,
+    "post_thickness_xz": [0.2474, 0.2474],
+    "rope_length": 5.8941,
+    "rope_thickness": 0.0448
+  },
+  "canvas": {
+    "mesh": "canvas",
+    "material": "mat_canvas",
+    "bounds": {
+      "min": [-3.2861, 1.7527, -3.6733],
+      "max": [3.4992, 1.7527, 3.112],
+      "size": [6.7853, 0, 6.7853],
+      "center": [0.1065, 1.7527, -0.2806]
+    }
+  },
+  "apron": {
+    "material": "mat_apron",
+    "height_y": 1.5963,
+    "meshes": [
+      "apron-west",
+      "apron-south",
+      "apron-east",
+      "apron-north"
+    ]
+  },
+  "posts": {
+    "material": "mat_post",
+    "meshes": [
+      "ring-post-nw",
+      "ring-post-sw",
+      "ring-post-ne",
+      "ring-post-se"
+    ],
+    "bounds_by_corner": {
+      "nw": {
+        "center": [-3.196, 2.61, -3.5843]
+      },
+      "ne": {
+        "center": [3.409, 2.61, -3.5843]
+      },
+      "sw": {
+        "center": [-3.196, 2.61, 3.0231]
+      },
+      "se": {
+        "center": [3.409, 2.61, 3.0231]
+      }
+    }
+  },
+  "ropes": {
+    "levels": {
+      "top": {
+        "material": "mat_rope_top",
+        "center_y": 3.1926
+      },
+      "middle": {
+        "material": "mat_rope_middle",
+        "center_y": 2.6705
+      },
+      "bottom": {
+        "material": "mat_rope_bottom",
+        "center_y": 2.2321
+      }
+    },
+    "meshes": [
+      "rope-south-top",
+      "rope-west-top",
+      "rope-east-top",
+      "rope-north-top",
+      "rope-south-middle",
+      "rope-west-middle",
+      "rope-east-middle",
+      "rope-north-middle",
+      "rope-south-bottom",
+      "rope-west-bottom",
+      "rope-east-bottom",
+      "rope-north-bottom"
+    ]
+  },
+  "turnbuckles": {
+    "pad_material": "mat_turnbuckle",
+    "bolt_cover_material": "mat_turnbuckle_bolt_cover",
+    "bolt_materials": [
+      "mat_turnbuckle_bolt_1",
+      "mat_turnbuckle_bolt_2"
+    ],
+    "corners": [
+      "nw",
+      "sw",
+      "ne",
+      "se"
+    ],
+    "levels": [
+      "top",
+      "middle",
+      "bottom"
+    ],
+    "mesh_name_patterns": [
+      "turnbuckle-pad-{corner}-{level}",
+      "turnbuckle-bolt-cover-{corner}-{level}",
+      "turnbuckle-bolt-1-{corner}-{level}",
+      "turnbuckle-bolt-2-{corner}-{level}"
+    ]
+  },
+  "materials": [
+    "mat_canvas",
+    "mat_apron",
+    "mat_turnbuckle",
+    "mat_turnbuckle_bolt_cover",
+    "mat_turnbuckle_bolt_1",
+    "mat_turnbuckle_bolt_2",
+    "mat_post",
+    "mat_rope_top",
+    "mat_rope_middle",
+    "mat_rope_bottom"
+  ],
+  "export": {
+    "format": "GLB",
+    "node_count": 69,
+    "mesh_count": 69,
+    "material_count": 10,
+    "single_mesh": false,
+    "generator": "Khronos glTF Blender I/O v5.0.21"
+  }
+}

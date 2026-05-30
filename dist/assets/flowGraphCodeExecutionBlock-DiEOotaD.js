@@ -1,0 +1,2 @@
+import{a8 as a,a9 as e}from"./index-C3G0Z6z7.js";class o extends a{constructor(t){super(t),this.config=t,this.executionFunction=this.registerDataInput("function",e),this.value=this.registerDataInput("value",e),this.result=this.registerDataOutput("result",e)}_updateOutputs(t){const s=this.executionFunction.getValue(t),u=this.value.getValue(t);s&&this.result.setValue(s(u,t),t)}getClassName(){return"FlowGraphCodeExecutionBlock"}}export{o as FlowGraphCodeExecutionBlock};
+//# sourceMappingURL=flowGraphCodeExecutionBlock-DiEOotaD.js.map

@@ -4,8 +4,7 @@
   "previewImage": "assets/textures/arena/previews/preview-budokan.png",
   "arenaParts": [
     "assets/glb/arena/arena-floor.glb",
-    "assets/glb/arena/barricade.glb",
-    "assets/glb/arena/ring-steps-positioned.glb"
+    "assets/glb/arena/barricade.glb"
   ],
   "arenaOverrides": {
     "mat_floor_cut_4x8": "assets/textures/arena/floor_mat_1_blue.png",

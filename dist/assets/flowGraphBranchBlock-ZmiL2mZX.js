@@ -1,0 +1,2 @@
+import{aG as a,ad as e,R as i}from"./index-C3G0Z6z7.js";class s extends a{constructor(t){super(t),this.condition=this.registerDataInput("condition",e),this.onTrue=this._registerSignalOutput("onTrue"),this.onFalse=this._registerSignalOutput("onFalse")}_execute(t){this.condition.getValue(t)?this.onTrue._activateSignal(t):this.onFalse._activateSignal(t)}getClassName(){return"FlowGraphBranchBlock"}}i("FlowGraphBranchBlock",s);export{s as FlowGraphBranchBlock};
+//# sourceMappingURL=flowGraphBranchBlock-ZmiL2mZX.js.map

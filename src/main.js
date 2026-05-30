@@ -73,15 +73,7 @@ const previewFrameTarget = getPreviewFrameTargetFromQuery();
 const initialArenaId = sanitizeArenaId(getArenaIdFromQuery(), availableArenas);
 const sceneManager = new SceneManager(canvas);
 const arenaRenderer = new ArenaRenderer();
-
-sceneManager.init();
-window._scene = sceneManager.scene;
-window._sceneManager = sceneManager;
-sceneManager.scene.createDefaultEnvironment({
-  createGround: false,
-  createSkybox: false,
-});
-sceneManager.run();
+let mainMenuSceneRenderer = null;
 
 let loadToken = 0;
 
@@ -254,6 +246,7 @@ function buildApp() {
   elements.stage = document.createElement('main');
   elements.stage.className = 'vpg-stage';
   elements.stage.dataset.page = toDomPageId(getPage());
+  elements.stage.dataset.active = 'true';
   elements.stage.dataset.zoom = 'in';
   elements.stage.dataset.transition = 'idle';
 
@@ -529,6 +522,10 @@ function updateMenu() {
   const activePage = getPage(activePageKey);
   elements.stage.dataset.page = toDomPageId(activePage);
 
+  if (state.screen === 'main-menu') {
+    mainMenuSceneRenderer?.frameCamera(activePageKey);
+  }
+
   for (const pageKey of PAGE_KEYS) {
     const panel = elements.panels.get(pageKey);
     panel.dataset.active = String(pageKey === activePageKey && state.screen === 'main-menu');
@@ -645,16 +642,26 @@ function showScreen(screen) {
   const previousScreen = state.screen;
   state.screen = screen;
   const isMainMenu = screen === 'main-menu';
-  elements.stage.dataset.active = String(isMainMenu);
-  elements.controlsPage.dataset.active = String(screen === 'controls');
-  elements.arenaPage.dataset.active = String(screen === 'arena-viewer');
-  canvas.dataset.active = String(screen === 'arena-viewer' && state.arenaSceneOpen);
 
   if (screen === 'arena-viewer') {
     state.arenaSceneOpen = false;
-    canvas.dataset.active = 'false';
   } else if (previousScreen === 'arena-viewer') {
     closeArenaScene();
+  }
+
+  elements.stage.dataset.active = String(isMainMenu);
+  elements.controlsPage.dataset.active = String(screen === 'controls');
+  elements.arenaPage.dataset.active = String(screen === 'arena-viewer');
+  canvas.dataset.active = String(isMainMenu || (screen === 'arena-viewer' && state.arenaSceneOpen));
+
+  if (isMainMenu) {
+    mainMenuSceneRenderer?.show(getPageKey());
+  } else {
+    mainMenuSceneRenderer?.hide();
+  }
+
+  if (screen === 'arena-viewer') {
+    canvas.dataset.active = 'false';
   }
 
   setInstructionsOpen(false);
@@ -711,6 +718,7 @@ async function loadArena(arenaId) {
   const token = ++loadToken;
   state.arenaId = sanitizeArenaId(arenaId, availableArenas);
   state.arenaSceneOpen = true;
+  mainMenuSceneRenderer?.hide();
   canvas.dataset.active = 'true';
   const arena = availableArenas.find((candidate) => candidate.id === state.arenaId);
 
@@ -1058,5 +1066,43 @@ function handleGlobalKeyboard(event) {
   }
 }
 
+function startSceneEngine() {
+  try {
+    sceneManager.init();
+    window._scene = sceneManager.scene;
+    window._sceneManager = sceneManager;
+    sceneManager.scene.createDefaultEnvironment({
+      createGround: false,
+      createSkybox: false,
+    });
+    sceneManager.run();
+    return true;
+  } catch (error) {
+    canvas.dataset.active = 'false';
+    console.warn('3D scene failed to initialize.', error);
+    return false;
+  }
+}
+
+async function startMainMenuScene() {
+  canvas.dataset.active = 'true';
+
+  try {
+    const { MainMenuSceneRenderer } = await import('./renderer/MainMenuSceneRenderer.js');
+    mainMenuSceneRenderer = new MainMenuSceneRenderer();
+    await mainMenuSceneRenderer.init(sceneManager.scene, sceneManager.camera);
+
+    if (state.screen === 'main-menu') {
+      mainMenuSceneRenderer.show(getPageKey());
+    }
+  } catch (error) {
+    canvas.dataset.active = 'false';
+    console.warn('Main menu scene failed to load.', error);
+  }
+}
+
 buildApp();
+if (startSceneEngine()) {
+  startMainMenuScene();
+}
 document.addEventListener('keydown', handleGlobalKeyboard);

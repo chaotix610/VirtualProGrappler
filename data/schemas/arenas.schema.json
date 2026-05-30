@@ -78,6 +78,15 @@
         "type": "number"
       }
     },
+    "rotation": {
+      "description": "World-space Euler rotation for an arena part, in radians, ordered [x, y, z].",
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "number"
+      }
+    },
     "arena_part": {
       "oneOf": [
         {
@@ -93,6 +102,9 @@
             },
             "position": {
               "$ref": "#/$defs/position"
+            },
+            "rotation": {
+              "$ref": "#/$defs/rotation"
             }
           }
         }

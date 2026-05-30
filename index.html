@@ -91,7 +91,7 @@
       position: fixed;
       inset: 0;
       overflow: hidden;
-      background: #050507;
+      background: transparent;
       transition: opacity 150ms ease, visibility 150ms ease;
       pointer-events: auto;
     }
@@ -105,12 +105,8 @@
     .vpg-menu-background {
       position: absolute;
       inset: 0;
-      background-image:
-        linear-gradient(180deg, rgba(5, 5, 10, 0.05), rgba(0, 0, 0, 0.25)),
-        url("/assets/textures/ui/mainmenu_bg.png");
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: cover;
+      background:
+        linear-gradient(180deg, rgba(5, 5, 10, 0.08), rgba(0, 0, 0, 0.28));
       transform: scale(1.6);
       transform-origin: 22% 52%;
       transition:
