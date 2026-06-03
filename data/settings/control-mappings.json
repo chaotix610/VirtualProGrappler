@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "profile": "default",
+  "bindings": {
+    "dpadUp": ["ArrowUp"],
+    "dpadDown": ["ArrowDown"],
+    "dpadLeft": ["ArrowLeft"],
+    "dpadRight": ["ArrowRight"],
+    "controlStickUp": ["KeyW"],
+    "controlStickDown": ["KeyS"],
+    "controlStickLeft": ["KeyA"],
+    "controlStickRight": ["KeyD"],
+    "a": ["Enter"],
+    "b": ["Escape"],
+    "z": ["KeyZ"],
+    "l": ["KeyQ"],
+    "r": ["KeyE"],
+    "start": ["Space"],
+    "cUp": ["KeyI"],
+    "cDown": ["KeyK"],
+    "cLeft": ["KeyJ"],
+    "cRight": ["KeyL"]
+  }
+}

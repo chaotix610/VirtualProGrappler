@@ -1,6 +1,24 @@
+# Build output
+dist/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+
+# Agent / tooling local files
 CLAUDE.md
 AGENT.md
-docs/ui/main-menu-prompt.md
-docs/ui/main-menu-prompt.md.bak
 .agents
 .claude
+
+# Draft docs
+docs/ui/main-menu-prompt.md
+docs/ui/main-menu-prompt.md.bak

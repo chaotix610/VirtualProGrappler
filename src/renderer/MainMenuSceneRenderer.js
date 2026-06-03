@@ -11,25 +11,21 @@ import '@babylonjs/loaders/glTF/2.0/index.js';
 const MAIN_MENU_SCENE_GLB_PATH = 'assets/glb/ui/main-menu-scene.glb';
 const MAIN_MENU_TV_LOOP_PATH = 'assets/videos/main-menu-tv-loop.mp4';
 const CAMERA_TRANSITION_MS = 520;
+const BACK_WALL_CAMERA_ALPHA = Math.PI / 1.82 + Math.PI / 2;
+const BACK_WALL_CAMERA_BETA = Math.PI / 2.04;
 
 const CAMERA_VIEWS = {
   multiPlay: {
-    alpha: Math.PI / 1.82 + Math.PI / 2,
-    beta: Math.PI / 2.04,
     radius: 4.3,
     targetOffset: new Vector3(-5.8, 0.45, -0.2),
   },
   singlePlay: {
-    alpha: Math.PI / 1.98,
-    beta: Math.PI / 2.1,
-    radius: 11.4,
-    targetOffset: new Vector3(-1.35, 0.85, -0.2),
+    radius: 5.6,
+    targetOffset: new Vector3(-2.3, 0.55, -0.2),
   },
   commissioner: {
-    alpha: Math.PI / 2.16,
-    beta: Math.PI / 2.16,
-    radius: 12.8,
-    targetOffset: new Vector3(5.8, 0.75, 0.35),
+    radius: 6.3,
+    targetOffset: new Vector3(2.8, 0.65, -0.2),
   },
 };
 
@@ -39,9 +35,11 @@ export class MainMenuSceneRenderer {
     this.camera = null;
     this.meshes = [];
     this.bounds = null;
+    this.meshBounds = new Map();
     this.loaded = false;
     this.cameraAnimationFrame = null;
     this.hasFramedOnce = false;
+    this.currentPageKey = null;
     this.tvVideoMaterial = null;
     this.tvVideoTexture = null;
   }
@@ -55,6 +53,7 @@ export class MainMenuSceneRenderer {
     const result = await SceneLoader.ImportMeshAsync('', '', MAIN_MENU_SCENE_GLB_PATH, scene);
     this.meshes = result.meshes;
     this.bounds = this._calculateBounds(this.meshes);
+    this.meshBounds = this._calculateMeshBounds(this.meshes);
     this._applyTvLoop(scene);
     this.loaded = true;
     this.setActive(false);
@@ -74,6 +73,7 @@ export class MainMenuSceneRenderer {
     if (!this.hasFramedOnce) {
       this.snapCamera(pageKey);
       this.hasFramedOnce = true;
+      this.currentPageKey = pageKey;
       return;
     }
 
@@ -87,20 +87,21 @@ export class MainMenuSceneRenderer {
 
   frameCamera(pageKey = 'singlePlay') {
     if (!this.camera || !this.bounds) return;
+    if (pageKey === this.currentPageKey) return;
 
-    const view = CAMERA_VIEWS[pageKey] ?? CAMERA_VIEWS.singlePlay;
-    const target = this.bounds.center.add(view.targetOffset);
+    const { view, target } = this._resolveCameraView(pageKey);
     const maxDimension = Math.max(this.bounds.size.x, this.bounds.size.y, this.bounds.size.z);
     const radius = view.radius ?? Math.max(maxDimension * view.radiusScale, 18);
 
     this.camera.lowerRadiusLimit = Math.max(Math.min(maxDimension * 0.38, radius * 0.72), 1.2);
     this.camera.upperRadiusLimit = Math.max(maxDimension * 2.4, radius + 8);
     this._animateCameraTo({
-      alpha: view.alpha,
-      beta: view.beta,
+      alpha: BACK_WALL_CAMERA_ALPHA,
+      beta: BACK_WALL_CAMERA_BETA,
       radius,
       target,
     });
+    this.currentPageKey = pageKey;
   }
 
   _animateCameraTo({ alpha, beta, radius, target }) {
@@ -137,6 +138,17 @@ export class MainMenuSceneRenderer {
 
   _lerp(start, end, amount) {
     return start + (end - start) * amount;
+  }
+
+  _resolveCameraView(pageKey = 'singlePlay') {
+    const view = CAMERA_VIEWS[pageKey] ?? CAMERA_VIEWS.singlePlay;
+    const wallBack = this.meshBounds.get('wall_back');
+    const baseTarget = wallBack?.center ?? this.bounds.center;
+
+    return {
+      view,
+      target: baseTarget.add(view.targetOffset),
+    };
   }
 
   _applyTvLoop(scene) {
@@ -197,17 +209,17 @@ export class MainMenuSceneRenderer {
   snapCamera(pageKey = 'singlePlay') {
     if (!this.camera || !this.bounds) return;
 
-    const view = CAMERA_VIEWS[pageKey] ?? CAMERA_VIEWS.singlePlay;
-    const target = this.bounds.center.add(view.targetOffset);
+    const { view, target } = this._resolveCameraView(pageKey);
     const maxDimension = Math.max(this.bounds.size.x, this.bounds.size.y, this.bounds.size.z);
     const radius = view.radius ?? Math.max(maxDimension * view.radiusScale, 18);
 
-    this.camera.alpha = view.alpha;
-    this.camera.beta = view.beta;
+    this.camera.alpha = BACK_WALL_CAMERA_ALPHA;
+    this.camera.beta = BACK_WALL_CAMERA_BETA;
     this.camera.radius = radius;
     this.camera.lowerRadiusLimit = Math.max(Math.min(maxDimension * 0.38, radius * 0.72), 1.2);
     this.camera.upperRadiusLimit = Math.max(maxDimension * 2.4, radius + 8);
     this.camera.setTarget(target);
+    this.currentPageKey = pageKey;
   }
 
   dispose() {
@@ -228,8 +240,10 @@ export class MainMenuSceneRenderer {
 
     this.meshes = [];
     this.bounds = null;
+    this.meshBounds = new Map();
     this.loaded = false;
     this.hasFramedOnce = false;
+    this.currentPageKey = null;
     this.scene = null;
     this.camera = null;
   }
@@ -256,5 +270,25 @@ export class MainMenuSceneRenderer {
     const center = min.add(max).scale(0.5);
     const size = max.subtract(min);
     return { min, max, center, size };
+  }
+
+  _calculateMeshBounds(meshes) {
+    const bounds = new Map();
+
+    for (const mesh of meshes) {
+      if (!mesh?.name || !mesh?.getBoundingInfo || !mesh?.getTotalVertices || mesh.getTotalVertices() === 0) {
+        continue;
+      }
+
+      mesh.computeWorldMatrix?.(true);
+      const boundingBox = mesh.getBoundingInfo().boundingBox;
+      const min = boundingBox.minimumWorld.clone();
+      const max = boundingBox.maximumWorld.clone();
+      const center = min.add(max).scale(0.5);
+      const size = max.subtract(min);
+      bounds.set(mesh.name, { min, max, center, size });
+    }
+
+    return bounds;
   }
 }

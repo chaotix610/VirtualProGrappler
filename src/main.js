@@ -2,6 +2,7 @@ import { SceneManager } from './renderer/SceneManager.js';
 import { ArenaRenderer } from './renderer/ArenaRenderer.js';
 import '@babylonjs/core/Helpers/sceneHelpers.js';
 import mainMenuData from '../data/ui/main-menu.json';
+import DEFAULT_CONTROL_MAPPINGS from '../data/settings/control-mappings.json';
 
 const arenaModules = import.meta.glob('../data/arenas/*.json', {
   eager: true,
@@ -9,30 +10,6 @@ const arenaModules = import.meta.glob('../data/arenas/*.json', {
 });
 
 const PAGE_KEYS = ['multiPlay', 'singlePlay', 'commissioner'];
-const DEFAULT_CONTROL_MAPPINGS = {
-  version: '1.0.0',
-  profile: 'default',
-  bindings: {
-    dpadUp: ['ArrowUp'],
-    dpadDown: ['ArrowDown'],
-    dpadLeft: ['ArrowLeft'],
-    dpadRight: ['ArrowRight'],
-    controlStickUp: ['KeyW'],
-    controlStickDown: ['KeyS'],
-    controlStickLeft: ['KeyA'],
-    controlStickRight: ['KeyD'],
-    a: ['Enter'],
-    b: ['Escape'],
-    z: ['KeyZ'],
-    l: ['KeyQ'],
-    r: ['KeyE'],
-    start: ['Space'],
-    cUp: ['KeyI'],
-    cDown: ['KeyK'],
-    cLeft: ['KeyJ'],
-    cRight: ['KeyL'],
-  },
-};
 
 const CONTROL_ROWS = [
   { id: 'dpadUp', label: 'D-Pad Up', image: 'assets/textures/ui/button_dpad_up.png' },
