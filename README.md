@@ -2,11 +2,12 @@
 
 ![Virtual Pro Grappler](assets/artwork/vpg-box-art.png)
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![Code License: PolyForm Noncommercial](https://img.shields.io/badge/Code-PolyForm%20Noncommercial%201.0.0-orange.svg)
+![Assets License: CC BY-NC 4.0](https://img.shields.io/badge/Assets-CC%20BY--NC%204.0-orange.svg)
 ![Babylon.js](https://img.shields.io/badge/Babylon.js-9.x-gray?logo=babylondotjs)
 ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite&logoColor=white)
 
-Virtual Pro Grappler is an open-source professional wrestling game and engine inspired by the AKI-era N64 wrestling games: WWF No Mercy, Virtual Pro Wrestling 2, WCW/nWo Revenge, and related titles.
+Virtual Pro Grappler is a source-available, non-commercial professional wrestling game and engine inspired by the AKI-era N64 wrestling games: WWF No Mercy, Virtual Pro Wrestling 2, WCW/nWo Revenge, and related titles.
 
 The project is currently in an early engine and tooling phase. The focus right now is building the data model, UI flow, arena rendering pipeline, and control mapping foundation before full match gameplay comes online.
 
@@ -227,7 +228,23 @@ Game flow:
 - Championship/career progression.
 - Save/load.
 
+## Credits and Asset Sources
+
+External model and animation sources used or referenced for in-game content. Third-party assets retain their own licenses. Attribution requirements are listed below and must be preserved in any redistribution.
+
+| Source | Content | License | Notes |
+| --- | --- | --- | --- |
+| [KayKit](https://github.com/KayKit-Game-Assets) | Low-poly character and animation packs | CC0 1.0 | Public domain dedication; no attribution required |
+| [Quaternius](https://quaternius.com) | Low-poly models and animations | CC0 1.0 | Public domain dedication; no attribution required |
+| [Bandai Namco Research Motiondataset](https://github.com/BandaiNamcoResearchInc/Bandai-Namco-Research-Motiondataset) | Motion-capture animation data (BVH) | CC BY-NC 4.0 | Attribution to Bandai Namco Research required; changes must be indicated; non-commercial use only |
+
+The CC0 sources above carry no restrictions and remain public domain regardless of this project's license. The Bandai Namco motion data is CC BY-NC 4.0, which is why this project as a whole is non-commercial (see License).
+
 ## License
 
-Virtual Pro Grappler is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
+Virtual Pro Grappler is a non-commercial project and uses a dual-license arrangement:
 
+- **Code** — everything under `src/`, build tooling, and JSON schemas: [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/). See [LICENSE-CODE](LICENSE-CODE).
+- **Assets and content** — original artwork, models, textures, data, and bundled third-party assets: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). See [LICENSE-ASSETS](LICENSE-ASSETS).
+
+Both licenses permit free use, modification, and redistribution for **non-commercial** purposes. Neither permits selling the game or distributing builds derived from it commercially. Bundled third-party assets remain under their own licenses; see Credits and Asset Sources for attribution requirements.
