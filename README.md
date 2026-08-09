@@ -1,243 +1,152 @@
 # Virtual Pro Grappler
 
-![Virtual Pro Grappler](assets/artwork/vpg-box-art.png)
+An AKI-style pro wrestling engine built on Babylon.js, Vue 3 and Vite.
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-![Babylon.js](https://img.shields.io/badge/Babylon.js-9.x-gray?logo=babylondotjs)
-![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite&logoColor=white)
+The combat systems follow the reverse-engineered VPW2/No Mercy mechanics
+documented in [`docs/mechanics`](docs/mechanics): a hierarchical state
+machine, a four-factor damage formula, joint stamina, and spirit-based grapple
+reversals.
 
-Virtual Pro Grappler is an open-source professional wrestling game and engine inspired by the AKI-era N64 wrestling games: WWF No Mercy, Virtual Pro Wrestling 2, WCW/nWo Revenge, and related titles.
-
-The project is currently in an early engine and tooling phase. The focus right now is building the data model, UI flow, arena rendering pipeline, and control mapping foundation before full match gameplay comes online.
-
-## Current State
-
-What runs today:
-
-- A data-driven main menu built from `data/ui/main-menu.json`.
-- A single main menu with Multi Play, Single Play, and Commissioner submenus.
-- A Commissioner Controls screen with remappable keyboard bindings.
-- UI button texture support for D-pad, control stick, C-buttons, A, B, Z, Start, L, and R.
-- An Arena Viewer selection screen with arena preview images.
-- Babylon.js arena loading only after an arena is selected/opened.
-- Arena Viewer camera controls for rotate and zoom.
-- JSON schemas for main menu data, moves, and move slots.
-- Move and move-slot data files under `data/moves`.
-- Arena definitions under `data/arenas`.
-- Vite build/dev tooling and Vitest test setup.
-
-What is still in progress:
-
-- Match runtime and fighter controller.
-- Character loading and animation playback in match context.
-- Grapple, strike, reversal, damage, pin, and submission systems.
-- Full match setup flow.
-- Superstar select and character editor.
-- Save data, championship progression, and AI.
-
-## Project Goals
-
-The long-term goal is a legally clean, fully moddable wrestling game that preserves the feel of the N64 classics while using modern browser technology.
-
-Core principles:
-
-- Data-driven content: menus, arenas, moves, move slots, wrestlers, and match rules should live in JSON where practical.
-- Frame-deterministic gameplay: combat logic should be testable and reproducible.
-- N64-inspired presentation: low-poly assets, stylized textures, bold menu typography, and direct controller-driven UI.
-- Mod-friendly structure: adding arenas, wrestlers, moves, attires, and menu options should not require invasive engine changes.
-- Original final assets: the project may use classic games as design references, but final shipped content should be legally clean.
-
-## Running The Project
-
-Install dependencies:
+## Getting started
 
 ```bash
 npm install
+npm run dev        # http://localhost:8080
 ```
 
-Start the dev server:
+| Script | Does |
+|---|---|
+| `npm run dev` | Vite dev server |
+| `npm run build` | Typecheck, then production build |
+| `npm run typecheck` | `vue-tsc` over src and tests |
+| `npm test` | Vitest unit suite, including data validation |
+| `npm run test:watch` | Vitest in watch mode |
+| `npm run validate:data` | Schemas, asset references and menu targets in `data/` |
+| `npm run assets:promote` | Copy the shipped asset subset out of `assets/source` |
 
-```bash
-npm run dev
-```
-
-Build for production:
-
-```bash
-npm run build
-```
-
-Run tests:
-
-```bash
-npm run test
-```
-
-Preview a production build:
-
-```bash
-npm run preview
-```
-
-## Controls
-
-Controls are stored in browser `localStorage` and can be remapped from the Commissioner -> Controls screen.
-
-Default keyboard mappings:
-
-| Game input | Default key |
-| --- | --- |
-| D-Pad Up | ArrowUp |
-| D-Pad Down | ArrowDown |
-| D-Pad Left | ArrowLeft |
-| D-Pad Right | ArrowRight |
-| Control Stick Up | W |
-| Control Stick Down | S |
-| Control Stick Left | A |
-| Control Stick Right | D |
-| A | Enter |
-| B | Escape |
-| Z | Z |
-| L | Q |
-| R | E |
-| Start | Space |
-| C-Up | I |
-| C-Down | K |
-| C-Left | J |
-| C-Right | L |
-
-Current Arena Viewer controls after opening an arena:
-
-| Game input | Action |
-| --- | --- |
-| Control Stick Up | Rotate arena down |
-| Control Stick Down | Rotate arena up |
-| Control Stick Left | Rotate arena right |
-| Control Stick Right | Rotate arena left |
-| C-Up | Zoom in |
-| C-Down | Zoom out |
-| B | Exit back to arena selection |
-
-## Data And Content
-
-Important data files:
-
-| Path | Purpose |
-| --- | --- |
-| `data/ui/main-menu.json` | Main menu page, item, target, and instruction data |
-| `data/schemas/main-menu.schema.json` | Schema for the main menu data |
-| `data/arenas/*.json` | Arena IDs, display names, preview images, and render data |
-| `data/moves/moves.json` | Move database |
-| `data/moves/move-slots.json` | Input/context move-slot mapping data |
-| `data/schemas/moves.schema.json` | Schema for move definitions |
-| `data/schemas/move-slots.schema.json` | Schema for move-slot definitions |
-
-Important docs:
-
-| Path | Purpose |
-| --- | --- |
-| `docs/ui/main-menu.md` | Main menu flow reference |
-| `docs/ui/superstar-select.md` | Superstar select planning/reference |
-| `docs/mechanics/move-slots.md` | Move-slot design reference |
-| `docs/mechanics/move-damage.md` | Damage formula research |
-| `docs/mechanics/REVERSALS.md` | Reversal-system research |
-| `docs/mechanics/HSFM Blueprint.md` | Hierarchical state machine plan |
-
-## Rendering And Assets
-
-The runtime uses Babylon.js for rendering. The current render path is centered on arena loading:
-
-- `src/renderer/SceneManager.js` creates the Babylon engine, scene, camera, and base light.
-- `src/renderer/ArenaRenderer.js` loads arena/ring GLB assets and applies arena data.
-- `src/renderer/MaterialManager.js` handles material and texture setup.
-- `src/main.js` currently owns the menu shell, controls screen, arena selector, and viewer input.
-
-Key asset folders:
-
-| Path | Purpose |
-| --- | --- |
-| `assets/glb/arena` | Arena and arena prop GLB files |
-| `assets/glb/ring` | Ring GLB files |
-| `assets/textures/arena` | Arena textures and preview images |
-| `assets/textures/ring` | Ring, canvas, rope, post, and turnbuckle textures |
-| `assets/textures/ui` | Menu backgrounds, headings, button icons, and fonts |
-| `assets/models/blender` | Source Blender files |
-
-## Project Structure
+## Layout
 
 ```text
 .
-├── assets/              # Artwork, GLB files, Blender files, textures, UI assets
+├── assets/
+│   ├── runtime/         # Served at the site root: GLB models, textures, favicon
+│   ├── artwork/         # Logo and menu backgrounds
+│   ├── textures/        # Arena, ring and UI art, plus menu fonts
+│   ├── schema/          # Measured geometry manifests for the ring assets
+│   └── source/          # Blender, Quaternius and Mixamo originals, never shipped
 ├── data/                # JSON content and JSON schemas
+│   ├── moves/           # Move catalog and slot definitions
+│   ├── arenas/          # One file per arena
+│   ├── ui/              # Main menu pages and copy
+│   ├── schemas/         # JSON schemas for the content files
+│   └── settings/        # Default control mappings
 ├── docs/                # UI, environment, and mechanics documentation
 ├── src/
-│   ├── data/            # Data loading helpers
-│   ├── renderer/        # Babylon.js scene, arena, and material renderers
-│   └── main.js          # Current UI shell and arena viewer runtime
-├── tests/               # Vitest tests
-├── index.html           # App entry point and current UI styles
-├── package.json         # Scripts and dependencies
-└── vite.config.js       # Vite config
+│   ├── combat/          # Damage, reversals, wrestler state, match
+│   ├── data/            # Data loading helpers and asset resolution
+│   ├── game/            # Movement, input, virtual controller, tuning
+│   ├── renderer/        # Babylon scenes, arena viewer, ropes, animation
+│   ├── sim/             # Fixed timestep, input buffer, seeded RNG
+│   ├── ui/              # Vue shell, menu, mapper, arena viewer, debug overlay
+│   └── main.ts          # App entry
+├── tests/
+│   ├── unit/            # Vitest
+│   └── browser/         # Playwright scripts driving the real game
+├── tools/               # Asset pipeline (Blender) and data validation
+├── index.html
+├── package.json
+└── vite.config.ts
 ```
 
-## Technology
+### Assets
 
-| Layer | Current technology |
-| --- | --- |
-| Runtime | Vanilla JavaScript ES modules |
-| Renderer | Babylon.js 9 |
-| Bundler/dev server | Vite 5 |
-| Tests | Vitest |
-| Schema validation | AJV |
-| Audio dependency | Howler.js |
-| Data format | JSON |
-| 3D source assets | Blender |
-| Runtime 3D assets | GLB |
+`assets/source` is the authoring tree — ~265MB of Blender, Quaternius, Mixamo
+and raw GLB originals. **Nothing there reaches the browser.** The shipped
+subset is copied out by:
 
-## Roadmap
+```bash
+npm run assets:promote        # copy anything missing or stale
+npm run assets:promote -- --check   # report drift without changing anything
+```
 
-Near-term:
+The manifest in [`tools/promote-assets.mjs`](tools/promote-assets.mjs) is the
+record of what ships and where it lands, so a working asset tree is
+reproducible from source rather than something assembled by hand.
 
-- Continue polishing the main menu, controls, and arena viewer.
-- Expand and validate move/move-slot schemas.
-- Add more arena data and preview coverage.
-- Move large inline UI code toward dedicated modules as screens stabilize.
+There are two destinations, because there are two ways a file reaches the
+browser — `assets/runtime/**` is Vite's public directory, served at the site
+root, and `assets/glb/**` and `assets/textures/**` are bundled and referenced
+from JSON by repository path.
 
-Gameplay foundation:
+Consumers do not need to know which is which:
+[`resolveAsset()`](src/data/assets.ts) takes a path as authored and returns a
+URL either way. That is the single entry point — new code should not build
+asset URLs by hand.
 
-- Fixed-step game loop and input buffer.
-- Fighter entity model.
-- Hierarchical fighter state machine.
-- Movement, running, facing, and interaction regions.
-- Strike and grapple initiation.
-- Move resolver and move execution.
+## Menu
 
-Combat systems:
+The app opens on a data-driven menu defined by
+[`data/ui/main-menu.json`](data/ui/main-menu.json):
 
-- Damage calculation.
-- Limb stamina and health caps.
-- Reversal windows and probability rules.
-- Pins, submissions, rope breaks, count outs, and match rules.
+```text
+Main Menu
+├── Multi Play          (not implemented)
+├── Single Play         (not implemented)
+└── Commissioner
+    ├── Smackdown Mall
+    │   └── Combat System Test   → the playable prototype
+    ├── Options         (not implemented)
+    ├── Arena Viewer    → the arena viewer
+    └── Controls        → the control mapper
+```
 
-Game flow:
+The **Arena Viewer** lists the ten arenas in [`data/arenas/`](data/arenas/)
+with their preview art, and renders the selected one: the ring, two sets of
+steps, and the environment GLBs the arena file names, with its texture and
+colour overrides applied. The control stick orbits the camera, `C-Up`/`C-Down`
+zoom, `Esc` closes. It renders the ring's static rope meshes rather than the
+elastic `RingRopes` system, which is gameplay rather than presentation.
 
-- Match setup screens.
-- Superstar select.
-- Character data, attires, parameters, and move assignment.
-- Championship/career progression.
-- Save/load.
+Menus are driven by a virtual N64 pad rather than raw keys: arrows or `W`/`S`
+move the cursor, `Enter` selects, `Esc` goes back, and `Z` shows the
+instructions panel for the highlighted item. Rebinding any of those in
+Controls changes the menus with it.
 
-## Credits and Asset Sources
+The control mapper lists all 18 pad inputs, warns before taking a key that is
+already in use, persists to `localStorage` under `vpg-control-mappings`, and
+can reset to defaults or export the active mapping as JSON.
 
-External model and animation sources used for in-game content. All bundled third-party assets are CC0 (public domain dedication), which is compatible with this project's GPLv3 distribution.
+## Controls
 
-| Source | Content | License |
-| --- | --- | --- |
-| [KayKit](https://github.com/KayKit-Game-Assets) | Low-poly character and animation packs | CC0 1.0 |
-| [Quaternius](https://quaternius.com) | Low-poly models and animations | CC0 1.0 |
+| Input | Action |
+|---|---|
+| `W` `A` `S` `D` | Move |
+| `Shift` | Run — alone runs ahead; press a direction first to run that way |
+| `J` | Punch |
+| `K` | Kick |
+| `L` | Jump |
+| `P` | Block, or roll while running |
 
-CC0 carries no attribution requirement, but crediting these creators here is good practice and keeps provenance clear for contributors and modders.
+Running into the ropes rebounds across the ring; running into a corner climbs
+to the top rope.
 
-## License
+> These are the in-match prototype bindings, and they are **separate from the
+> pad mapping the menus use**. `InputController` still has its own hardcoded
+> keys, while the menus and the control mapper go through the N64 pad mapping
+> in `data/settings/control-mappings.json`. Rebinding in Controls therefore
+> changes menu navigation but not gameplay yet. The move slots in
+> `data/moves/move-slots.json` are written against that same pad, so gameplay
+> is the side still to be reconciled.
 
-Virtual Pro Grappler is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
+## Asset pipeline
+
+For now, Character GLBs are built by retargeting the source (Quaternius) animation libraries
+onto the base characters:
+
+```bash
+blender --background --python tools/blender_retarget.py
+```
+
+This reads from `assets/source` and writes to `assets/runtime/models`. See the
+script's header for why the retarget is delta-based rather than a direct
+channel copy.

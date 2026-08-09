@@ -59,14 +59,26 @@
           "$ref": "#/definitions/displayText"
         },
         "target": {
-          "type": "string",
-          "description": "Menu page key, dot-delimited target route, or game state id.",
-          "pattern": "^[a-z][A-Za-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          "$ref": "#/definitions/target"
         },
         "instructions": {
           "$ref": "#/definitions/instructions"
         }
       }
+    },
+    "target": {
+      "description": "Where selecting the item goes. Either a bare camelCase key in `pages`, which navigates to that page, or a dot-delimited route id handled by the application.",
+      "type": "string",
+      "anyOf": [
+        {
+          "title": "Page key",
+          "pattern": "^[a-z][a-zA-Z0-9]*$"
+        },
+        {
+          "title": "Route id",
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+        }
+      ]
     },
     "instructions": {
       "type": "object",

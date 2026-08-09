@@ -233,7 +233,7 @@
         {
           "id": "smackdown_mall",
           "displayName": "Smackdown Mall",
-          "target": "commissioner.smackdown_mall",
+          "target": "smackdownMall",
           "instructions": {
             "title": "<< Smackdown Mall >>",
             "blocks": [
@@ -286,6 +286,27 @@
               {
                 "type": "paragraph",
                 "text": "Set the inputs and controls for Virtual Pro Grappler."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "smackdownMall": {
+      "id": "smackdown_mall",
+      "displayName": "Smackdown Mall",
+      "headingImage": "assets/textures/ui/heading_commissioner.png",
+      "menuItems": [
+        {
+          "id": "combat_system_test",
+          "displayName": "Combat System Test",
+          "target": "test.combat_system",
+          "instructions": {
+            "title": "<< Combat System Test >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Enter the ring and drive the combat systems directly. Movement, strikes, rope rebounds, and the corner climb are live, with the damage and joint stamina readout on screen."
               }
             ]
           }

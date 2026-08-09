@@ -1,6 +1,6 @@
 #  🎮 **Grapple Reversal System (AKI‑Style)** 
 
-This document describes how AKI wrestling games (WWF No Mercy, WM2K, VPW2, etc.) determine whether a **grapple move** is reversed. VPG Engine replicates this logic unless otherwise overridden.
+This document describes how our game engine must determine whether a **grapple move** is reversed. Based on AKI wrestling games (WWF No Mercy, WM2K, VPW2, etc.)
 
 ##  **Overview**
 
@@ -19,7 +19,6 @@ This system applies to:
 - Ground Grapples (identical table)
 - Turnbuckle Grapples
 - Apron Grapples
-- All AKI titles
 
 ## 🎮 **Reversal Input Window**
 

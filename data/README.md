@@ -1,101 +1,105 @@
 # data/
 
-This directory contains all structured reference data for VPG Engine. It is the source of truth for game rules, move definitions, slot structures, character rosters, and data schemas.
+Structured content for the VPG engine: move definitions, slot structures,
+arenas, menu content, control bindings, and the schemas describing them.
 
-No system explanations or design rationale live here — for that, see `docs/`. This directory is purely reference data.
+No design rationale lives here — for how the systems work, see `docs/`.
 
----
+## Contents
 
-## Directory Structure
-
-```
+```text
 data/
-├── README.md               ← this file
+├── README.md
 ├── moves/
-│   ├── README.md           ← explains the moves directory
-│   ├── move-slots.md       ← human-readable slot definitions (authoritative)
-│   └── move-database.json  ← programmatic master move list
-│
-├── characters/
-│   ├── README.md           ← explains the characters directory
-│   └── roster.json         ← list of all playable characters
-│
+│   ├── moves.json              master move list (919 moves)
+│   └── move-slots.json         slot definitions (138 slots)
+├── arenas/
+│   └── <arena>.json            one file per arena, 10 so far
+├── ui/
+│   └── main-menu.json          menu pages, items, and instruction copy
+├── settings/
+│   └── control-mappings.json   default N64 pad -> keyboard bindings
+├── characters/                 empty; per-character data not started
 └── schemas/
-    ├── README.md           ← explains the schemas directory
-    └── move-slots.json     ← JSON schema for the slot system structure
+    ├── moves.schema.json
+    ├── move-slots.schema.json
+    ├── arenas.schema.json
+    └── main-menu.schema.json
 ```
 
----
+## Validation
 
-## Core Concepts
+```bash
+npm run validate:data
+```
 
-### Move Slots
-A **move slot** is a named input combination available to every wrestler, defined by position and context. Every wrestler has the same set of slots — what differs between wrestlers is which move is assigned to each slot.
+Checks three things, and also runs as part of `npm test`:
 
-See `moves/move-slots.md` for the full slot reference.
-
-### Moves
-A **move** is a named action from the master move database. Moves are assigned to slots on a per-character basis in `assets/characters/{character}/moves.json`.
-
-See `moves/move-database.json` for the full move list.
-
-### Move Assignments
-A **move assignment** is the relationship between a slot and the move a specific character has assigned to it. These live in `assets/characters/{character}/moves.json`, not in this directory.
-
----
-
-## Shared Constants
-
-These values are used across multiple files in this directory and throughout the engine. They are defined here as the single authoritative reference.
-
-### Power Tier Scale
-
-Move power is expressed as a single letter grade on the following scale:
-
-| Tier | Description |
-|---|---|
-| `S` | Strongest — match-defining moves |
-| `A` | Very heavy damage |
-| `B` | Heavy damage |
-| `C` | Significant damage |
-| `D` | Moderate damage |
-| `E` | Minor damage |
-| `F` | Light damage |
-| `G` | Weakest — quick, low-damage moves |
-
-The scale runs `S → A → B → C → D → E → F → G` from strongest to weakest.
-
-### Move Features
-
-A move's `feature` property describes a special outcome it triggers on successful execution:
-
-| Value | Description |
-|---|---|
-| `Pin` | Move transitions directly into a pin attempt |
-| `Submit` | Move applies a submission hold |
-| `null` | No special outcome |
-
-### Boolean Flags
-
-| Flag | Description |
-|---|---|
-| `ko` | If `true`, this move can cause a knockout when the opponent's damage is sufficiently high |
-| `bleed` | If `true`, this move can open a blade job (cause the opponent to bleed) |
-
----
+1. **Schema conformance.** `main-menu.schema.json` is draft-07; the rest are
+   2020-12. The validator picks the matching ajv build per file.
+2. **Asset references.** Every `assets/...` string must name a file that
+   exists. Deliberate exceptions live in `PENDING_ASSETS` in
+   `tools/validate-data.mjs`.
+3. **Menu targets.** A target with no dot names a page and must resolve.
 
 ## Conventions
 
-- All filenames use **kebab-case**: `move-database.json`, `move-slots.md`
-- JSON files use **camelCase** for property names: `eligibleSlots`, `powerTier`
-- Markdown files are the human-readable authority — if a `.md` and `.json` file conflict, the `.md` is correct until reconciled
-- Schema files in `data/schemas/` define the structure of data files — they are not data themselves
+- Filenames are kebab-case: `move-slots.json`, `main-menu.schema.json`.
+- **Property naming is split, by file.** `moves.json` and `move-slots.json`
+  use `snake_case` (`move_id`, `slot_display_name`); `arenas/*.json` and
+  `ui/main-menu.json` use `camelCase` (`displayName`, `ringOverrides`). This
+  is a real inconsistency, not a rule — follow whichever file you are editing,
+  and do not "fix" one in isolation, since the loaders and schemas are written
+  against the existing shapes.
+- Asset paths are repository paths from the root (`assets/textures/...`), not
+  URLs. `src/data/assets.ts` maps them to real URLs at build time.
+- Schemas in `schemas/` describe data; they are not data themselves.
 
----
+## Core concepts
+
+### Move slots
+A **slot** is a named input/state combination available to every wrestler.
+Every wrestler has the same slots; what differs is the move assigned to each.
+
+### Moves
+A **move** is an entry in `moves/moves.json`. A move's `groups` reference group
+identifiers from `move-slots.json` — the move becomes eligible for every slot
+in any group it belongs to.
+
+Note that 62 `move_id`s appear twice, as weak and strong variants; `move_id` is
+unique only together with `position`.
+
+### Power tiers
+
+`S → A → B → C → D → E → F → G`, strongest to weakest. `null` is allowed for
+moves that do no damage.
+
+### Features and flags
+
+| Field | Meaning |
+|---|---|
+| `feature: "Pin"` | Transitions directly into a pin attempt |
+| `feature: "Submit"` | Applies a submission hold |
+| `feature: null` | No special outcome |
+| `ko` | Can cause a knockout at sufficient damage |
+| `bleed` | Can open a blade job |
+
+## Known data issues
+
+- 58 moves reference a `running_strike` group that no slot defines, so they
+  cannot currently be selected. Pinned by a test in `tests/unit/data.test.ts`.
+- **8 of the 10 arenas share `apron_raw.png`**, the RAW is WAR apron, as
+  placeholder art. Only King of the Ring has its own, and WrestleMania has
+  none. The renderer is applying these correctly — the art is the gap.
+- WrestleMania has no `mat_canvas`, `mat_apron` or `mat_turnbuckle` override;
+  it falls back to the ring's own materials until bespoke art exists.
+- `characters/` is empty. Per-character move assignments are not started; the
+  four playable profiles are currently hardcoded in `src/combat/profiles.ts`.
+- The barricade GLB's material is **unnamed**, so `arenaOverrides` can never
+  target it and no arena can retexture the barricade. It needs re-exporting
+  with a named material.
 
 ## Related
 
-- `assets/characters/` — Per-character move assignments and model data
-- `docs/mechanics/` — Explanations of how game systems work
-- `docs/environment/` — Explanations of environmental systems
-- `CONTRIBUTING.md` — How to contribute data, documentation, and research
+- `docs/mechanics/` — how the combat systems work
+- `src/data/` — the loaders that read these files

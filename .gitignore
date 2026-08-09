@@ -1,24 +1,39 @@
+# Dependencies
+node_modules/
+
 # Build output
 dist/
 
-# Dependencies
-node_modules/
+# Asset authoring tree — ~267MB of Blender, Quaternius and Mixamo originals.
+# Nothing here ships. The subset that does is committed under assets/runtime,
+# assets/textures, assets/glb and assets/artwork, and is copied out of this
+# tree by `npm run assets:promote`.
+assets/source/
+
+# Local env
+.env.local
+.env.*.local
 
 # Logs
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Agent / AI tooling — local only, never published
+CLAUDE.md
+AGENT.md
+AGENTS.md
+.claude/
+.agents/
+.codex
+docs/**/claude-*.md
 
 # OS / editor noise
 .DS_Store
 Thumbs.db
-*.swp
-
-# Agent / tooling local files
-CLAUDE.md
-AGENT.md
-.agents
-.claude
-
-# Draft docs
-docs/ui/main-menu-prompt.md
-docs/ui/main-menu-prompt.md.bak
+.idea/
+.vscode/
+*.sw?
+*.suo
