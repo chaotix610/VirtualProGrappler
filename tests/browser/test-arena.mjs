@@ -117,7 +117,7 @@ const variety = await page.evaluate(() => {
 check("the arena renders geometry, not a blank clear colour", variety > 3, `${variety} distinct colours`);
 
 // --- camera ----------------------------------------------------------------
-const shot = async (name) => {
+const shot = async () => {
   const b = await page.locator(".viewer__canvas").screenshot();
   return b.length;
 };

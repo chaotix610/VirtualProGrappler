@@ -10,6 +10,23 @@ Virtual Pro Grappler is an open-source professional wrestling game and engine in
 
 The project is currently in an early engine and tooling phase. The focus right now is building the data model, UI flow, arena rendering pipeline, and control mapping foundation before full match gameplay comes online.
 
+## Current State
+
+What runs today:
+
+- A data-driven main menu built from `data/ui/main-menu.json`.
+- A single main menu with Multi Play, Single Play, and Commissioner submenus.
+- A Commissioner Controls screen with remappable keyboard bindings.
+- UI button texture support for D-pad, control stick, C-buttons, A, B, Z, Start, L, and R.
+- An Arena Viewer selection screen with arena preview images.
+- A combat system tester with player and opponent, in a ring, with stats heads-up display
+- Babylon.js arena loading only after an arena is selected/opened.
+- Arena Viewer camera controls for rotate and zoom.
+- JSON schemas for main menu data, moves, and move slots.
+- Move and move-slot data files under `data/moves`.
+- Arena definitions under `data/arenas`.
+- Vite build/dev tooling and Vitest test setup.
+
 ## Getting started
 
 ```bash
