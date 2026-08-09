@@ -227,6 +227,17 @@ Game flow:
 - Championship/career progression.
 - Save/load.
 
+## Credits and Asset Sources
+
+External model and animation sources used for in-game content. All bundled third-party assets are CC0 (public domain dedication), which is compatible with this project's GPLv3 distribution.
+
+| Source | Content | License |
+| --- | --- | --- |
+| [KayKit](https://github.com/KayKit-Game-Assets) | Low-poly character and animation packs | CC0 1.0 |
+| [Quaternius](https://quaternius.com) | Low-poly models and animations | CC0 1.0 |
+
+CC0 carries no attribution requirement, but crediting these creators here is good practice and keeps provenance clear for contributors and modders.
+
 ## License
 
 Virtual Pro Grappler is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
