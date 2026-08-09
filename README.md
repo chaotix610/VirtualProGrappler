@@ -15,7 +15,7 @@ The project is currently in an early engine and tooling phase. The focus right n
 What runs today:
 
 - A data-driven main menu built from `data/ui/main-menu.json`.
-- Three primary menu pages: Multi Play, Single Play, and Commissioner.
+- A single main menu with Multi Play, Single Play, and Commissioner submenus.
 - A Commissioner Controls screen with remappable keyboard bindings.
 - UI button texture support for D-pad, control stick, C-buttons, A, B, Z, Start, L, and R.
 - An Arena Viewer selection screen with arena preview images.
@@ -230,4 +230,3 @@ Game flow:
 ## License
 
 Virtual Pro Grappler is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE).
-

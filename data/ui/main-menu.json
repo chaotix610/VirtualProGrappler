@@ -2,6 +2,55 @@
   "$schema": "data/schemas/main-menu.schema.json",
   "version": "1.0.0",
   "pages": {
+    "mainMenu": {
+      "id": "main_menu",
+      "displayName": "Main Menu",
+      "headingImage": "assets/artwork/vpg-logo.png",
+      "menuItems": [
+        {
+          "id": "multi_play",
+          "displayName": "Multi Play",
+          "target": "multiPlay",
+          "instructions": {
+            "title": "<< Multi Play >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Open multiplayer match types and events."
+              }
+            ]
+          }
+        },
+        {
+          "id": "single_play",
+          "displayName": "Single Play",
+          "target": "singlePlay",
+          "instructions": {
+            "title": "<< Single Play >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Open single-player game modes."
+              }
+            ]
+          }
+        },
+        {
+          "id": "commissioner",
+          "displayName": "Commissioner",
+          "target": "commissioner",
+          "instructions": {
+            "title": "<< Commissioner >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Open setup, options, arena viewer, and controls."
+              }
+            ]
+          }
+        }
+      ]
+    },
     "multiPlay": {
       "id": "multi_play",
       "displayName": "Multi Play",

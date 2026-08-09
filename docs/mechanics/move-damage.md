@@ -1,8 +1,8 @@
 # Damage System
 
-### _Authoritative Mechanics Based on AKI/VPW2 Behavior_
+### Engine Mechanics
 
-This section documents how the AKI Engine / VPG Engine models wrestler health, limb stamina, move parameters, and damage calculations. These systems are derived from reverse‑engineered VPW2 logic and are reproduced here with full accuracy.
+This section documents how our engine must model wrestler health, limb stamina, move parameters, and damage calculations. These systems are derived from reverse‑engineered VPW2 logic and are reproduced here with full accuracy.
 
 # 1. Health System
 

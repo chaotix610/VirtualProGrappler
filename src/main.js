@@ -9,7 +9,8 @@ const arenaModules = import.meta.glob('../data/arenas/*.json', {
   import: 'default',
 });
 
-const PAGE_KEYS = ['multiPlay', 'singlePlay', 'commissioner'];
+const ROOT_MENU_KEY = 'mainMenu';
+const MENU_KEYS = Object.keys(mainMenuData.pages);
 
 const CONTROL_ROWS = [
   { id: 'dpadUp', label: 'D-Pad Up', image: 'assets/textures/ui/button_dpad_up.png' },
@@ -41,8 +42,6 @@ const CONTROL_ACTIONS = [
 const LOCAL_STORAGE_KEY = 'vpg-control-mappings';
 const ARENA_VIEW_ROTATION_STEP = Math.PI / 48;
 const ARENA_VIEW_ZOOM_STEP = 1.2;
-const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
-
 const app = document.getElementById('app');
 const canvas = document.getElementById('vpg-canvas');
 const availableArenas = getAvailableArenas();
@@ -50,20 +49,17 @@ const previewFrameTarget = getPreviewFrameTargetFromQuery();
 const initialArenaId = sanitizeArenaId(getArenaIdFromQuery(), availableArenas);
 const sceneManager = new SceneManager(canvas);
 const arenaRenderer = new ArenaRenderer();
-let mainMenuSceneRenderer = null;
 
 let loadToken = 0;
 
 const state = {
   screen: 'main-menu',
-  pageIndex: 0,
+  activeMenuKey: ROOT_MENU_KEY,
   arenaIndex: Math.max(availableArenas.findIndex((arena) => arena.id === initialArenaId), 0),
   arenaId: initialArenaId,
   arenaSceneOpen: false,
-  itemIndices: Object.fromEntries(PAGE_KEYS.map((pageKey) => [pageKey, 0])),
+  itemIndices: Object.fromEntries(MENU_KEYS.map((pageKey) => [pageKey, 0])),
   instructionsOpen: false,
-  transitionInProgress: false,
-  queuedDirection: 0,
   controlsIndex: 0,
   listeningControlId: null,
   pendingBinding: null,
@@ -146,16 +142,35 @@ function toDomPageId(page) {
 }
 
 function getPageKey() {
-  return PAGE_KEYS[state.pageIndex];
+  return state.activeMenuKey;
 }
 
 function getPage(pageKey = getPageKey()) {
   return mainMenuData.pages[pageKey];
 }
 
-function getActiveItem(pageKey = getPageKey()) {
+function getMenuItems(pageKey = getPageKey()) {
   const page = getPage(pageKey);
-  return page.menuItems[state.itemIndices[pageKey] ?? 0];
+  const items = [...page.menuItems];
+
+  if (pageKey !== ROOT_MENU_KEY) {
+    items.push({
+      id: 'back',
+      displayName: 'Back',
+      target: ROOT_MENU_KEY,
+      instructions: {
+        title: '<< Back >>',
+        blocks: [{ type: 'paragraph', text: 'Return to the main menu.' }],
+      },
+    });
+  }
+
+  return items;
+}
+
+function getActiveItem(pageKey = getPageKey()) {
+  const items = getMenuItems(pageKey);
+  return items[state.itemIndices[pageKey] ?? 0];
 }
 
 function normalizeKeyCode(event) {
@@ -222,10 +237,7 @@ function buildApp() {
 
   elements.stage = document.createElement('main');
   elements.stage.className = 'vpg-stage';
-  elements.stage.dataset.page = toDomPageId(getPage());
   elements.stage.dataset.active = 'true';
-  elements.stage.dataset.zoom = 'in';
-  elements.stage.dataset.transition = 'idle';
 
   const background = document.createElement('div');
   background.className = 'vpg-menu-background';
@@ -233,7 +245,7 @@ function buildApp() {
   const chrome = document.createElement('div');
   chrome.className = 'vpg-menu-chrome';
 
-  for (const pageKey of PAGE_KEYS) {
+  for (const pageKey of MENU_KEYS) {
     const panel = buildMenuPanel(pageKey);
     chrome.append(panel);
     elements.panels.set(pageKey, panel);
@@ -277,7 +289,7 @@ function buildMenuPanel(pageKey) {
   list.setAttribute('role', 'menu');
   list.setAttribute('aria-label', page.displayName);
 
-  const itemNodes = page.menuItems.map((item, index) => {
+  const itemNodes = getMenuItems(pageKey).map((item, index) => {
     const node = document.createElement('li');
     node.className = 'vpg-menu-item';
     node.dataset.id = item.id;
@@ -286,7 +298,7 @@ function buildMenuPanel(pageKey) {
     node.tabIndex = 0;
     node.textContent = item.displayName;
     node.addEventListener('click', () => {
-      state.pageIndex = PAGE_KEYS.indexOf(pageKey);
+      state.activeMenuKey = pageKey;
       state.itemIndices[pageKey] = index;
       updateMenu();
       openActiveTarget();
@@ -499,11 +511,7 @@ function updateMenu() {
   const activePage = getPage(activePageKey);
   elements.stage.dataset.page = toDomPageId(activePage);
 
-  if (state.screen === 'main-menu') {
-    mainMenuSceneRenderer?.frameCamera(activePageKey);
-  }
-
-  for (const pageKey of PAGE_KEYS) {
+  for (const pageKey of MENU_KEYS) {
     const panel = elements.panels.get(pageKey);
     panel.dataset.active = String(pageKey === activePageKey && state.screen === 'main-menu');
 
@@ -519,6 +527,8 @@ function updateMenu() {
 
 function updateInstructionsContent() {
   const item = getActiveItem();
+  if (!item?.instructions) return;
+
   elements.modalTitle.textContent = item.instructions.title;
   elements.modalBody.textContent = '';
 
@@ -550,53 +560,24 @@ function setInstructionsOpen(isOpen) {
   elements.modal.dataset.state = modalState;
 }
 
-async function switchPage(direction) {
-  if (state.transitionInProgress) {
-    state.queuedDirection = direction;
-    return;
-  }
-
-  state.transitionInProgress = true;
-  setInstructionsOpen(false);
-  elements.stage.dataset.transition = 'hiding';
-  for (const panel of elements.panels.values()) panel.dataset.active = 'false';
-  await sleep(150);
-
-  elements.stage.dataset.zoom = 'out';
-  elements.stage.dataset.transition = 'zoom-out';
-  await sleep(400);
-
-  state.pageIndex = (state.pageIndex + direction + PAGE_KEYS.length) % PAGE_KEYS.length;
-  elements.stage.dataset.page = toDomPageId(getPage());
-  elements.stage.dataset.zoom = 'in';
-  elements.stage.dataset.transition = 'zoom-in';
-  await sleep(420);
-
-  elements.stage.dataset.transition = 'showing';
-  updateMenu();
-  await sleep(150);
-
-  elements.stage.dataset.transition = 'idle';
-  state.transitionInProgress = false;
-
-  const queuedDirection = state.queuedDirection;
-  state.queuedDirection = 0;
-  if (queuedDirection) {
-    switchPage(queuedDirection);
-  }
-}
-
 function moveCursor(direction) {
   const pageKey = getPageKey();
-  const page = getPage(pageKey);
+  const items = getMenuItems(pageKey);
   const currentIndex = state.itemIndices[pageKey] ?? 0;
-  state.itemIndices[pageKey] = (currentIndex + direction + page.menuItems.length) % page.menuItems.length;
+  state.itemIndices[pageKey] = (currentIndex + direction + items.length) % items.length;
   updateMenu();
 }
 
 function openActiveTarget() {
   const item = getActiveItem();
   setInstructionsOpen(false);
+
+  if (mainMenuData.pages[item.target]) {
+    state.activeMenuKey = item.target;
+    state.itemIndices[item.target] = state.itemIndices[item.target] ?? 0;
+    updateMenu();
+    return;
+  }
 
   if (item.target === 'commissioner.controls') {
     showScreen('controls');
@@ -630,12 +611,7 @@ function showScreen(screen) {
   elements.controlsPage.dataset.active = String(screen === 'controls');
   elements.arenaPage.dataset.active = String(screen === 'arena-viewer');
   canvas.dataset.active = String(isMainMenu || (screen === 'arena-viewer' && state.arenaSceneOpen));
-
-  if (isMainMenu) {
-    mainMenuSceneRenderer?.show(getPageKey());
-  } else {
-    mainMenuSceneRenderer?.hide();
-  }
+  if (isMainMenu) canvas.dataset.active = 'false';
 
   if (screen === 'arena-viewer') {
     canvas.dataset.active = 'false';
@@ -695,7 +671,6 @@ async function loadArena(arenaId) {
   const token = ++loadToken;
   state.arenaId = sanitizeArenaId(arenaId, availableArenas);
   state.arenaSceneOpen = true;
-  mainMenuSceneRenderer?.hide();
   canvas.dataset.active = 'true';
   const arena = availableArenas.find((candidate) => candidate.id === state.arenaId);
 
@@ -708,6 +683,10 @@ async function loadArena(arenaId) {
   }
 
   try {
+    if (!startSceneEngine()) {
+      throw new Error('Scene engine failed to initialize.');
+    }
+
     await arenaRenderer.init(sceneManager.scene, state.arenaId);
 
     if (token !== loadToken) {
@@ -724,6 +703,9 @@ async function loadArena(arenaId) {
 
     updateArenaPage();
   } catch (error) {
+    state.arenaSceneOpen = false;
+    canvas.dataset.active = 'false';
+    updateArenaPage();
     if (elements.arenaStatus) {
       elements.arenaStatus.textContent = 'Load failed';
     }
@@ -851,22 +833,6 @@ function runControlAction(actionId) {
 }
 
 function handleMainMenuInput(input, event) {
-  if (state.transitionInProgress && (input === 'left' || input === 'right')) {
-    event.preventDefault();
-    state.queuedDirection = input === 'left' ? -1 : 1;
-    return;
-  }
-
-  if (state.transitionInProgress) {
-    return;
-  }
-
-  if (input === 'left' || input === 'right') {
-    event.preventDefault();
-    switchPage(input === 'left' ? -1 : 1);
-    return;
-  }
-
   if (input === 'up' || input === 'down') {
     event.preventDefault();
     moveCursor(input === 'up' ? -1 : 1);
@@ -887,6 +853,12 @@ function handleMainMenuInput(input, event) {
 
   if (input === 'b') {
     event.preventDefault();
+    if (state.activeMenuKey !== ROOT_MENU_KEY && !state.instructionsOpen) {
+      state.activeMenuKey = ROOT_MENU_KEY;
+      updateMenu();
+      return;
+    }
+
     setInstructionsOpen(false);
   }
 }
@@ -1044,6 +1016,10 @@ function handleGlobalKeyboard(event) {
 }
 
 function startSceneEngine() {
+  if (sceneManager.engine) {
+    return true;
+  }
+
   try {
     sceneManager.init();
     window._scene = sceneManager.scene;
@@ -1061,25 +1037,5 @@ function startSceneEngine() {
   }
 }
 
-async function startMainMenuScene() {
-  canvas.dataset.active = 'true';
-
-  try {
-    const { MainMenuSceneRenderer } = await import('./renderer/MainMenuSceneRenderer.js');
-    mainMenuSceneRenderer = new MainMenuSceneRenderer();
-    await mainMenuSceneRenderer.init(sceneManager.scene, sceneManager.camera);
-
-    if (state.screen === 'main-menu') {
-      mainMenuSceneRenderer.show(getPageKey());
-    }
-  } catch (error) {
-    canvas.dataset.active = 'false';
-    console.warn('Main menu scene failed to load.', error);
-  }
-}
-
 buildApp();
-if (startSceneEngine()) {
-  startMainMenuScene();
-}
 document.addEventListener('keydown', handleGlobalKeyboard);

@@ -60,8 +60,8 @@
         },
         "target": {
           "type": "string",
-          "description": "Dot-delimited target route or game state id.",
-          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+          "description": "Menu page key, dot-delimited target route, or game state id.",
+          "pattern": "^[a-z][A-Za-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
         },
         "instructions": {
           "$ref": "#/definitions/instructions"
