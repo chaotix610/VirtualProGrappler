@@ -1,11 +1,14 @@
 # Virtual Pro Grappler
 
-An AKI-style pro wrestling engine built on Babylon.js, Vue 3 and Vite.
+![Virtual Pro Grappler](assets/artwork/vpg-box-art.png)
 
-The combat systems follow the reverse-engineered VPW2/No Mercy mechanics
-documented in [`docs/mechanics`](docs/mechanics): a hierarchical state
-machine, a four-factor damage formula, joint stamina, and spirit-based grapple
-reversals.
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![Babylon.js](https://img.shields.io/badge/Babylon.js-9.x-gray?logo=babylondotjs)
+![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite&logoColor=white)
+
+Virtual Pro Grappler is an open-source professional wrestling game and engine inspired by the AKI-era N64 wrestling games: WWF No Mercy, Virtual Pro Wrestling 2, WCW/nWo Revenge, and related titles.
+
+The project is currently in an early engine and tooling phase. The focus right now is building the data model, UI flow, arena rendering pipeline, and control mapping foundation before full match gameplay comes online.
 
 ## Getting started
 
