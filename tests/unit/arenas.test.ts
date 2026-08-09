@@ -1,7 +1,38 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { arenaById, arenaParts, availableArenas } from "@/data/arenas";
 import { cssColorToRgb } from "@/renderer/cssColor";
 import { resolveAsset } from "@/data/assets";
+
+const GLB_HEADER_BYTES = 12;
+const GLB_CHUNK_HEADER_BYTES = 8;
+const GLB_JSON_CHUNK = "JSON";
+
+function materialNamesInGlb(path: string): string[] {
+  const data = readFileSync(path);
+  let offset = GLB_HEADER_BYTES;
+
+  while (offset < data.length) {
+    const chunkLength = data.readUInt32LE(offset);
+    const chunkType = data.toString(
+      "ascii",
+      offset + 4,
+      offset + GLB_CHUNK_HEADER_BYTES
+    );
+    offset += GLB_CHUNK_HEADER_BYTES;
+
+    if (chunkType === GLB_JSON_CHUNK) {
+      const json = JSON.parse(data.subarray(offset, offset + chunkLength).toString("utf8"));
+      return (json.materials ?? [])
+        .map((material: { name?: string }) => material.name)
+        .filter((name: string | undefined): name is string => Boolean(name));
+    }
+
+    offset += chunkLength;
+  }
+
+  return [];
+}
 
 describe("arena catalog", () => {
   const arenas = availableArenas();
@@ -121,6 +152,31 @@ describe("every arena's referenced assets resolve", () => {
     }
 
     expect(unparseable).toEqual([]);
+  });
+
+  it("targets materials that exist in each arena's GLB parts", () => {
+    const unknown: string[] = [];
+    const materialCache = new Map<string, string[]>();
+
+    for (const summary of availableArenas()) {
+      const arena = arenaById(summary.id)!;
+      const materialNames = new Set<string>();
+
+      for (const part of arenaParts(arena)) {
+        const cached =
+          materialCache.get(part.glb) ??
+          materialNamesInGlb(part.glb);
+        materialCache.set(part.glb, cached);
+        for (const name of cached) materialNames.add(name);
+      }
+
+      for (const key of Object.keys(arena.arenaOverrides ?? {})) {
+        if (key.endsWith("Color")) continue;
+        if (!materialNames.has(key)) unknown.push(`${summary.id}: ${key}`);
+      }
+    }
+
+    expect(unknown).toEqual([]);
   });
 });
 

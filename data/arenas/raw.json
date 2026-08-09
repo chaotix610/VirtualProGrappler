@@ -7,9 +7,9 @@
     "assets/glb/arena/barricade.glb"
   ],
   "arenaOverrides": {
-    "mat_floor_cut_4x8": "assets/textures/arena/floor_mat_1.png",
-    "mat_floor_8x8": "assets/textures/arena/floor_mat_1_double.png",
-    "Material_1": "assets/textures/arena/floor_mat_1_double.png"
+    "mat_floor_ringside_corners": "assets/textures/arena/floor_mat_1.png",
+    "mat_floor_ringside": "assets/textures/arena/floor_mat_1_double.png",
+    "mat_ringside_barricade": "assets/textures/arena/floor_mat_1_double.png"
   },
   "ringOverrides": {
     "mat_canvas": "assets/textures/ring/shared/canvas.png",

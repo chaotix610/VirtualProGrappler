@@ -95,9 +95,6 @@ moves that do no damage.
   it falls back to the ring's own materials until bespoke art exists.
 - `characters/` is empty. Per-character move assignments are not started; the
   four playable profiles are currently hardcoded in `src/combat/profiles.ts`.
-- The barricade GLB's material is **unnamed**, so `arenaOverrides` can never
-  target it and no arena can retexture the barricade. It needs re-exporting
-  with a named material.
 
 ## Related
 
