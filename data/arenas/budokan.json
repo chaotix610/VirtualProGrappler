@@ -21,7 +21,7 @@
     "ropeTopColor": "rgba(255, 0, 0, 0.4)",
     "ropeMiddleColor": "rgba(255, 255, 255, 0.4)",
     "ropeBottomColor": "rgba(0, 0, 255, 0.4)",
-    "postColor": "rgba(0, 0, 255, 0.4)",
+    "postColor": "rgba(0, 0, 0, 0)",
     "turnbucklePadColor": "rgba(0, 0, 0, 1)"
   }
 }

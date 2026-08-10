@@ -18,7 +18,7 @@
     "mat_rope_middle": "assets/textures/ring/shared/rope.png",
     "mat_rope_bottom": "assets/textures/ring/shared/rope.png",
     "ropeColor": "rgba(255, 0, 0, 0.4)",
-    "postColor": "#000000",
-    "turnbucklePadColor": "#FF0000"
+    "postColor": "rgba(0, 0, 0, 0)",
+    "turnbucklePadColor": "rgba(0, 0, 0, 1)"
   }
 }

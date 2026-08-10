@@ -113,7 +113,7 @@ export default defineComponent({
     },
 
     backgroundStyle(): Record<string, string> {
-      const url = resolveAsset("assets/artwork/mainbg.jpg");
+      const url = resolveAsset("assets/artwork/arena1.png");
       return url ? { backgroundImage: `url(${url})` } : {};
     },
   },
