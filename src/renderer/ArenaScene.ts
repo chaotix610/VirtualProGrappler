@@ -269,18 +269,26 @@ export class ArenaScene {
 
   /** Replaces the steps' 1x1 placeholder with the real art. */
   private applyDefaultStepsTexture(): void {
+    const materials = new Set<Material>();
     for (const mesh of this.stepsMeshes) {
       if (mesh.material?.name === "mat_ring_steps") {
-        this.swapTexture(mesh.material, DEFAULT_STEPS_TEXTURE);
-        return;
+        materials.add(mesh.material);
       }
+    }
+
+    for (const material of materials) {
+      this.swapTexture(material, DEFAULT_STEPS_TEXTURE);
     }
   }
 
   private applyOverrides(arena: ArenaData): string[] {
     const warnings: string[] = [];
     warnings.push(
-      ...this.applyTo(this.ringMeshes, arena.ringOverrides, "ringOverrides")
+      ...this.applyTo(
+        [...this.ringMeshes, ...this.stepsMeshes],
+        arena.ringOverrides,
+        "ringOverrides"
+      )
     );
     warnings.push(
       ...this.applyTo(this.arenaMeshes, arena.arenaOverrides, "arenaOverrides")
@@ -295,9 +303,12 @@ export class ArenaScene {
   ): string[] {
     if (!overrides) return [];
 
-    const byName = new Map<string, Material>();
+    const byName = new Map<string, Set<Material>>();
     for (const mesh of meshes) {
-      if (mesh.material?.name) byName.set(mesh.material.name, mesh.material);
+      if (!mesh.material?.name) continue;
+      const materials = byName.get(mesh.material.name) ?? new Set<Material>();
+      materials.add(mesh.material);
+      byName.set(mesh.material.name, materials);
     }
 
     const warnings: string[] = [];
@@ -306,12 +317,12 @@ export class ArenaScene {
         this.applyColor(byName, key, value);
         continue;
       }
-      const material = byName.get(key);
-      if (!material) {
+      const materials = byName.get(key);
+      if (!materials?.size) {
         warnings.push(`${label}: no material named "${key}"`);
         continue;
       }
-      this.swapTexture(material, value);
+      for (const material of materials) this.swapTexture(material, value);
     }
     return warnings;
   }
@@ -339,7 +350,7 @@ export class ArenaScene {
   }
 
   private applyColor(
-    byName: Map<string, Material>,
+    byName: Map<string, Set<Material>>,
     key: string,
     cssColor: string
   ): void {
@@ -347,12 +358,14 @@ export class ArenaScene {
     if (!rgb) return;
 
     for (const name of this.colorTargets(key)) {
-      const material = byName.get(name);
-      if (!material) continue;
-      if (material instanceof PBRMaterial) {
-        material.albedoColor.set(rgb.r, rgb.g, rgb.b);
-      } else if (material instanceof StandardMaterial) {
-        material.diffuseColor.set(rgb.r, rgb.g, rgb.b);
+      const materials = byName.get(name);
+      if (!materials) continue;
+      for (const material of materials) {
+        if (material instanceof PBRMaterial) {
+          material.albedoColor.set(rgb.r, rgb.g, rgb.b);
+        } else if (material instanceof StandardMaterial) {
+          material.diffuseColor.set(rgb.r, rgb.g, rgb.b);
+        }
       }
     }
   }
