@@ -122,8 +122,8 @@ Main Menu
 
 The **Arena Viewer** lists the ten arenas in [`data/arenas/`](data/arenas/)
 with their preview art, and renders the selected one: the ring, two sets of
-steps, and the environment GLBs the arena file names, with its texture and
-colour overrides applied. The control stick orbits the camera, `C-Up`/`C-Down`
+steps, and the environment GLBs the arena file names, with its configured
+textures and colours applied. The control stick orbits the camera, `C-Up`/`C-Down`
 zoom, `Esc` closes. It renders the ring's static rope meshes rather than the
 elastic `RingRopes` system, which is gameplay rather than presentation.
 
@@ -170,3 +170,49 @@ blender --background --python tools/blender_retarget.py
 This reads from `assets/source` and writes to `assets/runtime/models`. See the
 script's header for why the retarget is delta-based rather than a direct
 channel copy.
+
+Characters modelled as separate body parts — one mesh and one texture each —
+go through a second step, which
+[`prepare-character-glb.mjs`](tools/prepare-character-glb.mjs) applies on the
+way out of the source tree:
+
+- clears the `alphaMode: MASK` and `doubleSided` flags Blender puts on every
+  material, neither of which the model needs;
+- packs the per-part textures into one atlas and rewrites the UVs into it, so
+  the parts share a material and can later merge into a single skinned mesh;
+- lower-cases node names, so a bone-mapping table keyed on part names cannot
+  miss one.
+
+It runs as part of `npm run assets:promote` rather than by hand, because a
+re-export undoes all three. `tests/unit/characterAssets.test.ts` fails if a raw
+export reaches `assets/runtime` unprepared, and `assets:promote` rebuilds it.
+
+### Rigging a modular character
+
+Austin is rigged to the same 65-bone skeleton the Quaternius characters use,
+lifted straight out of `Superhero_Male.glb` — which matters, because that
+armature already carries all sixteen clips. Reusing it means the clips apply
+directly and no retarget is needed.
+
+Two things make that work:
+
+- **The bind is rigid.** Each of the 21 body parts is weighted 1.0 to exactly
+  one bone, with no weight painting. On a blocky model that is not a
+  compromise, it is the point: the hard edges survive, and it is how the
+  console-era models were built.
+- **The mesh was moved to the skeleton, not the other way round.** Austin was
+  authored in an A-pose and the clips are authored against a T-pose rest. Bending
+  the skeleton to match him would have invalidated every clip, so his arm
+  chains were rotated up into the T-pose instead — exact, on rigid boxes, and
+  it leaves the rest pose untouched.
+
+Only along-axis joint fitting was applied on top of that (the elbow along X,
+the ankle along Z), which changes segment lengths without re-orienting a bone,
+so the clips stay valid.
+
+The rigged scene is kept at `assets/source/characters/steve_austin_rigged.blend`
+so the rig can be edited without redoing it.
+
+> His part names are mirrored: the mesh called `arm_left` sits at −X, which is
+> anatomically his right. The bind map in the .blend is by position, not by
+> name — worth knowing before trusting a `_left`/`_right` suffix on this model.

@@ -47,7 +47,7 @@ Checks three things, and also runs as part of `npm test`:
 - Filenames are kebab-case: `move-slots.json`, `main-menu.schema.json`.
 - **Property naming is split, by file.** `moves.json` and `move-slots.json`
   use `snake_case` (`move_id`, `slot_display_name`); `arenas/*.json` and
-  `ui/main-menu.json` use `camelCase` (`displayName`, `ringOverrides`). This
+  `ui/main-menu.json` use `camelCase` (`displayName`, `ringTextures`). This
   is a real inconsistency, not a rule — follow whichever file you are editing,
   and do not "fix" one in isolation, since the loaders and schemas are written
   against the existing shapes.
@@ -91,7 +91,7 @@ moves that do no damage.
 - **8 of the 10 arenas share `apron_raw.png`**, the RAW is WAR apron, as
   placeholder art. Only King of the Ring has its own, and WrestleMania has
   none. The renderer is applying these correctly — the art is the gap.
-- WrestleMania has no `mat_canvas`, `mat_apron` or `mat_turnbuckle` override;
+- WrestleMania has no `mat_canvas`, `mat_apron` or `mat_turnbuckle` texture;
   it falls back to the ring's own materials until bespoke art exists.
 - `characters/` is empty. Per-character move assignments are not started; the
   four playable profiles are currently hardcoded in `src/combat/profiles.ts`.

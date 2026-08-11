@@ -50,15 +50,23 @@ export interface CharacterDefinition {
   label: string;
   /** GLB file holding the rigged mesh plus every clip in REQUIRED_CLIPS. */
   file: string;
-  /** Material whose albedo texture gets swapped for the skin tone. */
-  bodyMaterial: string;
+  /**
+   * Material whose albedo texture gets swapped for the skin tone.
+   *
+   * Only meaningful for the Quaternius roster, where one shared mesh is
+   * re-skinned per variant. A bespoke character - one modelled and textured as
+   * itself, rather than as a tone of a base body - has no such material and
+   * leaves this unset, along with `bodyTexture` and `tint`.
+   */
+  bodyMaterial?: string;
   /**
    * Albedo texture file for this variant, resolved against TEXTURE_ROOT.
    * Omitted for
    * models that already ship the right texture.
    */
   bodyTexture?: string;
-  tone: SkinTone;
+  /** Which tone this variant represents, where the model is a re-skin. */
+  tone?: SkinTone;
   /**
    * Albedo multiplier applied over the texture, as [r, g, b].
    *
@@ -128,6 +136,22 @@ export const CHARACTERS: CharacterDefinition[] = [
     tone: "dark",
     tint: DARK_TINT,
     swatch: "#6d4830",
+  },
+  /**
+   * The first bespoke character: modelled and textured as himself rather than
+   * as a tone of a shared base body, so he names no `bodyMaterial` and takes
+   * no tint. His shading is painted into the texture and his material is
+   * marked unlit, which is what gives the low-poly roster its flat look.
+   *
+   * Deliberately last: `opponentFor` picks the first entry on a different
+   * mesh, so putting him earlier would hand the Quaternius characters an
+   * opponent that has no animation clips yet.
+   */
+  {
+    id: "steve-austin",
+    label: "Austin",
+    file: "steve_austin.glb",
+    swatch: "#2b2b2e",
   },
 ];
 

@@ -36,13 +36,13 @@
         "$ref": "#/$defs/arena_part"
       }
     },
-    "arenaOverrides": {
-      "description": "Texture overrides for arena/environment materials. Keys are material names.",
-      "$ref": "#/$defs/material_overrides"
+    "arenaTextures": {
+      "description": "Textures for arena/environment materials. Keys are material names.",
+      "$ref": "#/$defs/material_textures"
     },
-    "ringOverrides": {
-      "description": "Texture and color overrides for the ring GLB.",
-      "$ref": "#/$defs/ring_overrides"
+    "ringTextures": {
+      "description": "Textures and colors for the ring GLB. Keys are material names or supported color keys.",
+      "$ref": "#/$defs/ring_textures"
     }
   },
   "allOf": [
@@ -110,32 +110,32 @@
         }
       ]
     },
-    "material_override_value": {
+    "material_texture_value": {
       "description": "A texture path string, or null to keep/clear based on renderer-specific behavior.",
       "oneOf": [
         { "$ref": "#/$defs/asset_path" },
         { "type": "null" }
       ]
     },
-    "material_overrides": {
+    "material_textures": {
       "type": "object",
       "additionalProperties": {
-        "$ref": "#/$defs/material_override_value"
+        "$ref": "#/$defs/material_texture_value"
       }
     },
-    "ring_overrides": {
+    "ring_textures": {
       "type": "object",
       "properties": {
-        "mat_canvas": { "$ref": "#/$defs/material_override_value" },
-        "mat_apron": { "$ref": "#/$defs/material_override_value" },
-        "mat_rope_top": { "$ref": "#/$defs/material_override_value" },
-        "mat_rope_middle": { "$ref": "#/$defs/material_override_value" },
-        "mat_rope_bottom": { "$ref": "#/$defs/material_override_value" },
-        "mat_turnbuckle": { "$ref": "#/$defs/material_override_value" },
-        "mat_turnbuckle_cover": { "$ref": "#/$defs/material_override_value" },
-        "mat_turnbuckle_bolt_cover": { "$ref": "#/$defs/material_override_value" },
-        "mat_turnbuckle_bolt_1": { "$ref": "#/$defs/material_override_value" },
-        "mat_turnbuckle_bolt_2": { "$ref": "#/$defs/material_override_value" },
+        "mat_canvas": { "$ref": "#/$defs/material_texture_value" },
+        "mat_apron": { "$ref": "#/$defs/material_texture_value" },
+        "mat_rope_top": { "$ref": "#/$defs/material_texture_value" },
+        "mat_rope_middle": { "$ref": "#/$defs/material_texture_value" },
+        "mat_rope_bottom": { "$ref": "#/$defs/material_texture_value" },
+        "mat_turnbuckle": { "$ref": "#/$defs/material_texture_value" },
+        "mat_turnbuckle_cover": { "$ref": "#/$defs/material_texture_value" },
+        "mat_turnbuckle_bolt_cover": { "$ref": "#/$defs/material_texture_value" },
+        "mat_turnbuckle_bolt_1": { "$ref": "#/$defs/material_texture_value" },
+        "mat_turnbuckle_bolt_2": { "$ref": "#/$defs/material_texture_value" },
         "canvasColor": { "$ref": "#/$defs/css_color" },
         "ropeColor": { "$ref": "#/$defs/css_color" },
         "ropeTopColor": { "$ref": "#/$defs/css_color" },
@@ -145,7 +145,7 @@
         "turnbucklePadColor": { "$ref": "#/$defs/css_color" }
       },
       "additionalProperties": {
-        "$ref": "#/$defs/material_override_value"
+        "$ref": "#/$defs/material_texture_value"
       }
     }
   }

@@ -6,12 +6,12 @@
     "assets/glb/arena/arena-floor.glb",
     "assets/glb/arena/barricade.glb"
   ],
-  "arenaOverrides": {
+  "arenaTextures": {
     "mat_floor_ringside_corners": "assets/textures/arena/floor_mat_1.png",
     "mat_floor_ringside": "assets/textures/arena/floor_mat_1_double.png",
     "mat_ringside_barricade": "assets/textures/arena/floor_mat_1_double.png"
   },
-  "ringOverrides": {
+  "ringTextures": {
     "mat_canvas": "assets/textures/ring/shared/canvas.png",
     "mat_apron": "assets/textures/ring/apron_raw.png",
     "mat_rope_top": "assets/textures/ring/shared/rope.png",

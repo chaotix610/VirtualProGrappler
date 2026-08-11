@@ -553,6 +553,11 @@ export class GameScene {
     definition: CharacterDefinition,
     meshes: AbstractMesh[]
   ): void {
+    // A bespoke character ships its own textures and names no body material,
+    // so there is no re-skin to do. Checked before the lookup because an
+    // undefined name would otherwise match any unnamed material it met.
+    if (!definition.bodyMaterial) return;
+
     const material = meshes
       .map((m) => m.material)
       .find((m) => m?.name === definition.bodyMaterial);

@@ -116,7 +116,7 @@ describe("arena parts", () => {
 });
 
 describe("every arena's referenced assets resolve", () => {
-  it("resolves each part GLB and override texture", () => {
+  it("resolves each part GLB and configured texture", () => {
     const unresolved: string[] = [];
 
     for (const summary of availableArenas()) {
@@ -126,8 +126,8 @@ describe("every arena's referenced assets resolve", () => {
         if (!resolveAsset(part.glb)) unresolved.push(`${summary.id}: ${part.glb}`);
       }
 
-      for (const overrides of [arena.ringOverrides, arena.arenaOverrides]) {
-        for (const [key, value] of Object.entries(overrides ?? {})) {
+      for (const textures of [arena.ringTextures, arena.arenaTextures]) {
+        for (const [key, value] of Object.entries(textures ?? {})) {
           // `*Color` keys hold CSS colours, not asset paths.
           if (key.endsWith("Color")) continue;
           if (!resolveAsset(value)) unresolved.push(`${summary.id}.${key}: ${value}`);
@@ -138,13 +138,13 @@ describe("every arena's referenced assets resolve", () => {
     expect(unresolved).toEqual([]);
   });
 
-  it("parses every colour override the arenas use", () => {
+  it("parses every colour setting the arenas use", () => {
     const unparseable: string[] = [];
 
     for (const summary of availableArenas()) {
       const arena = arenaById(summary.id)!;
-      for (const overrides of [arena.ringOverrides, arena.arenaOverrides]) {
-        for (const [key, value] of Object.entries(overrides ?? {})) {
+      for (const textures of [arena.ringTextures, arena.arenaTextures]) {
+        for (const [key, value] of Object.entries(textures ?? {})) {
           if (!key.endsWith("Color")) continue;
           if (!cssColorToRgb(value)) unparseable.push(`${summary.id}.${key}: ${value}`);
         }
@@ -170,7 +170,7 @@ describe("every arena's referenced assets resolve", () => {
         for (const name of cached) materialNames.add(name);
       }
 
-      for (const key of Object.keys(arena.arenaOverrides ?? {})) {
+      for (const key of Object.keys(arena.arenaTextures ?? {})) {
         if (key.endsWith("Color")) continue;
         if (!materialNames.has(key)) unknown.push(`${summary.id}: ${key}`);
       }

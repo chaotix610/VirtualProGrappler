@@ -32,12 +32,18 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { isPreparedGlb, prepareCharacterGlb } from "./prepare-character-glb.mjs";
+
 const root = fileURLToPath(new URL("..", import.meta.url));
 const at = (...parts) => path.join(root, ...parts);
 
 /**
  * The shipped subset. Everything the build needs out of assets/source, and
  * nowhere else — if a file is not listed here, it does not reach the browser.
+ *
+ * Most entries are a straight copy. An entry with `via` is run through a
+ * transform instead, for assets that need processing between the authoring
+ * export and the runtime tree.
  */
 const MANIFEST = [
   {
@@ -60,6 +66,15 @@ const MANIFEST = [
     to: "assets/glb/arena/barricade.glb",
     why: "arenaParts in every data/arenas/*.json",
   },
+  {
+    from: "assets/source/characters/steve_austin.glb",
+    to: "assets/runtime/models/steve_austin.glb",
+    // Unlit: the shading is painted into the textures, so the scene lights
+    // must not apply a second pass of it.
+    via: (from, to) => prepareCharacterGlb(from, to, { unlit: true }),
+    why: "playable character; the Blender export needs its material flags " +
+      "cleared and its thirteen textures atlased before it is usable",
+  },
 ];
 
 /** Whether two files differ, by size then bytes. */
@@ -69,6 +84,26 @@ function differs(fromPath, toPath) {
   const b = fs.statSync(toPath);
   if (a.size !== b.size) return true;
   return !fs.readFileSync(fromPath).equals(fs.readFileSync(toPath));
+}
+
+/**
+ * Whether a transformed output needs rebuilding.
+ *
+ * A transform's output never equals its input, so the byte comparison above
+ * cannot answer this. Modification time is the usable signal: the output is
+ * stale if it is missing or older than either the source asset or the
+ * transform itself, so editing the tool rebuilds everything it produces.
+ */
+function transformStale(fromPath, toPath) {
+  if (!fs.existsSync(toPath)) return true;
+  // A raw export copied over the output is newer than its own source, so the
+  // timestamps below would call it current. Ask the file what it is instead.
+  if (!isPreparedGlb(toPath)) return true;
+
+  const out = fs.statSync(toPath).mtimeMs;
+  if (fs.statSync(fromPath).mtimeMs > out) return true;
+  const tool = at("tools", "prepare-character-glb.mjs");
+  return fs.existsSync(tool) && fs.statSync(tool).mtimeMs > out;
 }
 
 /** Copies anything missing or stale. Returns what it did, and any problems. */
@@ -86,7 +121,10 @@ export function promoteAssets({ check = false } = {}) {
       continue;
     }
 
-    if (!differs(fromPath, toPath)) continue;
+    const outdated = entry.via
+      ? transformStale(fromPath, toPath)
+      : differs(fromPath, toPath);
+    if (!outdated) continue;
 
     if (check) {
       stale.push(`${entry.to} is missing or out of date`);
@@ -94,8 +132,13 @@ export function promoteAssets({ check = false } = {}) {
     }
 
     fs.mkdirSync(path.dirname(toPath), { recursive: true });
-    fs.copyFileSync(fromPath, toPath);
-    copied.push(`${entry.from} -> ${entry.to}`);
+    if (entry.via) {
+      entry.via(fromPath, toPath);
+      copied.push(`${entry.from} -> ${entry.to} (transformed)`);
+    } else {
+      fs.copyFileSync(fromPath, toPath);
+      copied.push(`${entry.from} -> ${entry.to}`);
+    }
   }
 
   return { copied, stale, missing };

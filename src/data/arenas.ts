@@ -12,7 +12,7 @@ import { resolveAsset } from "./assets";
  */
 
 /** A texture path, or a CSS colour for the `*Color` keys. */
-export type MaterialOverrides = Record<string, string>;
+export type MaterialTextures = Record<string, string>;
 
 export interface ArenaPartSpec {
   glb: string;
@@ -29,8 +29,8 @@ export interface ArenaData {
   /** Legacy single-GLB field, superseded by arenaParts. */
   arenaGlb?: string;
   arenaParts?: (string | ArenaPartSpec)[];
-  arenaOverrides?: MaterialOverrides;
-  ringOverrides?: MaterialOverrides;
+  arenaTextures?: MaterialTextures;
+  ringTextures?: MaterialTextures;
 }
 
 /** One entry in the viewer's selection list. */

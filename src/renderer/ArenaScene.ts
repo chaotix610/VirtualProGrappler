@@ -23,8 +23,7 @@ import { cssColorToRgb } from "./cssColor";
 
 /**
  * Renders one arena for the Arena Viewer: the ring, two sets of steps, and
- * whatever environment the arena file lists, with its material overrides
- * applied.
+ * whatever environment the arena file lists, with its configured textures.
  *
  * Deliberately does *not* use RingRopes. Rope elasticity is a gameplay system
  * driven by the character controller; a viewer only needs to look at the ring,
@@ -43,7 +42,7 @@ const RING_STEPS_PATH = "assets/glb/arena/ring-steps.glb";
  * by this renderer rather than listed in arena data, there is nowhere in the
  * data for it to be named.
  *
- * Applied before the arena's own overrides, so a future arena file that names
+ * Applied before the arena's own textures, so a future arena file that names
  * `mat_ring_steps` still wins.
  */
 const DEFAULT_STEPS_TEXTURE = "assets/textures/arena/ring_steps.png";
@@ -204,7 +203,7 @@ export class ArenaScene {
       this.arenaMeshes.push(...meshes);
     }
 
-    warnings.push(...this.applyOverrides(arena));
+    warnings.push(...this.applyTextures(arena));
     this.frameCamera();
 
     return { warnings };
@@ -281,27 +280,27 @@ export class ArenaScene {
     }
   }
 
-  private applyOverrides(arena: ArenaData): string[] {
+  private applyTextures(arena: ArenaData): string[] {
     const warnings: string[] = [];
     warnings.push(
       ...this.applyTo(
         [...this.ringMeshes, ...this.stepsMeshes],
-        arena.ringOverrides,
-        "ringOverrides"
+        arena.ringTextures,
+        "ringTextures"
       )
     );
     warnings.push(
-      ...this.applyTo(this.arenaMeshes, arena.arenaOverrides, "arenaOverrides")
+      ...this.applyTo(this.arenaMeshes, arena.arenaTextures, "arenaTextures")
     );
     return warnings;
   }
 
   private applyTo(
     meshes: AbstractMesh[],
-    overrides: Record<string, string> | undefined,
+    textures: Record<string, string> | undefined,
     label: string
   ): string[] {
-    if (!overrides) return [];
+    if (!textures) return [];
 
     const byName = new Map<string, Set<Material>>();
     for (const mesh of meshes) {
@@ -312,7 +311,7 @@ export class ArenaScene {
     }
 
     const warnings: string[] = [];
-    for (const [key, value] of Object.entries(overrides)) {
+    for (const [key, value] of Object.entries(textures)) {
       if (key.endsWith("Color")) {
         this.applyColor(byName, key, value);
         continue;

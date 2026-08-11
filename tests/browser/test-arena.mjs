@@ -3,7 +3,7 @@ import { mkdirSync } from "node:fs";
 
 /**
  * Drives the Arena Viewer against the acceptance criteria in
- * claude-arena-viewer.md: selection, preview, load, overrides, camera, close.
+ * claude-arena-viewer.md: selection, preview, load, textures, camera, close.
  *
  * Navigation goes through real key events so the virtual controller layer is
  * exercised rather than bypassed.

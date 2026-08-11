@@ -98,6 +98,17 @@ export const PROFILES: Record<string, WrestlerProfile> = {
     weightFactor: 4,
     submissionSkill: "expert",
   },
+  // Brawler: everything comes from the hands, nothing from the top rope.
+  // 29 of the 30 points, with the spare left unspent rather than buying an
+  // aerial game he does not have.
+  "steve-austin": {
+    id: "steve-austin",
+    name: "Austin",
+    offense: params(3, 3, 5, 3, 1),
+    defense: params(3, 4, 3, 3, 1),
+    weightFactor: 5,
+    submissionSkill: "normal",
+  },
 };
 
 /** Falls back to a balanced profile for any id without one. */
