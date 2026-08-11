@@ -29,6 +29,9 @@ AGENTS.md
 .agents/
 .codex
 docs/**/claude-*.md
+# Working notes, session handoffs and anything else written for an agent
+# rather than for the project. Kept out of the public repository.
+claude/
 
 # OS / editor noise
 .DS_Store
