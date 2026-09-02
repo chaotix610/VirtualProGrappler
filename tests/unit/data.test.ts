@@ -55,17 +55,18 @@ describe("move catalog", () => {
   });
 
   it("keeps every variant when ids repeat", () => {
-    // moves.json calls (position, move_id) unique, but 62 ids appear twice as
-    // weak/strong variants. The loader must surface both, not silently pick
-    // one - so this asserts nothing is lost rather than that ids are unique.
+    // moves.json calls (position, move_id) unique, but 14 ids repeat within a
+    // position as weak/strong variants. The loader must surface every one, not
+    // silently pick one - so this asserts nothing is lost rather than that ids
+    // are unique.
     const total = CATALOG_MOVES.reduce((n, m) => {
       return n + (movesById(m.position, m.move_id).includes(m) ? 0 : 1);
     }, 0);
     expect(total).toBe(0);
 
-    const stretch = movesById("grappling", "abdominal_stretch");
-    expect(stretch).toHaveLength(2);
-    expect(stretch.map((m) => m.power).sort()).toEqual(["E", "F"]);
+    const slam = movesById("grappling", "fallaway_slam");
+    expect(slam).toHaveLength(3);
+    expect(slam.map((m) => m.power).sort()).toEqual(["D", "E", "E"]);
   });
 
   it("gives every move at least one group", () => {
@@ -92,6 +93,19 @@ describe("catalog cross-references", () => {
    */
   it("has one dangling group reference, and only one", () => {
     expect(validateCatalog().unknownGroups).toEqual(["running_strike"]);
+  });
+
+  /**
+   * KNOWN DATA ISSUE. slot_ids decide eligibility, and two moves point at
+   * lower-body submission slots move-slots.json does not define (it has
+   * facing_up and facing_down only), so neither move can be selected.
+   * Asserted as-is for the same reason as the group case above.
+   */
+  it("has two dangling slot references, and only two", () => {
+    expect(validateCatalog().unknownSlots.sort()).toEqual([
+      "lower_body_submission_kneeling_all_fours",
+      "lower_body_submission_sitting_up",
+    ]);
   });
 
   it("reuses standing and running strikes in turnbuckle slots by design", () => {

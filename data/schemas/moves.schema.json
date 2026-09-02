@@ -2,15 +2,15 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vpg-engine.local/schemas/moves.schema.json",
   "title": "VPG Engine — Moves",
-  "description": "Schema for the move catalog. Each move references one or more groups in move-slots.json to declare which slots it's eligible for.",
+  "description": "Schema for the move catalog. A move's slot_ids list the slots it is eligible for; its groups record which slot groups those came from.",
   "type": "object",
   "required": ["schema_version", "moves"],
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "description": "Increment when the schema shape changes in a breaking way.",
+      "description": "Increment when the schema shape changes in a breaking way. 2 added slot_ids and animation_id.",
       "type": "integer",
-      "const": 1
+      "const": 2
     },
     "description": {
       "type": "string"
@@ -87,10 +87,12 @@
         "name",
         "position",
         "groups",
+        "slot_ids",
         "power",
         "ko",
         "bleed",
-        "feature"
+        "feature",
+        "animation_id"
       ],
       "additionalProperties": false,
       "properties": {
@@ -101,7 +103,14 @@
         },
         "position": { "$ref": "#/$defs/position" },
         "groups": {
-          "description": "References to group ids from move-slots.json. Cross-file integrity is validated separately.",
+          "description": "Slot groups from move-slots.json that this move was drawn from. Descriptive only — eligibility is decided by slot_ids, which may be a strict subset of the slots these groups cover. Cross-file integrity is validated separately.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/snake_case_id" }
+        },
+        "slot_ids": {
+          "description": "Authoritative list of slot ids from move-slots.json this move can fill. Cross-file integrity is validated separately.",
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
@@ -110,7 +119,14 @@
         "power": { "$ref": "#/$defs/power" },
         "ko": { "type": "boolean" },
         "bleed": { "type": "boolean" },
-        "feature": { "$ref": "#/$defs/feature" }
+        "feature": { "$ref": "#/$defs/feature" },
+        "animation_id": {
+          "description": "Animation clip id, or null while the move is unanimated.",
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/snake_case_id" }
+          ]
+        }
       }
     }
   }

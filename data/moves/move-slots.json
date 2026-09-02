@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "description": "Move slot definitions for the VPG Engine. Each slot is a unique input/state combination that a move can be assigned to.",
   "field_definitions": {
     "slot_id": "Unique identifier for this slot. Used to assign moves to slots.",
@@ -8,8 +8,8 @@
     "category": "Functional grouping within a position (UI-ready title case).",
     "category_id": "snake_case version of category, for code references.",
     "group": "Eligibility group; moves reference groups, not individual slots.",
-    "player_state": "Array of player states this slot is valid in (any of these).",
-    "opponent_state": "Array of opponent states this slot is valid against (any of these). 'n/a' means no opponent required.",
+    "actor_state": "Array of states the actor (the wrestler performing the move) must be in for this slot to be valid (any of these). Not the same as the engagement role: on a counter slot the actor is the engagement's defender.",
+    "target_state": "Array of states the target (the wrestler the move is performed on) must be in (any of these). 'n/a' means the slot has no target, as for taunts and evasion.",
     "range": "Distance modifier: close, mid, any, or n/a.",
     "requires_special": "True if special meter is required to trigger this slot.",
     "trigger": "'manual' (player input fires the slot) or 'automatic' (engine fires it from context).",
@@ -33,10 +33,10 @@
       "category": "Apron Strike",
       "category_id": "apron_strike",
       "group": "apron_kick",
-      "player_state": [
+      "actor_state": [
         "on_apron"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -63,10 +63,10 @@
       "category": "Apron Strike",
       "category_id": "apron_strike",
       "group": "apron_kick",
-      "player_state": [
+      "actor_state": [
         "on_apron"
       ],
-      "opponent_state": [
+      "target_state": [
         "outside_ring"
       ],
       "range": "close",
@@ -92,10 +92,10 @@
       "category": "Apron Taunt",
       "category_id": "apron_taunt",
       "group": "apron_taunt",
-      "player_state": [
+      "actor_state": [
         "on_apron"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -121,11 +121,11 @@
       "category": "Counter Grapple from Apron",
       "category_id": "counter_grapple_from_apron",
       "group": "counter_grapple_from_apron_apron",
-      "player_state": [
+      "actor_state": [
         "apron_weak_grapple_from_apron_defending",
         "apron_strong_grapple_from_apron_defending"
       ],
-      "opponent_state": [
+      "target_state": [
         "apron_weak_grapple_from_apron_attacking",
         "apron_strong_grapple_from_apron_attacking"
       ],
@@ -153,10 +153,10 @@
       "category": "Flying Attack from Apron",
       "category_id": "flying_attack_from_apron",
       "group": "flying_attack_from_apron",
-      "player_state": [
+      "actor_state": [
         "on_apron"
       ],
-      "opponent_state": [
+      "target_state": [
         "outside_ring"
       ],
       "range": "any",
@@ -184,10 +184,10 @@
       "category": "Flying Attack from Apron",
       "category_id": "flying_attack_from_apron",
       "group": "running_flying_attack_from_apron",
-      "player_state": [
+      "actor_state": [
         "running_on_apron"
       ],
-      "opponent_state": [
+      "target_state": [
         "outside_ring"
       ],
       "range": "any",
@@ -213,10 +213,10 @@
       "category": "Flying Attack to Ring (Laying)",
       "category_id": "flying_attack_to_ring_laying",
       "group": "flying_attack_to_ring_laying",
-      "player_state": [
+      "actor_state": [
         "on_apron"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_in_ring"
       ],
       "range": "any",
@@ -242,10 +242,10 @@
       "category": "Flying Attack to Ring (Special)",
       "category_id": "flying_attack_to_ring_special",
       "group": "flying_attack_to_ring_special",
-      "player_state": [
+      "actor_state": [
         "on_apron"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away",
         "down_in_ring"
@@ -273,10 +273,10 @@
       "category": "Flying Attack to Ring (Standing)",
       "category_id": "flying_attack_to_ring_standing",
       "group": "flying_attack_to_ring_standing",
-      "player_state": [
+      "actor_state": [
         "on_apron"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -303,10 +303,10 @@
       "category": "Grapple from Apron",
       "category_id": "grapple_from_apron",
       "group": "apron_finisher_from_apron",
-      "player_state": [
+      "actor_state": [
         "apron_strong_grapple_from_apron_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "apron_strong_grapple_from_apron_defending"
       ],
       "range": "n/a",
@@ -332,10 +332,10 @@
       "category": "Grapple from Apron",
       "category_id": "grapple_from_apron",
       "group": "apron_strong_grapple_from_apron",
-      "player_state": [
+      "actor_state": [
         "apron_strong_grapple_from_apron_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "apron_strong_grapple_from_apron_defending"
       ],
       "range": "n/a",
@@ -365,10 +365,10 @@
       "category": "Grapple from Apron",
       "category_id": "grapple_from_apron",
       "group": "apron_weak_grapple_from_apron",
-      "player_state": [
+      "actor_state": [
         "apron_weak_grapple_from_apron_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "apron_weak_grapple_from_apron_defending"
       ],
       "range": "n/a",
@@ -398,10 +398,10 @@
       "category": "Double Team Flying Attack",
       "category_id": "double_team_flying_attack",
       "group": "double_team_flying_attack",
-      "player_state": [
+      "actor_state": [
         "on_apron"
       ],
-      "opponent_state": [
+      "target_state": [
         "held_on_shoulders"
       ],
       "range": "n/a",
@@ -418,10 +418,10 @@
       "category": "Double Team Flying Attack",
       "category_id": "double_team_flying_attack",
       "group": "double_team_flying_attack",
-      "player_state": [
+      "actor_state": [
         "on_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "held_on_shoulders"
       ],
       "range": "n/a",
@@ -438,10 +438,10 @@
       "category": "Double Team Flying Attack",
       "category_id": "double_team_flying_attack",
       "group": "double_team_flying_attack",
-      "player_state": [
+      "actor_state": [
         "on_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "held_on_shoulders"
       ],
       "range": "n/a",
@@ -458,10 +458,10 @@
       "category": "Double Team Grapple",
       "category_id": "double_team_grapple",
       "group": "double_team_grapple_back",
-      "player_state": [
+      "actor_state": [
         "double_team_grapple_back_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "double_team_grapple_back_defending"
       ],
       "range": "n/a",
@@ -487,10 +487,10 @@
       "category": "Double Team Grapple",
       "category_id": "double_team_grapple",
       "group": "double_team_grapple_front",
-      "player_state": [
+      "actor_state": [
         "double_team_grapple_front_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "double_team_grapple_front_defending"
       ],
       "range": "n/a",
@@ -516,10 +516,10 @@
       "category": "Double Team Grapple",
       "category_id": "double_team_grapple",
       "group": "running_double_team_grapple",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "running_toward_opponent"
       ],
       "range": "any",
@@ -545,10 +545,10 @@
       "category": "Double Team Grapple",
       "category_id": "double_team_grapple",
       "group": "double_team_grapple_sandwich",
-      "player_state": [
+      "actor_state": [
         "double_team_grapple_sandwich_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "double_team_grapple_sandwich_defending"
       ],
       "range": "n/a",
@@ -574,10 +574,10 @@
       "category": "Back Strong Grapple",
       "category_id": "back_strong_grapple",
       "group": "back_finisher",
-      "player_state": [
+      "actor_state": [
         "back_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -603,10 +603,10 @@
       "category": "Back Strong Grapple",
       "category_id": "back_strong_grapple",
       "group": "back_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "back_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -632,10 +632,10 @@
       "category": "Back Strong Grapple",
       "category_id": "back_strong_grapple",
       "group": "back_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "back_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -663,10 +663,10 @@
       "category": "Back Strong Grapple",
       "category_id": "back_strong_grapple",
       "group": "back_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "back_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -692,10 +692,10 @@
       "category": "Back Strong Grapple",
       "category_id": "back_strong_grapple",
       "group": "back_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "back_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -723,10 +723,10 @@
       "category": "Back Weak Grapple",
       "category_id": "back_weak_grapple",
       "group": "back_weak_grapple",
-      "player_state": [
+      "actor_state": [
         "back_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -752,10 +752,10 @@
       "category": "Back Weak Grapple",
       "category_id": "back_weak_grapple",
       "group": "back_weak_grapple",
-      "player_state": [
+      "actor_state": [
         "back_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -783,10 +783,10 @@
       "category": "Back Weak Grapple",
       "category_id": "back_weak_grapple",
       "group": "back_weak_grapple",
-      "player_state": [
+      "actor_state": [
         "back_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -812,10 +812,10 @@
       "category": "Back Weak Grapple",
       "category_id": "back_weak_grapple",
       "group": "back_weak_grapple",
-      "player_state": [
+      "actor_state": [
         "back_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -843,10 +843,10 @@
       "category": "Front Strong Grapple",
       "category_id": "front_strong_grapple",
       "group": "front_finisher",
-      "player_state": [
+      "actor_state": [
         "front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -872,10 +872,10 @@
       "category": "Front Strong Grapple",
       "category_id": "front_strong_grapple",
       "group": "front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -901,10 +901,10 @@
       "category": "Front Strong Grapple",
       "category_id": "front_strong_grapple",
       "group": "front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -933,10 +933,10 @@
       "category": "Front Strong Grapple",
       "category_id": "front_strong_grapple",
       "group": "front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -964,10 +964,10 @@
       "category": "Front Strong Grapple",
       "category_id": "front_strong_grapple",
       "group": "front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -995,10 +995,10 @@
       "category": "Front Strong Grapple",
       "category_id": "front_strong_grapple",
       "group": "front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -1024,10 +1024,10 @@
       "category": "Front Strong Grapple",
       "category_id": "front_strong_grapple",
       "group": "front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -1056,10 +1056,10 @@
       "category": "Front Strong Grapple",
       "category_id": "front_strong_grapple",
       "group": "front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -1087,10 +1087,10 @@
       "category": "Front Strong Grapple",
       "category_id": "front_strong_grapple",
       "group": "front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -1118,10 +1118,10 @@
       "category": "Front Weak Grapple",
       "category_id": "front_weak_grapple",
       "group": "front_weak_grapple_a",
-      "player_state": [
+      "actor_state": [
         "front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -1147,10 +1147,10 @@
       "category": "Front Weak Grapple",
       "category_id": "front_weak_grapple",
       "group": "front_weak_grapple_a",
-      "player_state": [
+      "actor_state": [
         "front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -1179,10 +1179,10 @@
       "category": "Front Weak Grapple",
       "category_id": "front_weak_grapple",
       "group": "front_weak_grapple_a",
-      "player_state": [
+      "actor_state": [
         "front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -1210,10 +1210,10 @@
       "category": "Front Weak Grapple",
       "category_id": "front_weak_grapple",
       "group": "front_weak_grapple_a",
-      "player_state": [
+      "actor_state": [
         "front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -1241,10 +1241,10 @@
       "category": "Front Weak Grapple",
       "category_id": "front_weak_grapple",
       "group": "front_weak_grapple_b",
-      "player_state": [
+      "actor_state": [
         "front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -1270,10 +1270,10 @@
       "category": "Front Weak Grapple",
       "category_id": "front_weak_grapple",
       "group": "front_weak_grapple_b",
-      "player_state": [
+      "actor_state": [
         "front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -1302,10 +1302,10 @@
       "category": "Front Weak Grapple",
       "category_id": "front_weak_grapple",
       "group": "front_weak_grapple_b",
-      "player_state": [
+      "actor_state": [
         "front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -1333,10 +1333,10 @@
       "category": "Front Weak Grapple",
       "category_id": "front_weak_grapple",
       "group": "front_weak_grapple_b",
-      "player_state": [
+      "actor_state": [
         "front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -1364,10 +1364,10 @@
       "category": "Grapple Reversal",
       "category_id": "grapple_reversal",
       "group": "back_strong_grapple_counter",
-      "player_state": [
+      "actor_state": [
         "back_strong_grapple_defending"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_strong_grapple_attacking"
       ],
       "range": "n/a",
@@ -1393,10 +1393,10 @@
       "category": "Grapple Reversal",
       "category_id": "grapple_reversal",
       "group": "back_weak_grapple_counter",
-      "player_state": [
+      "actor_state": [
         "back_weak_grapple_defending"
       ],
-      "opponent_state": [
+      "target_state": [
         "back_weak_grapple_attacking"
       ],
       "range": "n/a",
@@ -1422,10 +1422,10 @@
       "category": "Ground Striking",
       "category_id": "ground_striking",
       "group": "ground_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_down"
       ],
       "range": "close",
@@ -1451,10 +1451,10 @@
       "category": "Ground Striking",
       "category_id": "ground_striking",
       "group": "ground_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_up"
       ],
       "range": "close",
@@ -1480,10 +1480,10 @@
       "category": "Ground Striking",
       "category_id": "ground_striking",
       "group": "ground_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "kneeling_all_fours"
       ],
       "range": "close",
@@ -1509,10 +1509,10 @@
       "category": "Ground Striking",
       "category_id": "ground_striking",
       "group": "ground_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "sitting_up"
       ],
       "range": "close",
@@ -1538,10 +1538,10 @@
       "category": "Lower Body Finisher",
       "category_id": "lower_body_finisher",
       "group": "lower_body_finisher",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_down"
       ],
       "range": "close",
@@ -1567,10 +1567,10 @@
       "category": "Lower Body Finisher",
       "category_id": "lower_body_finisher",
       "group": "lower_body_finisher",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_up"
       ],
       "range": "close",
@@ -1596,10 +1596,10 @@
       "category": "Lower Body Submission",
       "category_id": "lower_body_submission",
       "group": "lower_body_submission",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_down"
       ],
       "range": "close",
@@ -1625,10 +1625,10 @@
       "category": "Lower Body Submission",
       "category_id": "lower_body_submission",
       "group": "lower_body_submission",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_up"
       ],
       "range": "close",
@@ -1654,10 +1654,10 @@
       "category": "Upper Body Finisher",
       "category_id": "upper_body_finisher",
       "group": "upper_body_finisher",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_down"
       ],
       "range": "close",
@@ -1683,10 +1683,10 @@
       "category": "Upper Body Finisher",
       "category_id": "upper_body_finisher",
       "group": "upper_body_finisher",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_up"
       ],
       "range": "close",
@@ -1712,10 +1712,10 @@
       "category": "Upper Body Submission",
       "category_id": "upper_body_submission",
       "group": "upper_body_submission",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_down"
       ],
       "range": "close",
@@ -1741,10 +1741,10 @@
       "category": "Upper Body Submission",
       "category_id": "upper_body_submission",
       "group": "upper_body_submission",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_up"
       ],
       "range": "close",
@@ -1770,10 +1770,10 @@
       "category": "Upper Body Submission",
       "category_id": "upper_body_submission",
       "group": "upper_body_submission",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "kneeling_all_fours"
       ],
       "range": "close",
@@ -1799,10 +1799,10 @@
       "category": "Upper Body Submission",
       "category_id": "upper_body_submission",
       "group": "upper_body_submission",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "sitting_up"
       ],
       "range": "close",
@@ -1828,10 +1828,10 @@
       "category": "Irish Whip Grapple (Strong)",
       "category_id": "irish_whip_grapple_strong",
       "group": "irish_whip_finisher",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "running_toward_from_strong_whip"
       ],
       "range": "any",
@@ -1857,10 +1857,10 @@
       "category": "Irish Whip Grapple (Strong)",
       "category_id": "irish_whip_grapple_strong",
       "group": "strong_irish_whip_grapple",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "running_toward_from_strong_whip"
       ],
       "range": "any",
@@ -1886,10 +1886,10 @@
       "category": "Irish Whip Grapple (Strong)",
       "category_id": "irish_whip_grapple_strong",
       "group": "strong_irish_whip_grapple",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "running_toward_from_strong_whip"
       ],
       "range": "any",
@@ -1915,10 +1915,10 @@
       "category": "Irish Whip Grapple (Weak)",
       "category_id": "irish_whip_grapple_weak",
       "group": "weak_irish_whip_grapple",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "running_toward_from_weak_whip"
       ],
       "range": "any",
@@ -1944,10 +1944,10 @@
       "category": "Irish Whip Grapple (Weak)",
       "category_id": "irish_whip_grapple_weak",
       "group": "weak_irish_whip_grapple",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "running_toward_from_weak_whip"
       ],
       "range": "any",
@@ -1973,10 +1973,10 @@
       "category": "Irish Whip Strike",
       "category_id": "irish_whip_strike",
       "group": "irish_whip_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "running_toward_opponent"
       ],
       "range": "any",
@@ -2002,10 +2002,10 @@
       "category": "Flying Attack to Outside",
       "category_id": "flying_attack_to_outside",
       "group": "flying_attack_to_outside",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "outside_ring"
       ],
       "range": "close",
@@ -2033,10 +2033,10 @@
       "category": "Flying Attack to Outside",
       "category_id": "flying_attack_to_outside",
       "group": "running_diving_attack",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "outside_ring"
       ],
       "range": "any",
@@ -2062,10 +2062,10 @@
       "category": "Flying Attack to Outside",
       "category_id": "flying_attack_to_outside",
       "group": "running_diving_attack",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "outside_ring"
       ],
       "range": "any",
@@ -2093,11 +2093,11 @@
       "category": "Grapple to Apron",
       "category_id": "grapple_to_apron",
       "group": "counter_grapple_from_apron_inside",
-      "player_state": [
+      "actor_state": [
         "apron_weak_grapple_from_inside_defending",
         "apron_strong_grapple_from_inside_defending"
       ],
-      "opponent_state": [
+      "target_state": [
         "apron_weak_grapple_from_inside_attacking",
         "apron_strong_grapple_from_inside_attacking"
       ],
@@ -2125,10 +2125,10 @@
       "category": "Grapple to Apron",
       "category_id": "grapple_to_apron",
       "group": "apron_special_grapple_from_inside",
-      "player_state": [
+      "actor_state": [
         "apron_strong_grapple_from_inside_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "apron_strong_grapple_from_inside_defending"
       ],
       "range": "n/a",
@@ -2154,10 +2154,10 @@
       "category": "Grapple to Apron",
       "category_id": "grapple_to_apron",
       "group": "apron_strong_grapple_from_inside",
-      "player_state": [
+      "actor_state": [
         "apron_strong_grapple_from_inside_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "apron_strong_grapple_from_inside_defending"
       ],
       "range": "n/a",
@@ -2187,10 +2187,10 @@
       "category": "Grapple to Apron",
       "category_id": "grapple_to_apron",
       "group": "apron_weak_grapple_from_inside",
-      "player_state": [
+      "actor_state": [
         "apron_weak_grapple_from_inside_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "apron_weak_grapple_from_inside_defending"
       ],
       "range": "n/a",
@@ -2220,10 +2220,10 @@
       "category": "Rebound Flying Attack",
       "category_id": "rebound_flying_attack",
       "group": "rebound_flying_attack",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2250,10 +2250,10 @@
       "category": "Rope Inside Attack",
       "category_id": "rope_inside_attack",
       "group": "springboard_attack",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_in_ring"
       ],
       "range": "close",
@@ -2281,10 +2281,10 @@
       "category": "Running Diving Taunt",
       "category_id": "running_diving_taunt",
       "group": "running_diving_taunt",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -2310,10 +2310,10 @@
       "category": "Evasion",
       "category_id": "evasion",
       "group": "evasion",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -2339,10 +2339,10 @@
       "category": "Running Grapple",
       "category_id": "running_grapple",
       "group": "run_back_grapple",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_away"
       ],
       "range": "any",
@@ -2368,10 +2368,10 @@
       "category": "Running Grapple",
       "category_id": "running_grapple",
       "group": "run_front_grapple",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player"
       ],
       "range": "any",
@@ -2397,10 +2397,10 @@
       "category": "Running Ground Strike",
       "category_id": "running_ground_strike",
       "group": "run_ground_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_down"
       ],
       "range": "any",
@@ -2426,10 +2426,10 @@
       "category": "Running Ground Strike",
       "category_id": "running_ground_strike",
       "group": "run_ground_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_facing_up"
       ],
       "range": "any",
@@ -2455,10 +2455,10 @@
       "category": "Running Ground Strike",
       "category_id": "running_ground_strike",
       "group": "run_ground_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "kneeling_all_fours"
       ],
       "range": "any",
@@ -2484,10 +2484,10 @@
       "category": "Running Ground Strike",
       "category_id": "running_ground_strike",
       "group": "run_ground_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "sitting_up"
       ],
       "range": "any",
@@ -2513,10 +2513,10 @@
       "category": "Running Strike",
       "category_id": "running_strike",
       "group": "strong_running_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2545,10 +2545,10 @@
       "category": "Running Strike",
       "category_id": "running_strike",
       "group": "strong_running_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2578,10 +2578,10 @@
       "category": "Running Strike",
       "category_id": "running_strike",
       "group": "weak_running_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2608,10 +2608,10 @@
       "category": "Running Strike",
       "category_id": "running_strike",
       "group": "weak_running_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2639,10 +2639,10 @@
       "category": "Counter Attack",
       "category_id": "counter_attack",
       "group": "counter_kick",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "throwing_kick"
       ],
       "range": "any",
@@ -2669,10 +2669,10 @@
       "category": "Counter Attack",
       "category_id": "counter_attack",
       "group": "counter_kick",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "throwing_kick"
       ],
       "range": "any",
@@ -2699,10 +2699,10 @@
       "category": "Counter Attack",
       "category_id": "counter_attack",
       "group": "counter_punch",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "throwing_punch"
       ],
       "range": "any",
@@ -2728,10 +2728,10 @@
       "category": "Counter Attack",
       "category_id": "counter_attack",
       "group": "special_counter_kick",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "throwing_kick"
       ],
       "range": "any",
@@ -2763,10 +2763,10 @@
       "category": "Counter Attack",
       "category_id": "counter_attack",
       "group": "special_counter_punch",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "throwing_punch"
       ],
       "range": "any",
@@ -2792,10 +2792,10 @@
       "category": "Recovering Strike",
       "category_id": "recovering_strike",
       "group": "ducking_strike",
-      "player_state": [
+      "actor_state": [
         "getting_up"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2822,10 +2822,10 @@
       "category": "Strong Striking",
       "category_id": "strong_striking",
       "group": "strong_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2852,10 +2852,10 @@
       "category": "Strong Striking",
       "category_id": "strong_striking",
       "group": "strong_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2884,10 +2884,10 @@
       "category": "Strong Striking",
       "category_id": "strong_striking",
       "group": "strong_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2915,10 +2915,10 @@
       "category": "Walking Style",
       "category_id": "walking_style",
       "group": "walking_style",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -2944,10 +2944,10 @@
       "category": "Weak Striking",
       "category_id": "weak_striking",
       "group": "weak_arm_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -2974,10 +2974,10 @@
       "category": "Weak Striking",
       "category_id": "weak_striking",
       "group": "weak_arm_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -3006,10 +3006,10 @@
       "category": "Weak Striking",
       "category_id": "weak_striking",
       "group": "weak_leg_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -3036,10 +3036,10 @@
       "category": "Weak Striking",
       "category_id": "weak_striking",
       "group": "weak_leg_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -3068,10 +3068,10 @@
       "category": "Taunt",
       "category_id": "taunt",
       "group": "celebration_taunt",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "defeated"
       ],
       "range": "n/a",
@@ -3088,10 +3088,10 @@
       "category": "Taunt",
       "category_id": "taunt",
       "group": "ducking_taunt",
-      "player_state": [
+      "actor_state": [
         "ducking"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -3117,10 +3117,10 @@
       "category": "Taunt",
       "category_id": "taunt",
       "group": "entryway_taunt",
-      "player_state": [
+      "actor_state": [
         "entering"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -3137,10 +3137,10 @@
       "category": "Taunt",
       "category_id": "taunt",
       "group": "special_taunt",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -3168,10 +3168,10 @@
       "category": "Taunt",
       "category_id": "taunt",
       "group": "taunt",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -3197,10 +3197,10 @@
       "category": "Taunt",
       "category_id": "taunt",
       "group": "taunt",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -3226,10 +3226,10 @@
       "category": "Taunt",
       "category_id": "taunt",
       "group": "taunt",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -3255,10 +3255,10 @@
       "category": "Back Turnbuckle Grapple",
       "category_id": "back_turnbuckle_grapple",
       "group": "turnbuckle_back_finisher",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_back_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_back_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -3284,10 +3284,10 @@
       "category": "Back Turnbuckle Grapple",
       "category_id": "back_turnbuckle_grapple",
       "group": "turnbuckle_back_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_back_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_back_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -3313,10 +3313,10 @@
       "category": "Back Turnbuckle Grapple",
       "category_id": "back_turnbuckle_grapple",
       "group": "turnbuckle_back_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_back_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_back_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -3342,10 +3342,10 @@
       "category": "Back Turnbuckle Grapple",
       "category_id": "back_turnbuckle_grapple",
       "group": "turnbuckle_back_weak_grapple",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_back_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_back_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -3371,10 +3371,10 @@
       "category": "Back Turnbuckle Grapple",
       "category_id": "back_turnbuckle_grapple",
       "group": "turnbuckle_back_weak_grapple",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_back_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_back_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -3400,10 +3400,10 @@
       "category": "Corner Counter",
       "category_id": "corner_counter",
       "group": "corner_counter",
-      "player_state": [
+      "actor_state": [
         "at_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player"
       ],
       "range": "n/a",
@@ -3431,10 +3431,10 @@
       "category": "Flying Attack (Laying)",
       "category_id": "flying_attack_laying",
       "group": "flying_top_turnbuckle_laying",
-      "player_state": [
+      "actor_state": [
         "on_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_in_ring"
       ],
       "range": "n/a",
@@ -3460,10 +3460,10 @@
       "category": "Flying Attack (Laying)",
       "category_id": "flying_attack_laying",
       "group": "flying_top_turnbuckle_laying_special",
-      "player_state": [
+      "actor_state": [
         "on_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_in_ring",
         "down_outside_ring"
       ],
@@ -3490,10 +3490,10 @@
       "category": "Flying Attack (Laying)",
       "category_id": "flying_attack_laying",
       "group": "flying_top_turnbuckle_laying_to_outside",
-      "player_state": [
+      "actor_state": [
         "on_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_outside_ring"
       ],
       "range": "n/a",
@@ -3519,10 +3519,10 @@
       "category": "Flying Attack (Second Rope)",
       "category_id": "flying_attack_second_rope",
       "group": "flying_second_turnbuckle",
-      "player_state": [
+      "actor_state": [
         "at_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "down_in_ring"
       ],
       "range": "close",
@@ -3548,10 +3548,10 @@
       "category": "Flying Attack (Standing)",
       "category_id": "flying_attack_standing",
       "group": "flying_top_turnbuckle_standing",
-      "player_state": [
+      "actor_state": [
         "on_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away"
       ],
@@ -3578,10 +3578,10 @@
       "category": "Flying Attack (Standing)",
       "category_id": "flying_attack_standing",
       "group": "flying_top_turnbuckle_standing_special",
-      "player_state": [
+      "actor_state": [
         "on_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "standing_facing_player",
         "standing_facing_away",
         "outside_ring"
@@ -3609,10 +3609,10 @@
       "category": "Flying Attack (Standing)",
       "category_id": "flying_attack_standing",
       "group": "flying_top_turnbuckle_standing_to_outside",
-      "player_state": [
+      "actor_state": [
         "on_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "outside_ring"
       ],
       "range": "n/a",
@@ -3638,10 +3638,10 @@
       "category": "Flying Move Counter",
       "category_id": "flying_move_counter",
       "group": "flying_move_counter",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "on_turnbuckle_facing_away"
       ],
       "range": "close",
@@ -3667,10 +3667,10 @@
       "category": "Flying Move Counter",
       "category_id": "flying_move_counter",
       "group": "flying_move_counter",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "on_turnbuckle_facing_player"
       ],
       "range": "close",
@@ -3696,10 +3696,10 @@
       "category": "Front Turnbuckle Grapple",
       "category_id": "front_turnbuckle_grapple",
       "group": "turnbuckle_front_finisher",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -3725,10 +3725,10 @@
       "category": "Front Turnbuckle Grapple",
       "category_id": "front_turnbuckle_grapple",
       "group": "turnbuckle_front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -3754,10 +3754,10 @@
       "category": "Front Turnbuckle Grapple",
       "category_id": "front_turnbuckle_grapple",
       "group": "turnbuckle_front_strong_grapple",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_front_strong_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_front_strong_grapple_defending"
       ],
       "range": "n/a",
@@ -3783,10 +3783,10 @@
       "category": "Front Turnbuckle Grapple",
       "category_id": "front_turnbuckle_grapple",
       "group": "turnbuckle_front_weak_grapple",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -3812,10 +3812,10 @@
       "category": "Front Turnbuckle Grapple",
       "category_id": "front_turnbuckle_grapple",
       "group": "turnbuckle_front_weak_grapple",
-      "player_state": [
+      "actor_state": [
         "turnbuckle_front_weak_grapple_attacking"
       ],
-      "opponent_state": [
+      "target_state": [
         "turnbuckle_front_weak_grapple_defending"
       ],
       "range": "n/a",
@@ -3841,10 +3841,10 @@
       "category": "Tree of Woe",
       "category_id": "tree_of_woe",
       "group": "running_tree_of_woe_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "tree_of_woe"
       ],
       "range": "any",
@@ -3870,10 +3870,10 @@
       "category": "Tree of Woe",
       "category_id": "tree_of_woe",
       "group": "tree_of_woe_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "tree_of_woe"
       ],
       "range": "close",
@@ -3899,10 +3899,10 @@
       "category": "Tree of Woe",
       "category_id": "tree_of_woe",
       "group": "tree_of_woe_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "tree_of_woe"
       ],
       "range": "close",
@@ -3930,10 +3930,10 @@
       "category": "Turnbuckle Strikes",
       "category_id": "turnbuckle_strikes",
       "group": "running_turnbuckle_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "at_turnbuckle_facing_out"
       ],
       "range": "any",
@@ -3959,10 +3959,10 @@
       "category": "Turnbuckle Strikes",
       "category_id": "turnbuckle_strikes",
       "group": "running_turnbuckle_strike",
-      "player_state": [
+      "actor_state": [
         "running"
       ],
-      "opponent_state": [
+      "target_state": [
         "at_turnbuckle_facing_out"
       ],
       "range": "any",
@@ -3989,10 +3989,10 @@
       "category": "Turnbuckle Strikes",
       "category_id": "turnbuckle_strikes",
       "group": "turnbuckle_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "at_turnbuckle_facing_out"
       ],
       "range": "close",
@@ -4018,10 +4018,10 @@
       "category": "Turnbuckle Strikes",
       "category_id": "turnbuckle_strikes",
       "group": "turnbuckle_strike",
-      "player_state": [
+      "actor_state": [
         "standing"
       ],
-      "opponent_state": [
+      "target_state": [
         "at_turnbuckle_facing_out"
       ],
       "range": "close",
@@ -4049,10 +4049,10 @@
       "category": "Turnbuckle Taunt",
       "category_id": "turnbuckle_taunt",
       "group": "corner_taunt",
-      "player_state": [
+      "actor_state": [
         "at_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",
@@ -4080,10 +4080,10 @@
       "category": "Turnbuckle Taunt",
       "category_id": "turnbuckle_taunt",
       "group": "top_rope_taunt",
-      "player_state": [
+      "actor_state": [
         "on_turnbuckle"
       ],
-      "opponent_state": [
+      "target_state": [
         "n/a"
       ],
       "range": "n/a",

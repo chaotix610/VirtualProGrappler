@@ -17,8 +17,8 @@ export interface MoveSlot {
   category: string;
   category_id: string;
   group: string;
-  player_state: string[];
-  opponent_state: string[];
+  actor_state: string[];
+  target_state: string[];
   range: string;
   requires_special: boolean;
   trigger: "manual" | "automatic";
@@ -38,16 +38,25 @@ export interface InputPattern {
   release_run?: boolean;
 }
 
-/** A move becomes eligible for every slot in any group it lists. */
+/** A move is eligible for exactly the slots it lists in slot_ids. */
 export interface CatalogMove {
   move_id: string;
   name: string;
   position: string;
+  /**
+   * Slot groups the move was drawn from. Descriptive only, and always a
+   * superset: a move can belong to a group and still be excluded from some of
+   * that group's slots, so eligibility is read from slot_ids, never from here.
+   */
   groups: string[];
+  /** The slots this move can fill. Authoritative. */
+  slot_ids: string[];
   power: string | null;
   ko: boolean;
   bleed: boolean;
   feature: "pin" | "submit" | null;
+  /** Animation clip id, or null while the move is unanimated. */
+  animation_id: string | null;
 }
 
 const slots = (moveSlotsJson as { slots: MoveSlot[] }).slots;
@@ -69,14 +78,23 @@ for (const slot of slots) {
   else slotsByGroup.set(slot.group, [slot]);
 }
 
+/** Moves indexed by the slots they can fill - the engine's main lookup. */
+const movesBySlot = new Map<string, CatalogMove[]>();
+for (const move of moves) {
+  for (const slotId of move.slot_ids) {
+    const list = movesBySlot.get(slotId);
+    if (list) list.push(move);
+    else movesBySlot.set(slotId, [move]);
+  }
+}
+
 /**
  * Moves indexed by (position, move_id).
  *
- * moves.json describes that pair as unique, but it is not: 62 ids appear
- * twice, as deliberate variants of the same move - an Abdominal Stretch
- * exists as both a weak (power E) and a strong (power F) grapple. So this
- * maps to a list rather than a single entry; keying to one would silently
- * drop half of each pair.
+ * moves.json describes that pair as unique, but it is not: 14 ids repeat
+ * within a position as deliberate variants of the same move - a Fallaway Slam
+ * exists as both a power D and a power E grapple. So this maps to a list
+ * rather than a single entry; keying to one would silently drop variants.
  */
 const movesByKey = new Map<string, CatalogMove[]>();
 for (const move of moves) {
@@ -99,24 +117,31 @@ export function movesById(position: string, moveId: string): CatalogMove[] {
   return movesByKey.get(`${position}:${moveId}`) ?? [];
 }
 
-/** Every slot a move is eligible for, via the groups it belongs to. */
+/** Every slot a move is eligible for. Unknown slot ids are skipped. */
 export function slotsForMove(move: CatalogMove): MoveSlot[] {
-  return move.groups.flatMap((g) => [...slotsInGroup(g)]);
+  return move.slot_ids
+    .map((id) => slotsById.get(id))
+    .filter((s): s is MoveSlot => s !== undefined);
 }
 
 /** Moves eligible for a given slot. */
 export function movesForSlot(slot: MoveSlot): CatalogMove[] {
-  return moves.filter((m) => m.groups.includes(slot.group));
+  return movesBySlot.get(slot.slot_id) ?? [];
 }
 
 export interface CatalogIssues {
   /**
-   * Groups a move references that no slot defines. Moves in these groups can
-   * never be selected, so this is the one genuinely broken case.
+   * Slot ids a move references that move-slots.json does not define. Those
+   * entries can never be selected, so this is the genuinely broken case.
+   */
+  unknownSlots: string[];
+  /**
+   * Groups a move references that no slot defines. Cosmetic now that groups
+   * are descriptive, but still a sign the two files have drifted.
    */
   unknownGroups: string[];
-  /** Groups with slots but no move assigned - playable but empty. */
-  emptyGroups: string[];
+  /** Slots that exist but no move fills - playable but empty. */
+  unfilledSlots: string[];
   /** (position, move_id) pairs used by more than one move. */
   duplicateIds: string[];
   /**
@@ -137,9 +162,13 @@ export interface CatalogIssues {
 export function validateCatalog(): CatalogIssues {
   const definedGroups = new Set(slots.map((s) => s.group));
   const usedGroups = new Set(moves.flatMap((m) => m.groups));
+  const usedSlots = new Set(moves.flatMap((m) => m.slot_ids));
 
+  const unknownSlots = [...usedSlots].filter((id) => !slotsById.has(id));
   const unknownGroups = [...usedGroups].filter((g) => !definedGroups.has(g));
-  const emptyGroups = [...definedGroups].filter((g) => !usedGroups.has(g));
+  const unfilledSlots = slots
+    .map((s) => s.slot_id)
+    .filter((id) => !usedSlots.has(id));
 
   const duplicateIds = [...movesByKey.entries()]
     .filter(([, list]) => list.length > 1)
@@ -156,8 +185,9 @@ export function validateCatalog(): CatalogIssues {
   }
 
   return {
+    unknownSlots,
     unknownGroups,
-    emptyGroups,
+    unfilledSlots,
     duplicateIds,
     crossPositionGroups: [...crossPositionGroups],
   };
