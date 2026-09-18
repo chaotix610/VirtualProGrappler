@@ -4,10 +4,26 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import Game from './Game.vue';
+import { defineAsyncComponent, defineComponent, h } from 'vue';
 import MainMenu from './MainMenu.vue';
+import SceneLoading from './SceneLoading.vue';
 import { loadSavedBindings } from '@/data/controls';
+
+/**
+ * The combat screen pulls in Babylon, which dwarfs everything else in the
+ * bundle. Loading it on demand keeps the engine out of the menu's download,
+ * so the first screen paints without waiting on a renderer it never uses.
+ */
+const Game = defineAsyncComponent({
+  loader: () => import('./Game.vue'),
+  // GameScene clears to this sky blue, so the placeholder hands over to the
+  // live canvas without a flash. Kept as a literal rather than imported from
+  // the renderer, which would drag Babylon back into this chunk.
+  loadingComponent: () => h(SceneLoading, { background: '#87b0d6' }),
+  // The menu already fills the screen, so there is nothing to shift; showing
+  // the placeholder immediately reads as a response to the keypress.
+  delay: 0,
+});
 
 type Screen = 'menu' | 'game';
 

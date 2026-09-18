@@ -489,7 +489,7 @@ Your document confirms:
 
 The Move Database provides:
 
-- **Power Tier** (F, E, D, C, B, A, S, G)
+- **Power Tier** (S, A, B, C, D, E, F, G)
     
 - **Move Type** (Strike, Grapple, Submission, Pin)
     

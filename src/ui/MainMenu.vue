@@ -56,7 +56,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineAsyncComponent, defineComponent, h } from "vue";
 import {
   MenuItem,
   MenuPage,
@@ -68,7 +68,21 @@ import {
 import { resolveAsset } from "@/data/assets";
 import { isMenuDown, isMenuUp, virtualInputFor } from "@/game/VirtualController";
 import ControlMapper from "./ControlMapper.vue";
-import ArenaViewer from "./ArenaViewer.vue";
+import SceneLoading from "./SceneLoading.vue";
+
+/**
+ * The arena viewer is the menu's other Babylon screen. Loading it on demand
+ * keeps the engine out of the menu's own chunk - the menu is the first thing
+ * drawn, and most visits never open the viewer at all.
+ */
+const ArenaViewer = defineAsyncComponent({
+  loader: () => import("./ArenaViewer.vue"),
+  // ArenaScene's clear colour, so the placeholder hands over to the live
+  // canvas without a flash. Kept as a literal rather than imported from the
+  // renderer, which would drag Babylon back into this chunk.
+  loadingComponent: () => h(SceneLoading, { background: "#0d0d14" }),
+  delay: 0,
+});
 
 /** Routes the menu knows how to open. Everything else is not built yet. */
 const ROUTE_CONTROLS = "commissioner.controls";

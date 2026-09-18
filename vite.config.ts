@@ -22,7 +22,10 @@ export default defineConfig({
     host: "localhost",
   },
   build: {
-    // Babylon is large; the warning is expected and not actionable here.
+    // Babylon no longer ships with the menu - the screens that need it are
+    // async components, so it splits into its own lazily fetched chunks. The
+    // largest of those is still a few MB, which is inherent to the engine
+    // rather than something this app can trim, so the limit stays raised.
     chunkSizeWarningLimit: 4000,
   },
   test: {

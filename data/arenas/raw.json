@@ -4,12 +4,14 @@
   "previewImage": "assets/textures/arena/previews/preview-rawiswar.png",
   "arenaParts": [
     "assets/glb/arena/arena-floor.glb",
-    "assets/glb/arena/barricade.glb"
+    "assets/glb/arena/barricade.glb",
+    "assets/glb/arena/shared/arena_outer.glb",
+    "assets/glb/arena/raw_is_war/raw_stage.glb"
   ],
   "arenaTextures": {
-    "mat_floor_ringside_corners": "assets/textures/arena/floor_mat_1.png",
     "mat_floor_ringside": "assets/textures/arena/floor_mat_1_double.png",
-    "mat_ringside_barricade": "assets/textures/arena/floor_mat_1_double.png"
+    "mat_ringside_barricade": "assets/textures/arena/floor_mat_1_double.png",
+    "mat_ceiling_banners": "assets/textures/arena/raw_is_war/raw_is_war_banner_512.png"
   },
   "ringTextures": {
     "mat_canvas": "assets/textures/ring/shared/canvas.png",
@@ -19,6 +21,7 @@
     "mat_rope_bottom": "assets/textures/ring/shared/rope.png",
     "ropeColor": "rgba(255, 0, 0, 0.4)",
     "postColor": "rgba(0, 0, 0, 0)",
-    "turnbucklePadColor": "rgba(0, 0, 0, 1)"
+    "turnbucklePadColor": "rgba(0, 0, 0, 1)",
+    "turnbuckleBoltCoverColor": "rgba(0, 0, 0, 0)"
   }
 }

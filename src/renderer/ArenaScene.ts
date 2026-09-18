@@ -36,6 +36,22 @@ const RING_PATH = `assets/runtime/${RING.file}`;
 const RING_STEPS_PATH = "assets/glb/arena/ring-steps.glb";
 
 /**
+ * Trusses, lights and hanging banners over the ring.
+ *
+ * Added by the renderer rather than listed per arena, on the same footing as
+ * the ring steps: every arena has a ceiling, so there is nothing for an arena
+ * file to decide beyond how it is dressed. The GLB is authored in place -
+ * centred on the ring, spanning about +-11.8 units and sitting 9.3 to 13.3
+ * units up - so it loads with no placement of its own.
+ *
+ * Its textures are packed into the file, so it renders correctly untouched.
+ * An arena that wants its own banners names `mat_ceiling_banners` in
+ * `arenaTextures`; `mat_ceiling_lights` and `mat_ceiling_truss` are reachable
+ * the same way.
+ */
+const CEILING_TRUSSES_PATH = "assets/glb/arena/ceiling_trusses.glb";
+
+/**
  * The steps GLB ships with a 1x1 placeholder baked into `mat_ring_steps`, so
  * on its own it renders flat white. The real 512x256 art sits beside it in the
  * texture tree, unreferenced by any arena file - because the steps are added
@@ -46,6 +62,12 @@ const RING_STEPS_PATH = "assets/glb/arena/ring-steps.glb";
  * `mat_ring_steps` still wins.
  */
 const DEFAULT_STEPS_TEXTURE = "assets/textures/arena/ring_steps.png";
+
+const DEFAULT_RING_TEXTURES: Record<string, string> = {
+  mat_turnbuckle_bolt_1: "assets/textures/ring/shared/turnbuckle-bolt-1.png",
+  mat_turnbuckle_bolt_2: "assets/textures/ring/shared/turnbuckle-bolt-2.png",
+  mat_turnbuckle_bolt_cover: "assets/textures/ring/shared/turnbuckle-bolt-cover.png",
+};
 
 /**
  * Where the two sets of steps sit, measured from the authored ring.
@@ -96,6 +118,7 @@ export class ArenaScene {
   private ringMeshes: AbstractMesh[] = [];
   private stepsMeshes: AbstractMesh[] = [];
   private arenaMeshes: AbstractMesh[] = [];
+  private ceilingMeshes: AbstractMesh[] = [];
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
@@ -203,6 +226,13 @@ export class ArenaScene {
       this.arenaMeshes.push(...meshes);
     }
 
+    const ceilingUrl = resolveAsset(CEILING_TRUSSES_PATH);
+    if (ceilingUrl) {
+      this.ceilingMeshes = (await ImportMeshAsync(ceilingUrl, scene)).meshes;
+    } else {
+      warnings.push(`Ceiling trusses not bundled: ${CEILING_TRUSSES_PATH}`);
+    }
+
     warnings.push(...this.applyTextures(arena));
     this.frameCamera();
 
@@ -216,6 +246,7 @@ export class ArenaScene {
       ...this.ringMeshes,
       ...this.stepsMeshes,
       ...this.arenaMeshes,
+      ...this.ceilingMeshes,
     ]) {
       // Meshes share materials - the ring has ~69 meshes over 10 materials -
       // so they are collected and disposed once rather than per mesh.
@@ -227,6 +258,7 @@ export class ArenaScene {
     this.ringMeshes = [];
     this.stepsMeshes = [];
     this.arenaMeshes = [];
+    this.ceilingMeshes = [];
   }
 
   private placeSteps(
@@ -282,15 +314,23 @@ export class ArenaScene {
 
   private applyTextures(arena: ArenaData): string[] {
     const warnings: string[] = [];
+    const ringTextures = { ...arena.ringTextures };
+    for (const [name, path] of Object.entries(DEFAULT_RING_TEXTURES)) {
+      ringTextures[name] ??= path;
+    }
     warnings.push(
       ...this.applyTo(
         [...this.ringMeshes, ...this.stepsMeshes],
-        arena.ringTextures,
+        ringTextures,
         "ringTextures"
       )
     );
     warnings.push(
-      ...this.applyTo(this.arenaMeshes, arena.arenaTextures, "arenaTextures")
+      ...this.applyTo(
+        [...this.arenaMeshes, ...this.ceilingMeshes],
+        arena.arenaTextures,
+        "arenaTextures"
+      )
     );
     return warnings;
   }
@@ -335,6 +375,8 @@ export class ArenaScene {
         return ["mat_post"];
       case "turnbucklePadColor":
         return ["mat_turnbuckle"];
+      case "turnbuckleBoltCoverColor":
+        return ["mat_turnbuckle_bolt_cover"];
       case "ropeColor":
         return ["mat_rope_top", "mat_rope_middle", "mat_rope_bottom"];
       case "ropeTopColor":
@@ -390,7 +432,12 @@ export class ArenaScene {
 
   /** Everything currently loaded, for framing. */
   private allMeshes(): AbstractMesh[] {
-    return [...this.ringMeshes, ...this.stepsMeshes, ...this.arenaMeshes];
+    return [
+      ...this.ringMeshes,
+      ...this.stepsMeshes,
+      ...this.arenaMeshes,
+      ...this.ceilingMeshes,
+    ];
   }
 
   bounds(meshes = this.ringMeshes): ArenaBounds | null {
@@ -431,7 +478,14 @@ export class ArenaScene {
     camera.setTarget(target);
     camera.radius = Math.max(largest * 1.2, 12);
     camera.lowerRadiusLimit = Math.max(largest * 0.35, 8);
-    camera.upperRadiusLimit = Math.max(largest * 3, camera.radius + 10);
+
+    // The opening shot stays on the ring, but the outer limit is measured
+    // against everything loaded so the ceiling - roughly three times the
+    // ring's span and well above it - can be pulled back into view rather
+    // than sitting permanently off the top of the frame.
+    const whole = this.bounds(this.allMeshes()) ?? bounds;
+    const widest = Math.max(whole.size.x, whole.size.y, whole.size.z);
+    camera.upperRadiusLimit = Math.max(widest * 3, camera.radius + 10);
   }
 
   private static readonly ROTATION_STEP = Math.PI / 48;
@@ -474,11 +528,17 @@ export class ArenaScene {
   }
 
   /** How many meshes are loaded, by group. For tests. */
-  meshCounts(): { ring: number; steps: number; arena: number } {
+  meshCounts(): {
+    ring: number;
+    steps: number;
+    arena: number;
+    ceiling: number;
+  } {
     return {
       ring: this.ringMeshes.length,
       steps: this.stepsMeshes.length,
       arena: this.arenaMeshes.length,
+      ceiling: this.ceilingMeshes.length,
     };
   }
 }

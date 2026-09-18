@@ -57,6 +57,45 @@ Checks three things, and also runs as part of `npm test`:
 
 ## Core concepts
 
+### Arena ring textures
+
+Arena JSON files can override the turnbuckle bolt textures in `ringTextures`:
+
+```json
+"ringTextures": {
+  "mat_turnbuckle_bolt_1": "assets/textures/ring/shared/turnbuckle-bolt-1.png",
+  "mat_turnbuckle_bolt_2": "assets/textures/ring/shared/turnbuckle-bolt-2.png",
+  "mat_turnbuckle_bolt_cover": "assets/textures/ring/shared/turnbuckle-bolt-cover.png"
+}
+```
+
+The Arena Viewer uses these shared textures when the corresponding key is
+omitted or `null`, including when `ringTextures` is omitted entirely. Set a key
+to another repository-relative texture path to customize that material.
+
+Use `turnbuckleBoltCoverColor` in `ringTextures` to tint
+`mat_turnbuckle_bolt_cover`. Like the other ring color settings, this multiplies
+the texture's RGB color and ignores alpha, so `rgba(0, 0, 0, 0)` renders black.
+
+### Arena ceiling
+
+The Arena Viewer adds trusses, lights and hanging banners over every ring from
+`assets/glb/arena/ceiling_trusses.glb`, the same way it adds the ring steps —
+no arena file lists it, and there is nothing to place, since the GLB is
+authored centred above the ring.
+
+Its textures are packed into the GLB, so it renders correctly with no
+configuration. To give one arena its own banners, name the material in
+`arenaTextures`:
+
+```json
+"arenaTextures": {
+  "mat_ceiling_banners": "assets/textures/arena/royal_rumble/ceiling_banner.png"
+}
+```
+
+`mat_ceiling_lights` and `mat_ceiling_truss` are overridable the same way.
+
 ### Move slots
 A **slot** is a named input/state combination available to every wrestler.
 Every wrestler has the same slots; what differs is the move assigned to each.

@@ -3,21 +3,24 @@
   "displayName": "Royal Rumble",
   "previewImage": "assets/textures/arena/previews/preview-royalrumble.png",
   "arenaParts": [
-    "assets/glb/arena/arena-floor.glb",
-    "assets/glb/arena/barricade.glb"
+    "assets/glb/arena/royal_rumble/arena_floor.glb",
+    "assets/glb/arena/royal_rumble/barricade.glb",
+    "assets/glb/arena/royal_rumble/arena_outer.glb",
+    "assets/glb/arena/royal_rumble/royal_rumble_stage.glb"
   ],
   "arenaTextures": {
-    "mat_floor_ringside_corners": "assets/textures/arena/floor_mat_1.png",
     "mat_floor_ringside": "assets/textures/arena/floor_mat_1_double.png",
     "mat_ringside_barricade": "assets/textures/arena/floor_mat_1_double.png"
   },
   "ringTextures": {
     "mat_canvas": "assets/textures/ring/shared/canvas.png",
-    "mat_apron": "assets/textures/ring/apron_raw.png",
+    "mat_apron": "assets/textures/arena/royal_rumble/ring_apron.png",
     "mat_rope_top": "assets/textures/ring/shared/rope.png",
     "mat_rope_middle": "assets/textures/ring/shared/rope.png",
     "mat_rope_bottom": "assets/textures/ring/shared/rope.png",
     "ropeColor": "rgba(0, 0, 0, 0.4)",
-    "turnbucklePadColor": "rgba(0, 0, 0, 1)"
+    "postColor": "rgba(0, 0, 0, 0)",
+    "turnbucklePadColor": "rgba(0, 0, 0, 1)",
+    "turnbuckleBoltCoverColor": "rgba(0, 0, 0, 0)"
   }
 }

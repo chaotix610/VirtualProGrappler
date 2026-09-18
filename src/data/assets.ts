@@ -21,11 +21,12 @@ const modules = import.meta.glob(
     "../../assets/textures/**/*.{png,jpg,jpeg,webp,gif}",
     "../../assets/textures/**/*.{ttf,woff,woff2}",
     "../../assets/glb/**/*.glb",
-    // `raw/` holds unprocessed rips kept for reference, named as they came out
-    // of the extractor. They are never referenced by the data, and one of them
-    // contains a `#`, which is a fragment delimiter in a module specifier and
-    // so cannot be resolved at all. Excluded on both counts.
-    "!../../assets/textures/**/raw/**",
+    // Unprocessed rips are kept for reference alongside the art they feed,
+    // named as they came out of the extractor. Those names contain a `#`,
+    // which is a fragment delimiter in a module specifier and so cannot be
+    // resolved at all. Excluded by that name, rather than by directory, so
+    // that finished textures sitting next to them still bundle.
+    "!../../assets/textures/**/*#*",
   ],
   { eager: true, query: "?url", import: "default" }
 ) as Record<string, string>;

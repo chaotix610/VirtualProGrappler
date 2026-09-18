@@ -158,9 +158,16 @@ describe("every arena's referenced assets resolve", () => {
     const unknown: string[] = [];
     const materialCache = new Map<string, string[]>();
 
+    // The ceiling trusses are added by ArenaScene rather than listed in the
+    // arena files, so their materials are in scope for every arena's
+    // `arenaTextures` - that is how an arena dresses its own banners.
+    const rendererAdded = materialNamesInGlb(
+      "assets/glb/arena/ceiling_trusses.glb"
+    );
+
     for (const summary of availableArenas()) {
       const arena = arenaById(summary.id)!;
-      const materialNames = new Set<string>();
+      const materialNames = new Set<string>(rendererAdded);
 
       for (const part of arenaParts(arena)) {
         const cached =
@@ -177,6 +184,25 @@ describe("every arena's referenced assets resolve", () => {
     }
 
     expect(unknown).toEqual([]);
+  });
+});
+
+describe("ceiling trusses", () => {
+  // Kept in step with CEILING_TRUSSES_PATH in src/renderer/ArenaScene.ts.
+  const CEILING_GLB = "assets/glb/arena/ceiling_trusses.glb";
+
+  it("is bundled, since every arena gets one", () => {
+    expect(resolveAsset(CEILING_GLB)).not.toBeNull();
+  });
+
+  it("names the materials an arena file can dress", () => {
+    expect(materialNamesInGlb(CEILING_GLB)).toEqual(
+      expect.arrayContaining([
+        "mat_ceiling_banners",
+        "mat_ceiling_lights",
+        "mat_ceiling_truss",
+      ])
+    );
   });
 });
 

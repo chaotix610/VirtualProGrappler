@@ -142,7 +142,8 @@
         "ropeMiddleColor": { "$ref": "#/$defs/css_color" },
         "ropeBottomColor": { "$ref": "#/$defs/css_color" },
         "postColor": { "$ref": "#/$defs/css_color" },
-        "turnbucklePadColor": { "$ref": "#/$defs/css_color" }
+        "turnbucklePadColor": { "$ref": "#/$defs/css_color" },
+        "turnbuckleBoltCoverColor": { "$ref": "#/$defs/css_color" }
       },
       "additionalProperties": {
         "$ref": "#/$defs/material_texture_value"
