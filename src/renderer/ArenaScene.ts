@@ -185,17 +185,22 @@ export class ArenaScene {
   /**
    * Loads an arena, replacing whatever was on screen.
    *
+   * Takes either a saved arena's id or arena data directly. The editor passes
+   * data, so a draft can be rendered before - or without - it ever being
+   * written to disk.
+   *
    * A missing environment part warns and carries on, since an arena is still
    * worth looking at without its floor. A missing ring throws: there would be
    * nothing left to show.
    */
-  async load(arenaId: string): Promise<ArenaLoadReport> {
+  async load(arenaOrId: string | ArenaData): Promise<ArenaLoadReport> {
     this.init();
     this.clearArena();
 
     const scene = this.scene!;
-    const arena = arenaById(arenaId);
-    if (!arena) throw new Error(`No arena data for "${arenaId}"`);
+    const arena =
+      typeof arenaOrId === "string" ? arenaById(arenaOrId) : arenaOrId;
+    if (!arena) throw new Error(`No arena data for "${arenaOrId}"`);
 
     const warnings: string[] = [];
 
@@ -525,6 +530,31 @@ export class ArenaScene {
   cameraState(): { alpha: number; beta: number; radius: number } | null {
     const c = this.camera;
     return c ? { alpha: c.alpha, beta: c.beta, radius: c.radius } : null;
+  }
+
+  /**
+   * The material names present in the loaded scene, grouped the way the arena
+   * file's texture maps are.
+   *
+   * The editor lists these so a texture is assigned to a material that is
+   * actually there. Picking a name by hand is the one way to write a valid
+   * arena file that silently does nothing, since a key matching no material
+   * is only reported as a load warning after the fact.
+   */
+  materialNames(): { arena: string[]; ring: string[] } {
+    const names = (meshes: AbstractMesh[]): string[] =>
+      [
+        ...new Set(
+          meshes
+            .map((mesh) => mesh.material?.name)
+            .filter((name): name is string => !!name)
+        ),
+      ].sort();
+
+    return {
+      arena: names([...this.arenaMeshes, ...this.ceilingMeshes]),
+      ring: names([...this.ringMeshes, ...this.stepsMeshes]),
+    };
   }
 
   /** How many meshes are loaded, by group. For tests. */

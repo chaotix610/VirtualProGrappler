@@ -2,9 +2,11 @@ import { fileURLToPath, URL } from "node:url";
 // vitest/config re-exports Vite's defineConfig widened with the `test` key.
 import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
+// Dev-only: the Arena Editor's save endpoint. Not part of a production build.
+import { arenaEditorPlugin } from "./tools/vite-arena-editor.mjs";
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), arenaEditorPlugin()],
   /**
    * Only assets/runtime is served and shipped. The Blender originals and raw
    * animation libraries in assets/source stay out of the bundle - they are

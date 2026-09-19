@@ -66,11 +66,26 @@
               {
                 "type": "definitionList",
                 "items": [
-                  { "term": "Single Match", "definition": "1 vs. 1" },
-                  { "term": "Tag Match", "definition": "2 vs. 2" },
-                  { "term": "Triple Threat Match", "definition": "1 vs. 1 vs. 1" },
-                  { "term": "Handicap Match", "definition": "2 vs. 1" },
-                  { "term": "Cage Match", "definition": "1 vs. 1" }
+                  {
+                    "term": "Single Match",
+                    "definition": "1 vs. 1"
+                  },
+                  {
+                    "term": "Tag Match",
+                    "definition": "2 vs. 2"
+                  },
+                  {
+                    "term": "Triple Threat Match",
+                    "definition": "1 vs. 1 vs. 1"
+                  },
+                  {
+                    "term": "Handicap Match",
+                    "definition": "2 vs. 1"
+                  },
+                  {
+                    "term": "Cage Match",
+                    "definition": "1 vs. 1"
+                  }
                 ]
               }
             ]
@@ -272,6 +287,20 @@
               {
                 "type": "paragraph",
                 "text": "View the arenas currently available in VPG."
+              }
+            ]
+          }
+        },
+        {
+          "id": "arena_editor",
+          "displayName": "Arena Editor",
+          "target": "commissioner.arena_editor",
+          "instructions": {
+            "title": "<< Arena Editor >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Create and edit arenas: parts, textures and placement, with a live preview. Saves to data/arenas/ through the dev server, so changes land in the project."
               }
             ]
           }

@@ -2,6 +2,7 @@
   <div class="menu" :style="backgroundStyle">
     <ControlMapper v-if="mapperOpen" @back="closeMapper" />
     <ArenaViewer v-else-if="arenaViewerOpen" @back="closeArenaViewer" />
+    <ArenaEditor v-else-if="arenaEditorOpen" @back="closeArenaEditor" />
 
     <template v-else>
       <img
@@ -84,15 +85,27 @@ const ArenaViewer = defineAsyncComponent({
   delay: 0,
 });
 
+/**
+ * The editor is the menu's third Babylon screen, and the heaviest - it renders
+ * an arena and carries its own editing UI. Lazy for the same reason as the
+ * viewer: it is opened rarely and should not weigh on the menu's load.
+ */
+const ArenaEditor = defineAsyncComponent({
+  loader: () => import("./ArenaEditor.vue"),
+  loadingComponent: () => h(SceneLoading, { background: "#0b0e14" }),
+  delay: 0,
+});
+
 /** Routes the menu knows how to open. Everything else is not built yet. */
 const ROUTE_CONTROLS = "commissioner.controls";
 const ROUTE_ARENA_VIEWER = "commissioner.arena_viewer";
+const ROUTE_ARENA_EDITOR = "commissioner.arena_editor";
 const ROUTE_COMBAT_TEST = "test.combat_system";
 
 export default defineComponent({
   name: "MainMenu",
 
-  components: { ControlMapper, ArenaViewer },
+  components: { ControlMapper, ArenaViewer, ArenaEditor },
 
   emits: ["launch"],
 
@@ -104,6 +117,7 @@ export default defineComponent({
       showInstructions: false,
       mapperOpen: false,
       arenaViewerOpen: false,
+      arenaEditorOpen: false,
       status: "",
     };
   },
@@ -143,7 +157,9 @@ export default defineComponent({
   methods: {
     onKeyDown(event: KeyboardEvent) {
       // The mapper and the arena viewer run their own handlers while open.
-      if (this.mapperOpen || this.arenaViewerOpen) return;
+      if (this.mapperOpen || this.arenaViewerOpen || this.arenaEditorOpen) {
+        return;
+      }
 
       const input = virtualInputFor(event);
       if (!input) return;
@@ -197,6 +213,11 @@ export default defineComponent({
         return;
       }
 
+      if (target.id === ROUTE_ARENA_EDITOR) {
+        this.arenaEditorOpen = true;
+        return;
+      }
+
       if (target.id === ROUTE_COMBAT_TEST) {
         this.$emit("launch", target.id);
         return;
@@ -219,6 +240,11 @@ export default defineComponent({
 
     closeArenaViewer() {
       this.arenaViewerOpen = false;
+      this.status = "";
+    },
+
+    closeArenaEditor() {
+      this.arenaEditorOpen = false;
       this.status = "";
     },
   },

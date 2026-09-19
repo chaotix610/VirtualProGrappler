@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { arenaById, arenaParts, availableArenas } from "@/data/arenas";
 import { cssColorToRgb } from "@/renderer/cssColor";
@@ -38,7 +38,11 @@ describe("arena catalog", () => {
   const arenas = availableArenas();
 
   it("loads every arena file", () => {
-    expect(arenas).toHaveLength(10);
+    // Counted from the directory rather than hardcoded: arenas are created
+    // through the editor now, and a fixed number would fail on every new one
+    // while saying nothing about whether the loader saw them all.
+    const files = readdirSync("data/arenas").filter((f) => f.endsWith(".json"));
+    expect(arenas).toHaveLength(files.length);
   });
 
   it("sorts by display name", () => {
