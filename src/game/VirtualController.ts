@@ -60,10 +60,18 @@ export function eventCode(event: KeyboardEvent): string {
   return event.code || event.key;
 }
 
-/** The virtual input a keyboard event stands for, if any. */
+/**
+ * The virtual input a keyboard event stands for, if any.
+ *
+ * Escape always backs out. The mapper reserves it as its cancel key, so once
+ * B is rebound there is no way to bind Escape again - without this fallback a
+ * rebind would leave every screen without a keyboard back.
+ */
 export function virtualInputFor(event: KeyboardEvent): VirtualInput | null {
-  const control = controlForKey(eventCode(event));
-  return control ? VIRTUAL_BY_CONTROL[control] : null;
+  const code = eventCode(event);
+  const control = controlForKey(code);
+  if (control) return VIRTUAL_BY_CONTROL[control];
+  return code === "Escape" ? "b" : null;
 }
 
 /** Whether an input moves a menu cursor up, from either stick or d-pad. */

@@ -73,7 +73,7 @@ export function idProblem(id: string, taken: Iterable<string>): string | null {
 
 /** Every saved arena's id. */
 export function existingIds(): string[] {
-  return availableArenas().map((arena) => arena.id);
+  return availableArenas({ includeHidden: true }).map((arena) => arena.id);
 }
 
 /**

@@ -22,6 +22,10 @@
       "type": "string",
       "minLength": 1
     },
+    "hidden": {
+      "description": "When true, the arena is left out of the arena viewer and arena editor menus. Defaults to false.",
+      "type": "boolean"
+    },
     "previewImage": {
       "$ref": "#/$defs/asset_path"
     },

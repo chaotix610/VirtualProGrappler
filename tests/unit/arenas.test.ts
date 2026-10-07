@@ -43,7 +43,13 @@ describe("arena catalog", () => {
     // through the editor now, and a fixed number would fail on every new one
     // while saying nothing about whether the loader saw them all.
     const files = readdirSync("data/arenas").filter((f) => f.endsWith(".json"));
-    expect(arenas).toHaveLength(files.length);
+    expect(availableArenas({ includeHidden: true })).toHaveLength(files.length);
+  });
+
+  it("leaves hidden arenas off the menu list", () => {
+    for (const summary of arenas) {
+      expect(arenaById(summary.id)?.hidden).not.toBe(true);
+    }
   });
 
   it("sorts by display name", () => {

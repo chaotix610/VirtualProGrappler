@@ -27,6 +27,8 @@ export interface ArenaData {
   id: string;
   displayName: string;
   previewImage?: string;
+  /** Leaves the arena out of the viewer and editor menus. It still loads by id. */
+  hidden?: boolean;
   /** Stage id from data/stages.json. The current way to describe an arena. */
   stage?: string;
   /** Ringside floor GLB. One of the pieces the stage lists. */
@@ -63,9 +65,17 @@ for (const [path, data] of Object.entries(modules)) {
   byId.set(id, { ...data, id });
 }
 
-/** Every arena, ordered by display name. */
-export function availableArenas(): ArenaSummary[] {
+/**
+ * Every arena, ordered by display name.
+ *
+ * Arenas marked `hidden` are left out unless asked for, so they stay off the
+ * menus while still counting when an id needs to be unique.
+ */
+export function availableArenas(
+  { includeHidden = false }: { includeHidden?: boolean } = {}
+): ArenaSummary[] {
   return [...byId.values()]
+    .filter((arena) => includeHidden || arena.hidden !== true)
     .map((arena) => ({
       id: arena.id,
       displayName: arena.displayName ?? arena.id,

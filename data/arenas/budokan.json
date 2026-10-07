@@ -11,6 +11,7 @@
     "mat_ringside_barricade": "assets/textures/arena/floor_ringside/floor_mat_1_double.png",
     "mat_ceiling_banners": "assets/textures/arena/ceiling_banners/raw_is_war_banner.png"
   },
+  "hidden": true,
   "ringTextures": {
     "mat_rope_top": "assets/textures/ring/rope/rope_2.png",
     "mat_rope_middle": "assets/textures/ring/rope/rope_2.png",
