@@ -1,5 +1,6 @@
 <template>
   <MainMenu v-if="screen === 'menu'" @launch="launch" />
+  <CombatTest2 v-else-if="screen === 'combat2'" @exit="exit" />
   <Game v-else @exit="exit" />
 </template>
 
@@ -26,20 +27,40 @@ const Game = defineAsyncComponent({
   delay: 0,
 });
 
-type Screen = 'menu' | 'game';
+/** Combat System Test 2.0. Babylon again, so loaded on demand as well. */
+const CombatTest2 = defineAsyncComponent({
+  loader: () => import('./CombatTest2.vue'),
+  // Matches the 2.0 scene's clear colour, for the same no-flash handover.
+  loadingComponent: () => h(SceneLoading, { background: '#08080d' }),
+  delay: 0,
+});
 
-/** Deep link straight to the combat prototype, skipping the menu. */
-const COMBAT_HASH = '#combat';
+type Screen = 'menu' | 'game' | 'combat2';
+
+/** Menu routes that open a screen of their own. */
+const SCREEN_BY_ROUTE: Record<string, Screen> = {
+  'test.combat_system': 'game',
+  'test.combat_system_2': 'combat2',
+};
+
+/** Deep links straight to a combat test, skipping the menu. */
+const HASH_BY_SCREEN: Partial<Record<Screen, string>> = {
+  game: '#combat',
+  combat2: '#combat2',
+};
 
 function screenFromLocation(): Screen {
   if (typeof location === 'undefined') return 'menu';
-  return location.hash === COMBAT_HASH ? 'game' : 'menu';
+  const match = Object.entries(HASH_BY_SCREEN).find(
+    ([, hash]) => hash === location.hash
+  );
+  return (match?.[0] as Screen | undefined) ?? 'menu';
 }
 
 /**
  * Application shell.
  *
- * The menu is the root screen; the combat test is the one feature it can
+ * The menu is the root screen. The two combat tests are the features it can
  * currently launch, from Commissioner -> Smackdown Mall.
  *
  * The screen is mirrored into the URL hash, so a refresh stays put and the
@@ -49,7 +70,7 @@ function screenFromLocation(): Screen {
 export default defineComponent({
   name: 'App',
 
-  components: { Game, MainMenu },
+  components: { CombatTest2, Game, MainMenu },
 
   data() {
     return {
@@ -66,8 +87,8 @@ export default defineComponent({
   },
 
   methods: {
-    launch() {
-      this.screen = 'game';
+    launch(route: string) {
+      this.screen = SCREEN_BY_ROUTE[route] ?? 'game';
       this.syncHash();
     },
 
@@ -80,7 +101,7 @@ export default defineComponent({
       if (typeof history === 'undefined') return;
       // replaceState rather than assigning location.hash, so moving between
       // menu and game does not leave a trail of back-button entries.
-      const url = this.screen === 'game' ? COMBAT_HASH : location.pathname;
+      const url = HASH_BY_SCREEN[this.screen] ?? location.pathname;
       history.replaceState(null, '', url);
     },
   },

@@ -58,6 +58,19 @@
       </span>
     </div>
 
+    <!-- Live camera readout; polled because mouse drags move it too. -->
+    <dl v-if="sceneOpen && view" class="position">
+      <dt>Pos</dt>
+      <dd>{{ formatVec(view.position) }}</dd>
+      <dt>Target</dt>
+      <dd>{{ formatVec(view.target) }}</dd>
+      <dt>Orbit</dt>
+      <dd>
+        &alpha; {{ degrees(view.alpha) }}&deg; &middot; &beta;
+        {{ degrees(view.beta) }}&deg; &middot; r {{ view.radius.toFixed(2) }}
+      </dd>
+    </dl>
+
     <div v-if="loading" class="loading">Loading&hellip;</div>
   </div>
 </template>
@@ -66,7 +79,7 @@
 import { defineComponent, markRaw } from "vue";
 import { ArenaSummary, availableArenas } from "@/data/arenas";
 import { resolveAsset } from "@/data/assets";
-import { ArenaScene } from "@/renderer/ArenaScene";
+import { ArenaScene, CameraState } from "@/renderer/ArenaScene";
 import { isMenuDown, isMenuUp, virtualInputFor } from "@/game/VirtualController";
 import { playMenuCue } from "@/audio/menuAudio";
 
@@ -98,6 +111,9 @@ export default defineComponent({
       scene: null as ArenaScene | null,
       /** Guards against an older load finishing after a newer one. */
       loadToken: 0,
+      /** The camera as of the last readout poll. */
+      view: null as CameraState | null,
+      viewTimer: 0,
     };
   },
 
@@ -134,10 +150,14 @@ export default defineComponent({
 
   mounted() {
     window.addEventListener("keydown", this.onKeyDown);
+    // A few updates a second is plenty to read, and keeps Vue out of the
+    // render loop.
+    this.viewTimer = window.setInterval(this.pollView, 100);
   },
 
   beforeUnmount() {
     window.removeEventListener("keydown", this.onKeyDown);
+    window.clearInterval(this.viewTimer);
     this.scene?.dispose();
     this.scene = null;
   },
@@ -165,6 +185,18 @@ export default defineComponent({
         return this.$emit("back");
       }
       // Left and right stay inert, as they are in the menus.
+    },
+
+    pollView() {
+      this.view = this.sceneOpen ? this.scene?.cameraState() ?? null : null;
+    },
+
+    formatVec(v: { x: number; y: number; z: number }): string {
+      return [v.x, v.y, v.z].map((n) => n.toFixed(2)).join(", ");
+    },
+
+    degrees(radians: number): string {
+      return ((radians * 180) / Math.PI).toFixed(1);
     },
 
     move(delta: number) {
@@ -376,6 +408,31 @@ export default defineComponent({
 .hud__warning {
   flex-basis: 100%;
   color: #ffcc80;
+}
+
+.position {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0.15rem 0.6rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  background: rgba(10, 14, 20, 0.7);
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.position dt {
+  opacity: 0.6;
+}
+
+.position dd {
+  margin: 0;
 }
 
 .loading {

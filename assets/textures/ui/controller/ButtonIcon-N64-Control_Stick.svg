@@ -1,0 +1,77 @@
+<svg id="svg2" version="1.1" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+	<defs id="defs4">
+		<clipPath id="clipPath4405">
+			<path id="path4407" d="m128 59a69 69 0 0 0-69 69 69 69 0 0 0 69 69 69 69 0 0 0 69-69 69 69 0 0 0-69-69zm0 10a59 59 0 0 1 59 59 59 59 0 0 1-59 59 59 59 0 0 1-59-59 59 59 0 0 1 59-59z" style="fill:#fff"/>
+		</clipPath>
+		<clipPath id="clipPath4459">
+			<path id="path4461" d="m128 79a49 49 0 0 0-49 49 49 49 0 0 0 49 49 49 49 0 0 0 49-49 49 49 0 0 0-49-49zm0 10a39 39 0 0 1 39 39 39 39 0 0 1-39 39 39 39 0 0 1-39-39 39 39 0 0 1 39-39z" style="fill:#fff"/>
+		</clipPath>
+		<clipPath id="clipPath4481">
+			<path id="path4483" d="m128 99a29 29 0 0 0-29 29 29 29 0 0 0 29 29 29 29 0 0 0 29-29 29 29 0 0 0-29-29zm0 10a19 19 0 0 1 19 19 19 19 0 0 1-19 19 19 19 0 0 1-19-19 19 19 0 0 1 19-19z" style="fill:#fff"/>
+		</clipPath>
+		<radialGradient id="radialGradient4355" cx="128" cy="124" r="80" gradientUnits="userSpaceOnUse">
+			<stop id="stop4275" style="stop-color:#bfbfbf" offset="0"/>
+			<stop id="stop4281" style="stop-color:#bfbfbf" offset=".95"/>
+			<stop id="stop4277" style="stop-color:#5f5f5f" offset="1"/>
+		</radialGradient>
+		<radialGradient id="radialGradient4357" cx="128" cy="124" r="80" gradientUnits="userSpaceOnUse">
+			<stop id="stop4287" style="stop-color:#cfcfcf" offset="0"/>
+			<stop id="stop4297" style="stop-color:#cfcfcf" offset=".85"/>
+			<stop id="stop4293" style="stop-color:#cfcfcf;stop-opacity:0" offset=".95"/>
+			<stop id="stop4289" style="stop-color:#cfcfcf;stop-opacity:0" offset="1"/>
+		</radialGradient>
+		<radialGradient id="radialGradient4193" cx="128" cy="128" r="69" gradientUnits="userSpaceOnUse">
+			<stop id="stop4189" offset="0"/>
+			<stop id="stop4195" offset=".85507"/>
+			<stop id="stop4197" style="stop-opacity:0" offset=".90338"/>
+			<stop id="stop4199" style="stop-opacity:0" offset=".95169"/>
+			<stop id="stop4191" offset="1"/>
+		</radialGradient>
+		<radialGradient id="radialGradient4213" cx="128" cy="128" r="49" gradientUnits="userSpaceOnUse">
+			<stop id="stop4209" offset="0"/>
+			<stop id="stop4223" offset=".79075"/>
+			<stop id="stop4225" style="stop-opacity:0" offset=".8605"/>
+			<stop id="stop4227" style="stop-opacity:0" offset=".93025"/>
+			<stop id="stop4211" offset="1"/>
+		</radialGradient>
+		<radialGradient id="radialGradient4221" cx="128" cy="128" r="29" gradientUnits="userSpaceOnUse">
+			<stop id="stop4217" offset="0"/>
+			<stop id="stop4229" offset=".67802"/>
+			<stop id="stop4231" style="stop-opacity:0" offset=".78535"/>
+			<stop id="stop4233" style="stop-opacity:0" offset=".89267"/>
+			<stop id="stop4219" offset="1"/>
+		</radialGradient>
+		<radialGradient id="radialGradient4383" cx="128" cy="126" r="69" gradientUnits="userSpaceOnUse">
+			<stop id="stop4373" style="stop-color:#fff;stop-opacity:0" offset="0"/>
+			<stop id="stop4375" style="stop-color:#fff;stop-opacity:0" offset=".85507"/>
+			<stop id="stop4377" style="stop-color:#fff" offset=".92754"/>
+			<stop id="stop4381" style="stop-color:#fff;stop-opacity:0" offset="1"/>
+		</radialGradient>
+		<radialGradient id="radialGradient4451" cx="128" cy="126" r="49" gradientUnits="userSpaceOnUse">
+			<stop id="stop4441" style="stop-color:#fff;stop-opacity:0" offset="0"/>
+			<stop id="stop4443" style="stop-color:#fff;stop-opacity:0" offset=".79075"/>
+			<stop id="stop4447" style="stop-color:#fff" offset=".89538"/>
+			<stop id="stop4449" style="stop-color:#fff;stop-opacity:0" offset="1"/>
+		</radialGradient>
+		<radialGradient id="radialGradient4477" cx="128" cy="126" r="29" gradientUnits="userSpaceOnUse">
+			<stop id="stop4467" style="stop-color:#fff;stop-opacity:0" offset="0"/>
+			<stop id="stop4469" style="stop-color:#fff;stop-opacity:0" offset=".67802"/>
+			<stop id="stop4473" style="stop-color:#fff" offset=".83901"/>
+			<stop id="stop4475" style="stop-color:#fff;stop-opacity:0" offset="1"/>
+		</radialGradient>
+		<clipPath id="clipPath3410">
+			<circle id="circle3412" cx="128" cy="128" r="80" style="fill:#fff"/>
+		</clipPath>
+	</defs>
+	<g id="control-stick">
+		<path id="circle4351" d="m208 128a80 80 0 0 1-80 80 80 80 0 0 1-80-80 80 80 0 0 1 80-80 80 80 0 0 1 80 80z" style="fill:url(#radialGradient4355)"/>
+		<path id="circle4353" d="m208 124a80 80 0 0 1-80 80 80 80 0 0 1-80-80 80 80 0 0 1 80-80 80 80 0 0 1 80 80z" clip-path="url(#clipPath3410)" style="fill:url(#radialGradient4357)"/>
+		<path id="circle4178" d="m128 59a69 69 0 0 0-69 69 69 69 0 0 0 69 69 69 69 0 0 0 69-69 69 69 0 0 0-69-69zm0 10a59 59 0 0 1 59 59 59 59 0 0 1-59 59 59 59 0 0 1-59-59 59 59 0 0 1 59-59z" style="fill:url(#radialGradient4193);opacity:.25"/>
+		<path id="circle4180" d="m128 79a49 49 0 0 0-49 49 49 49 0 0 0 49 49 49 49 0 0 0 49-49 49 49 0 0 0-49-49zm0 10a39 39 0 0 1 39 39 39 39 0 0 1-39 39 39 39 0 0 1-39-39 39 39 0 0 1 39-39z" style="fill:url(#radialGradient4213);opacity:.25"/>
+		<path id="circle4182" d="m128 99a29 29 0 0 0-29 29 29 29 0 0 0 29 29 29 29 0 0 0 29-29 29 29 0 0 0-29-29zm0 10a19 19 0 0 1 19 19 19 19 0 0 1-19 19 19 19 0 0 1-19-19 19 19 0 0 1 19-19z" style="fill:url(#radialGradient4221);opacity:.25"/>
+		<path id="circle4176" d="m136 128a8 8 0 0 1-8 8 8 8 0 0 1-8-8 8 8 0 0 1 8-8 8 8 0 0 1 8 8z"/>
+		<path id="path4367" d="m128 57a69 69 0 0 0-69 69 69 69 0 0 0 69 69 69 69 0 0 0 69-69 69 69 0 0 0-69-69zm0 10a59 59 0 0 1 59 59 59 59 0 0 1-59 59 59 59 0 0 1-59-59 59 59 0 0 1 59-59z" clip-path="url(#clipPath4405)" style="fill:url(#radialGradient4383);opacity:.5"/>
+		<path id="path4437" d="m128 77a49 49 0 0 0-49 49 49 49 0 0 0 49 49 49 49 0 0 0 49-49 49 49 0 0 0-49-49zm0 10a39 39 0 0 1 39 39 39 39 0 0 1-39 39 39 39 0 0 1-39-39 39 39 0 0 1 39-39z" clip-path="url(#clipPath4459)" style="fill:url(#radialGradient4451);opacity:.5"/>
+		<path id="path4463" d="m128 97a29 29 0 0 0-29 29 29 29 0 0 0 29 29 29 29 0 0 0 29-29 29 29 0 0 0-29-29zm0 10a19 19 0 0 1 19 19 19 19 0 0 1-19 19 19 19 0 0 1-19-19 19 19 0 0 1 19-19z" clip-path="url(#clipPath4481)" style="fill:url(#radialGradient4477);opacity:.5"/>
+	</g>
+</svg>

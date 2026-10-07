@@ -1,0 +1,22 @@
+<svg id="svg2" version="1.1" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<defs id="defs4">
+		<radialGradient id="radialGradient4279" cx="128" cy="124" r="96" gradientUnits="userSpaceOnUse">
+			<stop id="stop4275" style="stop-color:#004fbf" offset="0"/>
+			<stop id="stop4281" style="stop-color:#004fbf" offset=".95"/>
+			<stop id="stop4277" style="stop-color:#00275f" offset="1"/>
+		</radialGradient>
+		<radialGradient id="radialGradient4291" cx="128" cy="124" r="96" gradientUnits="userSpaceOnUse">
+			<stop id="stop4287" style="stop-color:#3f7bcf" offset="0"/>
+			<stop id="stop4297" style="stop-color:#3f7bcf" offset=".85"/>
+			<stop id="stop4293" style="stop-color:#3f7bcf;stop-opacity:0" offset=".95"/>
+			<stop id="stop4289" style="stop-color:#3f7bcf;stop-opacity:0" offset="1"/>
+		</radialGradient>
+	</defs>
+	<g id="button-a">
+		<path id="path42137" d="m32 128v16c0 53.019 42.981 96 96 96 53.019 0 96-42.981 96-96v-16z" style="fill:#00275f"/>
+		<path id="path42143" d="m224 128a96 96 0 0 1-96 96 96 96 0 0 1-96-96 96 96 0 0 1 96-96 96 96 0 0 1 96 96z" style="fill:url(#radialGradient4279)"/>
+		<path id="path42140" d="m224 124a96 96 0 0 1-96 96 96 96 0 0 1-96-96 96 96 0 0 1 96-96 96 96 0 0 1 96 96z" style="fill:url(#radialGradient4291)"/>
+		<path id="path42134" d="m106.63 113.88 4.7168 24.797c0.1591 0.83643-0.77358 1.9707-1.625 1.9707h-6.9316c-0.85142 0-1.784-1.1343-1.625-1.9707l4.7148-24.797c0.0467-0.2456 0.70328-0.2456 0.75 0zm10.49-24.312c-0.19222-1.0106-1.3463-1.9707-2.375-1.9707h-16.979c-1.0287 0-2.1828 0.96011-2.375 1.9707l-15.324 80.568c-0.15909 0.83643 0.77358 1.9707 1.625 1.9707h11.113c1.0287 0 2.1828-0.9601 2.375-1.9707l2.5352-13.33c0.1922-1.0106 1.3463-1.9707 2.375-1.9707h12.33c1.0287 0 2.1828 0.96011 2.375 1.9707l2.5352 13.33c0.1922 1.0106 1.3463 1.9707 2.375 1.9707h11.113c0.85142 0 1.7841-1.1343 1.625-1.9707z" style="fill-rule:evenodd;fill:#00275f"/>
+		<path id="path42131" d="m97.766 91.596c-1.0287 0-2.1828 0.96011-2.375 1.9707l-14.824 77.936c0.31389 0.35042 0.72629 0.60352 1.125 0.60352h11.113c1.0287 0 2.1828-0.9601 2.375-1.9707l2.5352-13.33c0.1922-1.0106 1.3463-1.9707 2.375-1.9707h12.33c1.0287 0 2.1828 0.96011 2.375 1.9707l2.5352 13.33c0.1922 1.0106 1.3463 1.9707 2.375 1.9707h11.113c0.39871 0 0.81111-0.2531 1.125-0.60352l-14.824-77.936c-0.19222-1.0106-1.3463-1.9707-2.375-1.9707zm8.4883 22.1c0.17582 0 0.35164 0.0608 0.375 0.1836l4.7168 24.797v4c0 0.85143-0.77358 1.9707-1.625 1.9707h-6.9316c-0.85142 0-1.625-1.1193-1.625-1.9707v-4l4.7148-24.797c0.0233-0.1228 0.19917-0.1836 0.375-0.1836z" style="fill-rule:evenodd;fill:#003b8f"/>
+	</g>
+</svg>

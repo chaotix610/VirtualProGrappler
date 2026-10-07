@@ -67,6 +67,18 @@ describe("main menu data", () => {
     });
   });
 
+  it("lists Combat System Test 2.0 after the original, on its own route", () => {
+    const mall = pageByKey("smackdownMall")!;
+    expect(mall.menuItems.map((i) => i.displayName)).toEqual([
+      "Combat System Test",
+      "Combat System Test 2.0",
+    ]);
+    expect(resolveTarget(mall.menuItems[1].target)).toEqual({
+      kind: "route",
+      id: "test.combat_system_2",
+    });
+  });
+
   it("keeps the controls screen on a route the menu handles", () => {
     const commissioner = pageByKey("commissioner")!;
     const controls = commissioner.menuItems.find((i) => i.id === "controls")!;

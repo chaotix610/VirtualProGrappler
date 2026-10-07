@@ -135,6 +135,20 @@ export function keysForControl(control: PadControl): readonly string[] {
   return CONTROL_MAPPING.bindings[control] ?? [];
 }
 
+/** Turns a KeyboardEvent.code into something readable on screen. */
+export function describeKey(code: string): string {
+  if (code.startsWith("Key")) return code.slice(3);
+  if (code.startsWith("Digit")) return code.slice(5);
+  if (code.startsWith("Arrow")) return `${code.slice(5)} Arrow`;
+  return code;
+}
+
+/** The keys bound to a control, as on-screen text, or "unbound". */
+export function describeControl(control: PadControl): string {
+  const keys = keysForControl(control);
+  return keys.length ? keys.map(describeKey).join(", ") : "unbound";
+}
+
 /** Every control that has no key bound to it. */
 export function unboundControls(): PadControl[] {
   return PAD_CONTROLS.filter((c) => keysForControl(c).length === 0);

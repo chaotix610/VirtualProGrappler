@@ -1,6 +1,6 @@
 import { Camera, Scalar, TransformNode, Vector3 } from "@babylonjs/core";
 import { AnimationController } from "../renderer/AnimationController";
-import { InputController, RunMode } from "./InputController";
+import { CharacterInput, RunMode } from "./InputController";
 import { RingRopes, RopeSide } from "../renderer/RingRopes";
 import { Anim, RingBounds, Tuning } from "./config";
 
@@ -87,7 +87,7 @@ export class CharacterController {
   constructor(
     public readonly root: TransformNode,
     private animations: AnimationController,
-    private input: InputController,
+    private input: CharacterInput,
     private camera: Camera,
     private bounds: RingBounds | null = null,
     private ropes: RingRopes | null = null
@@ -187,6 +187,11 @@ export class CharacterController {
         // until the key comes up, rather than replaying the raise on a cycle.
         this.animations.play(Anim.BLOCK, { loop: false, restart: true });
       }
+      return;
+    }
+
+    if (action === "evade") {
+      this.startRoll();
       return;
     }
 

@@ -4,106 +4,38 @@ import {
   Color4,
   Engine,
   HemisphericLight,
-  ImportMeshAsync,
-  Material,
-  PBRMaterial,
-  Quaternion,
   Scene,
-  StandardMaterial,
-  Texture,
   Vector3,
 } from "@babylonjs/core";
-// Side-effect import: registers the glTF/GLB loader with the SceneLoader.
-import "@babylonjs/loaders/glTF";
 
-import { RING } from "../game/config";
-import { resolveAsset } from "../data/assets";
-import { ArenaData, arenaById, arenaParts } from "../data/arenas";
-import { colorTargets } from "../data/textureSlots";
-import { cssColorToRgb } from "./cssColor";
+import { ArenaData, arenaById } from "../data/arenas";
+import { LoadedArena, disposeArena, loadArena } from "./ArenaLoader";
 
 /**
  * Renders one arena for the Arena Viewer: the ring, two sets of steps, and
  * whatever environment the arena file lists, with its configured textures.
+ * The building itself is `loadArena`'s; this class adds the orbiting camera
+ * and render loop around it.
  *
  * Deliberately does *not* use RingRopes. Rope elasticity is a gameplay system
  * driven by the character controller; a viewer only needs to look at the ring,
  * and the GLB's own static rope meshes are the right thing to show.
  */
 
-/** The ring is served from publicDir; resolveAsset maps it to its URL. */
-const RING_PATH = `assets/runtime/${RING.file}`;
-
-const RING_STEPS_PATH = "assets/glb/arena/ring-steps.glb";
-
-/**
- * Trusses, lights and hanging banners over the ring.
- *
- * Added by the renderer rather than listed per arena, on the same footing as
- * the ring steps: every arena has a ceiling, so there is nothing for an arena
- * file to decide beyond how it is dressed. The GLB is authored in place -
- * centred on the ring, spanning about +-11.8 units and sitting 9.3 to 13.3
- * units up - so it loads with no placement of its own.
- *
- * Its textures are packed into the file, so it renders correctly untouched.
- * An arena that wants its own banners names `mat_ceiling_banners` in
- * `arenaTextures`; `mat_ceiling_lights` and `mat_ceiling_truss` are reachable
- * the same way.
- */
-const CEILING_TRUSSES_PATH = "assets/glb/arena/ceiling_trusses.glb";
-
-/**
- * The steps GLB ships with a 1x1 placeholder baked into `mat_ring_steps`, so
- * on its own it renders flat white. The real 512x256 art sits beside it in the
- * texture tree, unreferenced by any arena file - because the steps are added
- * by this renderer rather than listed in arena data, there is nowhere in the
- * data for it to be named.
- *
- * Applied before the arena's own textures, so a future arena file that names
- * `mat_ring_steps` still wins.
- */
-const DEFAULT_STEPS_TEXTURE = "assets/textures/arena/ring_steps.png";
-
-const DEFAULT_RING_TEXTURES: Record<string, string> = {
-  mat_turnbuckle_bolt_1: "assets/textures/ring/shared/turnbuckle-bolt-1.png",
-  mat_turnbuckle_bolt_2: "assets/textures/ring/shared/turnbuckle-bolt-2.png",
-  mat_turnbuckle_bolt_cover: "assets/textures/ring/shared/turnbuckle-bolt-cover.png",
-};
-
-/**
- * Where the two sets of steps sit, measured from the authored ring.
- *
- * These rotations are quaternions, ordered [x, y, z, w] - a different
- * convention from the Euler triples an arena file uses for `arenaParts`.
- */
-const RING_STEPS_PLACEMENTS: {
-  corner: string;
-  position: [number, number, number];
-  quaternion: [number, number, number, number];
-}[] = [
-  {
-    corner: "ne",
-    position: [3.7936058044433594, 0.675000011920929, -3.80749249458313],
-    quaternion: [
-      0.27059805393218994, 0.6532813310623169, -0.6532816290855408,
-      0.2705979645252228,
-    ],
-  },
-  {
-    corner: "sw",
-    position: [-3.5595788955688477, 0.675000011920929, 3.2128915786743164],
-    quaternion: [
-      0.6532816290855408, -0.27059799432754517, 0.2705981135368347,
-      0.6532813310623169,
-    ],
-  },
-];
-
 export interface ArenaBounds {
   min: Vector3;
   max: Vector3;
   center: Vector3;
   size: Vector3;
+}
+
+/** Where the orbit camera is, in world units and radians. */
+export interface CameraState {
+  alpha: number;
+  beta: number;
+  radius: number;
+  position: { x: number; y: number; z: number };
+  target: { x: number; y: number; z: number };
 }
 
 /** Anything that went wrong but did not stop the arena rendering. */
@@ -120,6 +52,7 @@ export class ArenaScene {
   private stepsMeshes: AbstractMesh[] = [];
   private arenaMeshes: AbstractMesh[] = [];
   private ceilingMeshes: AbstractMesh[] = [];
+  private loaded: LoadedArena | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
@@ -135,6 +68,7 @@ export class ArenaScene {
 
     this.scene = new Scene(this.engine);
     this.scene.clearColor = new Color4(0.05, 0.05, 0.08, 1);
+    this.scene.collisionsEnabled = true;
 
     this.camera = new ArcRotateCamera(
       "arenaCamera",
@@ -149,6 +83,16 @@ export class ArenaScene {
     this.camera.upperBetaLimit = Math.PI / 2.2;
     this.camera.lowerRadiusLimit = 8;
     this.camera.upperRadiusLimit = 30;
+    // Babylon sweeps the camera from its last position to its new one, so a
+    // move into a wall slides along its surface instead of passing through.
+    // Off until the first framing: the camera starts at the origin, and the
+    // sweep out from there would snag on the ring.
+    this.camera.checkCollisions = false;
+    this.camera.collisionRadius = new Vector3(
+      ArenaScene.CAMERA_CLEARANCE,
+      ArenaScene.CAMERA_CLEARANCE,
+      ArenaScene.CAMERA_CLEARANCE
+    );
 
     const light = new HemisphericLight(
       "arenaLight",
@@ -198,218 +142,34 @@ export class ArenaScene {
     this.init();
     this.clearArena();
 
-    const scene = this.scene!;
     const arena =
       typeof arenaOrId === "string" ? arenaById(arenaOrId) : arenaOrId;
     if (!arena) throw new Error(`No arena data for "${arenaOrId}"`);
 
-    const warnings: string[] = [];
+    const loaded = await loadArena(this.scene!, arena);
+    this.loaded = loaded;
+    this.ringMeshes = loaded.ring;
+    this.stepsMeshes = loaded.steps;
+    this.arenaMeshes = loaded.arena;
+    this.ceilingMeshes = loaded.ceiling;
 
-    const ringUrl = resolveAsset(RING_PATH);
-    if (!ringUrl) throw new Error(`Ring model is missing: ${RING_PATH}`);
-    this.ringMeshes = (await ImportMeshAsync(ringUrl, scene)).meshes;
+    // Everything loaded is solid to the camera.
+    for (const mesh of this.allMeshes()) mesh.checkCollisions = true;
 
-    const stepsUrl = resolveAsset(RING_STEPS_PATH);
-    if (stepsUrl) {
-      for (const placement of RING_STEPS_PLACEMENTS) {
-        const meshes = (await ImportMeshAsync(stepsUrl, scene)).meshes;
-        this.placeSteps(meshes, placement);
-        this.stepsMeshes.push(...meshes);
-      }
-      this.applyDefaultStepsTexture();
-    } else {
-      warnings.push(`Ring steps not bundled: ${RING_STEPS_PATH}`);
-    }
-
-    for (const part of arenaParts(arena)) {
-      const url = resolveAsset(part.glb);
-      if (!url) {
-        warnings.push(`Arena part not bundled: ${part.glb}`);
-        continue;
-      }
-      const meshes = (await ImportMeshAsync(url, scene)).meshes;
-      this.placePart(meshes, part.position, part.rotation);
-      this.arenaMeshes.push(...meshes);
-    }
-
-    const ceilingUrl = resolveAsset(CEILING_TRUSSES_PATH);
-    if (ceilingUrl) {
-      this.ceilingMeshes = (await ImportMeshAsync(ceilingUrl, scene)).meshes;
-    } else {
-      warnings.push(`Ceiling trusses not bundled: ${CEILING_TRUSSES_PATH}`);
-    }
-
-    warnings.push(...this.applyTextures(arena));
     this.frameCamera();
 
-    return { warnings };
+    return { warnings: loaded.warnings };
   }
 
   /** Removes the loaded arena but keeps the engine and camera alive. */
   private clearArena(): void {
-    const materials = new Set<Material>();
-    for (const mesh of [
-      ...this.ringMeshes,
-      ...this.stepsMeshes,
-      ...this.arenaMeshes,
-      ...this.ceilingMeshes,
-    ]) {
-      // Meshes share materials - the ring has ~69 meshes over 10 materials -
-      // so they are collected and disposed once rather than per mesh.
-      if (mesh.material) materials.add(mesh.material);
-      mesh.dispose();
-    }
-    for (const material of materials) material.dispose();
+    if (this.loaded) disposeArena(this.loaded);
+    this.loaded = null;
 
     this.ringMeshes = [];
     this.stepsMeshes = [];
     this.arenaMeshes = [];
     this.ceilingMeshes = [];
-  }
-
-  private placeSteps(
-    meshes: AbstractMesh[],
-    placement: (typeof RING_STEPS_PLACEMENTS)[number]
-  ): void {
-    const target = meshes.find((m) => m.name === "ring-steps") ?? meshes[0];
-    if (!target) return;
-    target.position.set(...placement.position);
-    target.rotationQuaternion = new Quaternion(...placement.quaternion);
-  }
-
-  private placePart(
-    meshes: AbstractMesh[],
-    position: [number, number, number],
-    rotation: [number, number, number]
-  ): void {
-    const offset = new Vector3(...position);
-    const euler = new Vector3(...rotation);
-    const hasOffset = offset.lengthSquared() > 0;
-    const hasRotation = euler.lengthSquared() > 0;
-    if (!hasOffset && !hasRotation) return;
-
-    for (const mesh of meshes) {
-      // Only roots move; children follow their parent.
-      if (mesh.parent) continue;
-
-      if (hasRotation) {
-        const spin = Quaternion.RotationYawPitchRoll(euler.y, euler.x, euler.z);
-        mesh.rotationQuaternion = mesh.rotationQuaternion
-          ? spin.multiply(mesh.rotationQuaternion)
-          : spin;
-      }
-      if (hasOffset) mesh.position.addInPlace(offset);
-    }
-  }
-
-  // --- materials -----------------------------------------------------------
-
-  /** Replaces the steps' 1x1 placeholder with the real art. */
-  private applyDefaultStepsTexture(): void {
-    const materials = new Set<Material>();
-    for (const mesh of this.stepsMeshes) {
-      if (mesh.material?.name === "mat_ring_steps") {
-        materials.add(mesh.material);
-      }
-    }
-
-    for (const material of materials) {
-      this.swapTexture(material, DEFAULT_STEPS_TEXTURE);
-    }
-  }
-
-  private applyTextures(arena: ArenaData): string[] {
-    const warnings: string[] = [];
-    const ringTextures = { ...arena.ringTextures };
-    for (const [name, path] of Object.entries(DEFAULT_RING_TEXTURES)) {
-      ringTextures[name] ??= path;
-    }
-    warnings.push(
-      ...this.applyTo(
-        [...this.ringMeshes, ...this.stepsMeshes],
-        ringTextures,
-        "ringTextures"
-      )
-    );
-    warnings.push(
-      ...this.applyTo(
-        [...this.arenaMeshes, ...this.ceilingMeshes],
-        arena.arenaTextures,
-        "arenaTextures"
-      )
-    );
-    return warnings;
-  }
-
-  private applyTo(
-    meshes: AbstractMesh[],
-    textures: Record<string, string> | undefined,
-    label: string
-  ): string[] {
-    if (!textures) return [];
-
-    const byName = new Map<string, Set<Material>>();
-    for (const mesh of meshes) {
-      if (!mesh.material?.name) continue;
-      const materials = byName.get(mesh.material.name) ?? new Set<Material>();
-      materials.add(mesh.material);
-      byName.set(mesh.material.name, materials);
-    }
-
-    const warnings: string[] = [];
-    for (const [key, value] of Object.entries(textures)) {
-      if (key.endsWith("Color")) {
-        this.applyColor(byName, key, value);
-        continue;
-      }
-      const materials = byName.get(key);
-      if (!materials?.size) {
-        warnings.push(`${label}: no material named "${key}"`);
-        continue;
-      }
-      for (const material of materials) this.swapTexture(material, value);
-    }
-    return warnings;
-  }
-
-  private applyColor(
-    byName: Map<string, Set<Material>>,
-    key: string,
-    cssColor: string
-  ): void {
-    const rgb = cssColorToRgb(cssColor);
-    if (!rgb) return;
-
-    // The slot registry owns the key -> material mapping, so a new colour
-    // control works here without the renderer being told about it.
-    for (const name of colorTargets(key)) {
-      const materials = byName.get(name);
-      if (!materials) continue;
-      for (const material of materials) {
-        if (material instanceof PBRMaterial) {
-          material.albedoColor.set(rgb.r, rgb.g, rgb.b);
-        } else if (material instanceof StandardMaterial) {
-          material.diffuseColor.set(rgb.r, rgb.g, rgb.b);
-        }
-      }
-    }
-  }
-
-  private swapTexture(material: Material, texturePath: string): void {
-    const url = resolveAsset(texturePath);
-    if (!url) return;
-
-    // invertY false matches the glTF UV convention; without it every swapped
-    // texture appears upside down against the baked ones.
-    const texture = new Texture(url, this.scene, undefined, false);
-
-    // GLB materials import as PBRMaterial, so that is the branch that fires
-    // for the ring and floor. StandardMaterial covers anything built in code.
-    if (material instanceof PBRMaterial) {
-      material.albedoTexture = texture;
-    } else if (material instanceof StandardMaterial) {
-      material.diffuseTexture = texture;
-    }
   }
 
   // --- camera --------------------------------------------------------------
@@ -447,11 +207,23 @@ export class ArenaScene {
     };
   }
 
-  /** Frames the ring if it has geometry, else whatever else loaded. */
+  /**
+   * Frames the ring if it has geometry, else whatever else loaded.
+   *
+   * The camera jumps straight to its framed spot rather than sweeping there:
+   * the sweep from wherever it was could catch on the arena on the way.
+   */
   private frameCamera(): void {
     const camera = this.camera;
     if (!camera) return;
 
+    camera.checkCollisions = false;
+    this.placeCamera(camera);
+    camera.getViewMatrix(true);
+    camera.checkCollisions = true;
+  }
+
+  private placeCamera(camera: ArcRotateCamera): void {
     const bounds = this.bounds() ?? this.bounds(this.allMeshes());
     if (!bounds) return;
 
@@ -472,6 +244,8 @@ export class ArenaScene {
     camera.upperRadiusLimit = Math.max(widest * 3, camera.radius + 10);
   }
 
+  /** How close, in world units, the camera may come to a surface. */
+  private static readonly CAMERA_CLEARANCE = 0.5;
   private static readonly ROTATION_STEP = Math.PI / 48;
   private static readonly ZOOM_STEP = 1.2;
 
@@ -505,10 +279,19 @@ export class ArenaScene {
     }
   }
 
-  /** Camera state, for tests and debugging. */
-  cameraState(): { alpha: number; beta: number; radius: number } | null {
+  /** Camera state, for tests, debugging and the viewer's position readout. */
+  cameraState(): CameraState | null {
     const c = this.camera;
-    return c ? { alpha: c.alpha, beta: c.beta, radius: c.radius } : null;
+    if (!c) return null;
+    const { x, y, z } = c.position;
+    const t = c.target;
+    return {
+      alpha: c.alpha,
+      beta: c.beta,
+      radius: c.radius,
+      position: { x, y, z },
+      target: { x: t.x, y: t.y, z: t.z },
+    };
   }
 
   /**

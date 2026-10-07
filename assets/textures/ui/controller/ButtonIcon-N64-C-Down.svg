@@ -1,0 +1,31 @@
+<svg version="1.1" viewBox="88 166 80 92" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<!-- The C-Down button alone, cut from ButtonIcon-N64-C.svg. -->
+	<defs id="defs4">
+		<linearGradient id="linearGradient4285">
+			<stop id="stop4287" style="stop-color:#ffe73f" offset="0"/>
+			<stop id="stop4297" style="stop-color:#ffe73f" offset=".85"/>
+			<stop id="stop4293" style="stop-color:#ffe73f;stop-opacity:0" offset=".95"/>
+			<stop id="stop4289" style="stop-color:#ffe73f;stop-opacity:0" offset="1"/>
+		</linearGradient>
+		<linearGradient id="linearGradient4273">
+			<stop id="stop4275" style="stop-color:#ffdf00" offset="0"/>
+			<stop id="stop4281" style="stop-color:#ffdf00" offset=".95"/>
+			<stop id="stop4277" style="stop-color:#7f6f00" offset="1"/>
+		</linearGradient>
+		<radialGradient id="radialGradient4279" cx="128" cy="124" r="96" gradientTransform="matrix(.375 0 0 .375 158 81.5)" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient4273"/>
+		<radialGradient id="radialGradient4291" cx="128" cy="124" r="96" gradientTransform="matrix(.375 0 0 .375 158 81.5)" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient4285"/>
+		<radialGradient id="radialGradient36303" cx="128" cy="124" r="96" gradientTransform="matrix(.375 0 0 .375 80 3.5)" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient4273"/>
+		<radialGradient id="radialGradient36305" cx="128" cy="124" r="96" gradientTransform="matrix(.375 0 0 .375 80 3.5)" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient4285"/>
+		<radialGradient id="radialGradient36307" cx="128" cy="124" r="96" gradientTransform="matrix(.375 0 0 .375 80 159.5)" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient4273"/>
+		<radialGradient id="radialGradient36309" cx="128" cy="124" r="96" gradientTransform="matrix(.375 0 0 .375 80 159.5)" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient4285"/>
+		<radialGradient id="radialGradient36311" cx="128" cy="124" r="96" gradientTransform="matrix(.375 0 0 .375 2 81.5)" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient4273"/>
+		<radialGradient id="radialGradient36313" cx="128" cy="124" r="96" gradientTransform="matrix(.375 0 0 .375 2 81.5)" gradientUnits="userSpaceOnUse" xlink:href="#linearGradient4285"/>
+	</defs>
+	<g id="c-down">
+		<path id="path37173" d="m92 207.5v10c0 19.882 16.118 36 36 36s36-16.118 36-36v-10z" style="fill:#7f6f00"/>
+		<path id="circle37176" d="m164 207.5a36 36 0 0 1-36 36 36 36 0 0 1-36-36 36 36 0 0 1 36-36 36 36 0 0 1 36 36z" style="fill:url(#radialGradient36307);stroke-width:.5"/>
+		<path id="circle37179" d="m164 206a36 36 0 0 1-36 36 36 36 0 0 1-36-36 36 36 0 0 1 36-36 36 36 0 0 1 36 36z" style="fill:url(#radialGradient36309);stroke-width:.5"/>
+		<path id="path37182" d="m148.93 192.99c0.16657-0.2885-0.16705-0.86523-0.50018-0.86523h-40.859c-0.33313 0-0.66675 0.57673-0.50019 0.86523l20.43 35.386c0.16666 0.28868 0.83333 0.28868 1 0z" style="fill:#7f6f00"/>
+		<path id="path37185" d="m107.73 194.13 19.774 34.251c0.16666 0.28868 0.83333 0.28868 1 0l19.774-34.251z" style="fill:#bfa700"/>
+	</g>
+</svg>

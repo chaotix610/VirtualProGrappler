@@ -94,7 +94,7 @@ await press("Enter");
 check(
   "Commissioner opens its submenu",
   JSON.stringify(await items()) ===
-    JSON.stringify(["Smackdown Mall", "Options", "Arena Viewer", "Controls"]),
+    JSON.stringify(["Smackdown Mall", "Options", "Arena Viewer", "Arena Editor", "Controls"]),
   JSON.stringify(await items())
 );
 
@@ -127,6 +127,7 @@ check(
 // --- control mapper --------------------------------------------------------
 await press("ArrowDown");
 await press("ArrowDown");
+await press("ArrowDown");
 check("cursor reaches Controls", (await activeItem()) === "Controls");
 await press("Enter");
 await page.waitForSelector(".mapper", { timeout: 5000 });
@@ -139,6 +140,22 @@ check(
 );
 
 check("A defaults to Enter", (await rowKey("A")) === "Enter", await rowKey("A"));
+
+const targets = page.locator(".controller__target");
+check("controller exposes all 18 clickable controls", await targets.count() === 18);
+for (let i = 0; i < await targets.count(); i += 1) {
+  const target = targets.nth(i);
+  const name = (await target.getAttribute("aria-label")).split(":")[0];
+  await target.click();
+  check(`clicking ${name} starts rebinding`,
+    await page.locator(".row--listening .row__label").textContent() === name);
+  await press("Escape");
+}
+await page.locator('.controller__target[aria-label^="L:"]').click();
+await press("KeyX");
+check("controller click assigns and saves a key", (await rowKey("L")) === "X");
+await page.click('.row:has(.row__label:text-is("Reset Defaults"))');
+await page.locator('.row:has(.row__label:text-is("D-Pad Up"))').focus();
 
 await page.screenshot({ path: `${OUT}/02-mapper.png` });
 

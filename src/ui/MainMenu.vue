@@ -68,7 +68,7 @@ import {
 } from "@/data/mainMenu";
 import { resolveAsset } from "@/data/assets";
 import { isMenuDown, isMenuUp, virtualInputFor } from "@/game/VirtualController";
-import { playMenuCue } from "@/audio/menuAudio";
+import { playMenuCue, setMenuMusicDepth, startMenuMusic, stopMenuMusic } from "@/audio/menuAudio";
 import ControlMapper from "./ControlMapper.vue";
 import SceneLoading from "./SceneLoading.vue";
 
@@ -102,6 +102,7 @@ const ROUTE_CONTROLS = "commissioner.controls";
 const ROUTE_ARENA_VIEWER = "commissioner.arena_viewer";
 const ROUTE_ARENA_EDITOR = "commissioner.arena_editor";
 const ROUTE_COMBAT_TEST = "test.combat_system";
+const ROUTE_COMBAT_TEST_2 = "test.combat_system_2";
 
 export default defineComponent({
   name: "MainMenu",
@@ -124,6 +125,10 @@ export default defineComponent({
   },
 
   computed: {
+    musicDepth(): number {
+      return this.stack.length + Number(this.mapperOpen || this.arenaViewerOpen || this.arenaEditorOpen);
+    },
+
     page(): MenuPage {
       // Every key on the stack was resolved before being pushed.
       return pageByKey(this.stack[this.stack.length - 1])!;
@@ -147,15 +152,31 @@ export default defineComponent({
     },
   },
 
+  watch: {
+    musicDepth(depth: number) {
+      setMenuMusicDepth(depth);
+    },
+  },
+
   mounted() {
+    setMenuMusicDepth(this.musicDepth);
+    window.addEventListener("keydown", this.unlockMusic);
+    window.addEventListener("pointerdown", this.unlockMusic);
     window.addEventListener("keydown", this.onKeyDown);
   },
 
   beforeUnmount() {
+    stopMenuMusic();
+    window.removeEventListener("keydown", this.unlockMusic);
+    window.removeEventListener("pointerdown", this.unlockMusic);
     window.removeEventListener("keydown", this.onKeyDown);
   },
 
   methods: {
+    unlockMusic() {
+      void startMenuMusic();
+    },
+
     onKeyDown(event: KeyboardEvent) {
       // The mapper and the arena viewer run their own handlers while open.
       if (this.mapperOpen || this.arenaViewerOpen || this.arenaEditorOpen) {
@@ -229,7 +250,7 @@ export default defineComponent({
         return;
       }
 
-      if (target.id === ROUTE_COMBAT_TEST) {
+      if (target.id === ROUTE_COMBAT_TEST || target.id === ROUTE_COMBAT_TEST_2) {
         this.$emit("launch", target.id);
         playMenuCue("select");
         return;

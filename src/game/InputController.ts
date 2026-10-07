@@ -1,7 +1,7 @@
 import { Scene } from "@babylonjs/core";
 
 /** One-shot actions the player can trigger. */
-export type ActionKey = "punch" | "kick" | "jump" | "guard";
+export type ActionKey = "punch" | "kick" | "jump" | "guard" | "evade";
 
 /**
  * How a run was started, which decides how it steers and how it ends.
@@ -16,23 +16,48 @@ export type ActionKey = "punch" | "kick" | "jump" | "guard";
 export type RunMode = "none" | "directed" | "default";
 
 /**
+ * What a CharacterController reads from its input each frame.
+ *
+ * Two sources implement it: this file's InputController, with the original
+ * combat test's fixed keyboard layout, and PadInput, which reads the N64 pad
+ * bindings from the control mapper. The controller cannot tell them apart.
+ */
+export interface CharacterInput {
+  /** -1 = left, +1 = right, relative to the camera. */
+  readonly horizontal: number;
+  /** -1 = backward, +1 = forward, relative to the camera. */
+  readonly vertical: number;
+  /** How the current run was started, if one is active. */
+  readonly runMode: RunMode;
+  /** True while the guard input is held. */
+  readonly guarding: boolean;
+  /** True while a run of either kind is active. */
+  readonly isRunning: boolean;
+  /** True when a direction is held. */
+  readonly hasMovement: boolean;
+  /** Refreshes the held state. Called once per frame before movement. */
+  update(): void;
+  /** Removes and returns the next queued action, if any. */
+  consumeAction(): ActionKey | undefined;
+  dispose(): void;
+}
+
+/**
  * Tracks the keyboard. Movement keys are polled as held state, while actions
  * are queued as edge-triggered events so a single tap fires exactly once even
  * if the key is held down.
  */
-export class InputController {
+export class InputController implements CharacterInput {
   /** -1 = left, +1 = right, relative to the camera. */
   horizontal = 0;
   /** -1 = backward, +1 = forward, relative to the camera. */
   vertical = 0;
-  /** How the current run was started, if one is active. */
-  runMode: RunMode = "none";
   /** True while the guard key is held. Blocking is a sustained state, unlike
    *  the one-shot attacks. */
   guarding = false;
 
-  /** Shift state on the previous frame, for press-edge detection. */
-  private shiftWasDown = false;
+  /** Shift is the run modifier on this layout. */
+  private readonly run = new RunLatch();
 
   private held = new Set<string>();
   private queued: ActionKey[] = [];
@@ -67,8 +92,7 @@ export class InputController {
     this.onBlur = () => {
       this.held.clear();
       this.queued.length = 0;
-      this.runMode = "none";
-      this.shiftWasDown = false;
+      this.run.reset();
     };
 
     window.addEventListener("keydown", this.onKeyDown);
@@ -87,38 +111,20 @@ export class InputController {
     this.horizontal = (right ? 1 : 0) - (left ? 1 : 0);
     this.guarding = this.held.has("KeyP");
 
-    this.updateRunMode(fwd || back || left || right);
+    this.run.update(
+      this.held.has("ShiftLeft") || this.held.has("ShiftRight"),
+      fwd || back || left || right
+    );
   }
 
-  /**
-   * Resolves the run latch. The mode is fixed at the instant Shift goes down
-   * by whether a direction was already held, and cannot change until the run
-   * ends - that is what makes press order meaningful.
-   */
-  private updateRunMode(anyDirection: boolean): void {
-    const shiftDown =
-      this.held.has("ShiftLeft") || this.held.has("ShiftRight");
-
-    // Latch on the press edge only. While a run is live the mode is locked,
-    // so pressing Shift again mid-run changes nothing.
-    if (shiftDown && !this.shiftWasDown && this.runMode === "none") {
-      this.runMode = anyDirection ? "directed" : "default";
-    }
-
-    if (this.runMode === "default" && !shiftDown) {
-      // Directions were ignored for this run, so Shift alone ends it.
-      this.runMode = "none";
-    } else if (this.runMode === "directed" && !shiftDown && !anyDirection) {
-      // Releasing just one of the two keeps the run going.
-      this.runMode = "none";
-    }
-
-    this.shiftWasDown = shiftDown;
+  /** How the current run was started, if one is active. */
+  get runMode(): RunMode {
+    return this.run.mode;
   }
 
   /** True while a run of either kind is active. */
   get isRunning(): boolean {
-    return this.runMode !== "none";
+    return this.run.mode !== "none";
   }
 
   /** True when a direction key is held. */
@@ -137,5 +143,41 @@ export class InputController {
     window.removeEventListener("blur", this.onBlur);
     this.held.clear();
     this.queued.length = 0;
+  }
+}
+
+/**
+ * The run latch, shared by every input source so they all run the same way.
+ *
+ * The mode is fixed at the instant the run input goes down by whether a
+ * direction was already held, and cannot change until the run ends - that is
+ * what makes press order meaningful.
+ */
+export class RunLatch {
+  mode: RunMode = "none";
+  /** Run input state on the previous update, for press-edge detection. */
+  private wasDown = false;
+
+  update(runDown: boolean, anyDirection: boolean): void {
+    // Latch on the press edge only. While a run is live the mode is locked,
+    // so pressing run again mid-run changes nothing.
+    if (runDown && !this.wasDown && this.mode === "none") {
+      this.mode = anyDirection ? "directed" : "default";
+    }
+
+    if (this.mode === "default" && !runDown) {
+      // Directions were ignored for this run, so the run input alone ends it.
+      this.mode = "none";
+    } else if (this.mode === "directed" && !runDown && !anyDirection) {
+      // Releasing just one of the two keeps the run going.
+      this.mode = "none";
+    }
+
+    this.wasDown = runDown;
+  }
+
+  reset(): void {
+    this.mode = "none";
+    this.wasDown = false;
   }
 }

@@ -1,11 +1,8 @@
 /**
  * Menu sound effects.
  *
- * The cues are synthesised with the Web Audio API rather than loaded from
- * files. There is no audio in the repository yet, and a handful of square-wave
- * blips is both the era-correct sound for these menus and a few hundred bytes
- * of code instead of a few hundred kilobytes of samples that would have to be
- * bundled, licensed and kept in step with the screens.
+ * Sound effects and synchronized, layered menu music share one audio context
+ * and the saved master volume.
  *
  * Every entry point is safe to call anywhere: with no AudioContext - the unit
  * suite, or a browser that blocks audio - the whole module quietly does
@@ -265,4 +262,86 @@ function save(): void {
   } catch {
     // A full or blocked quota should not break the menus.
   }
+}
+
+/** All stems run together; navigation changes gains, never playback position. */
+const MUSIC_URLS = [
+  new URL("../../assets/sound/music/menu/menu-music-basetrack.mp3", import.meta.url).href,
+  new URL("../../assets/sound/music/menu/menu-music-overlay-1.mp3", import.meta.url).href,
+  new URL("../../assets/sound/music/menu/menu-music-overlay-2.mp3", import.meta.url).href,
+];
+
+let musicDepth = 0;
+let musicBuffers: Promise<AudioBuffer[]> | null = null;
+let musicLoading = false;
+let musicSources: AudioBufferSourceNode[] = [];
+let musicGains: GainNode[] = [];
+
+/** Root = 1, first submenu = 2, second submenu and deeper = 3. */
+export function setMenuMusicDepth(depth: number): void {
+  musicDepth = Math.max(0, Math.floor(depth));
+  updateMusicLayers();
+  if (musicDepth > 0) void startMenuMusic();
+}
+
+/** Called on user gestures too, to unlock browsers that suspend autoplay. */
+export async function startMenuMusic(): Promise<void> {
+  if (musicDepth === 0) return;
+  const ctx = audio();
+  if (!ctx || !master || musicSources.length || musicLoading) return;
+  musicLoading = true;
+  try {
+    musicBuffers ??= Promise.all(MUSIC_URLS.map(async (url) => {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Music load failed: ${response.status}`);
+      return ctx.decodeAudioData(await response.arrayBuffer());
+    }));
+    const buffers = await musicBuffers;
+    if (musicDepth === 0) return;
+    // One shared loop boundary prevents even slightly different encoded
+    // durations from accumulating drift between stems.
+    const loopEnd = Math.min(...buffers.map((buffer) => buffer.duration));
+    const start = ctx.currentTime + 0.05;
+    buffers.forEach((buffer, index) => {
+      const source = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      source.buffer = buffer;
+      source.loop = true;
+      source.loopEnd = loopEnd;
+      gain.gain.setValueAtTime(index < musicDepth ? 1 : 0, start);
+      source.connect(gain);
+      gain.connect(master!);
+      musicSources.push(source);
+      musicGains.push(gain);
+      source.start(start);
+    });
+  } catch {
+    // Allow a later gesture to retry a failed load, without breaking navigation.
+    musicBuffers = null;
+    stopMusicSources();
+  } finally {
+    musicLoading = false;
+  }
+}
+
+export function stopMenuMusic(): void {
+  musicDepth = 0;
+  stopMusicSources();
+}
+
+function stopMusicSources(): void {
+  for (const source of musicSources) {
+    source.stop();
+    source.disconnect();
+  }
+  for (const gain of musicGains) gain.disconnect();
+  musicSources = [];
+  musicGains = [];
+}
+
+function updateMusicLayers(): void {
+  if (!context) return;
+  musicGains.forEach((gain, index) => {
+    gain.gain.setTargetAtTime(index < musicDepth ? 1 : 0, context!.currentTime, 0.025);
+  });
 }

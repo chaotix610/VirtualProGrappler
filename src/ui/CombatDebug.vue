@@ -72,7 +72,7 @@
 
     <div class="debug__log">
       <div v-if="!snapshot.history.length" class="log__empty">
-        No exchanges yet &mdash; get close and press J or K.
+        No exchanges yet &mdash; get close and {{ strikeHint }}.
       </div>
       <div
         v-for="(entry, i) in snapshot.history"
@@ -126,6 +126,12 @@ export default defineComponent({
     frameSource: {
       type: Function as PropType<() => number>,
       required: true,
+    },
+    /** How to throw a strike, finishing "get close and ...". Each screen has
+     *  its own controls, so the screen says what they are. */
+    strikeHint: {
+      type: String,
+      default: "press J or K",
     },
   },
 

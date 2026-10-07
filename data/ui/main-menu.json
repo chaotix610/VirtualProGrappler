@@ -339,6 +339,30 @@
               }
             ]
           }
+        },
+        {
+          "id": "combat_system_test_2",
+          "displayName": "Combat System Test 2.0",
+          "target": "test.combat_system_2",
+          "instructions": {
+            "title": "<< Combat System Test 2.0 >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Austin against Austin in the RAW arena, played with the controls set in the Control Mapper. Walk the ring, run the ropes, and climb the corners while your opponent waits in his stance."
+              },
+              {
+                "type": "definitionList",
+                "items": [
+                  { "term": "Control Stick / D-Pad", "definition": "Move" },
+                  { "term": "C-Down", "definition": "Run. Hold it into the ropes to rebound, or into a corner to climb" },
+                  { "term": "B", "definition": "Punch. With a direction held, kick" },
+                  { "term": "R", "definition": "Block. While running, roll" },
+                  { "term": "Start", "definition": "Pause" }
+                ]
+              }
+            ]
+          }
         }
       ]
     }
