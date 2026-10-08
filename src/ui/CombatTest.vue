@@ -1,6 +1,6 @@
 <template>
-  <div class="combat2">
-    <canvas ref="canvas" class="combat2__canvas" tabindex="0" />
+  <div class="combat">
+    <canvas ref="canvas" class="combat__canvas" tabindex="0" />
 
     <div v-if="loading" class="overlay">
       <p class="overlay__label">Loading the RAW arena&hellip;</p>
@@ -37,6 +37,9 @@
         <p class="hud__hint">
           Hold Run into the ropes to rebound off them, or into a corner to
           climb it. Let go of Run on the top rope to dive.
+        </p>
+        <p class="hud__hint">
+          Drag with the mouse to turn the camera; scroll to zoom.
         </p>
         <p v-if="warning" class="hud__warning">{{ warning }}</p>
       </div>
@@ -107,7 +110,7 @@ const PAUSE_OPTIONS = [
 ] as const;
 
 /**
- * Combat System Test 2.0.
+ * Combat System Test.
  *
  * Austin against an idle Austin in the RAW arena. Gameplay input goes through
  * the control mapper's bindings (see PadInput), and so does the pause menu,
@@ -115,7 +118,7 @@ const PAUSE_OPTIONS = [
  * or d-pad moves, A selects and B backs out.
  */
 export default defineComponent({
-  name: "CombatTest2",
+  name: "CombatTest",
 
   components: { CombatDebug },
 
@@ -158,7 +161,7 @@ export default defineComponent({
       // a stray click from leaving focus on a button.
       canvas.focus();
     } catch (err) {
-      this.error = `Could not load Combat System Test 2.0: ${String(err)}`;
+      this.error = `Could not load Combat System Test: ${String(err)}`;
     } finally {
       this.loading = false;
     }
@@ -229,7 +232,7 @@ export default defineComponent({
 </script>
 
 <style scoped>
-.combat2 {
+.combat {
   position: relative;
   width: 100vw;
   height: 100vh;
@@ -237,7 +240,7 @@ export default defineComponent({
   background: #08080d;
 }
 
-.combat2__canvas {
+.combat__canvas {
   width: 100%;
   height: 100%;
   display: block;

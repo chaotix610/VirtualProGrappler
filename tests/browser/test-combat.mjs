@@ -1,3 +1,11 @@
+/**
+ * Drives Combat System Test: Austin against an idle Austin in the RAW
+ * arena, on the control mapper's default bindings.
+ *
+ * Checks that the arena and both wrestlers load, that the stick walks him
+ * around the ring, that holding Run (C-Down) into the ropes rebounds him back
+ * and forth, and that the opponent stays put in his idle clip throughout.
+ */
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 
@@ -8,170 +16,172 @@ mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
-const page = await browser.newPage({ viewport: { width: 1100, height: 650 } });
+const page = await browser.newPage({ viewport: { width: 1100, height: 700 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 
-await page.goto(URL, { waitUntil: "networkidle" });
-await page.waitForTimeout(1200);
-await page.click('.roster__card:has(.roster__name:text-is("Ranger"))');
-await page.waitForFunction(() => window.__game?.currentAnimation, { timeout: 60000 });
-await page.waitForTimeout(1500);
+const state = () =>
+  page.evaluate(() => {
+    const g = window.__combat;
+    return g
+      ? {
+          anim: g.currentAnimation,
+          opponentAnim: g.opponentAnimation,
+          pos: g.playerPosition,
+          opponent: g.opponentPosition,
+          bounds: g.ringBounds,
+        }
+      : null;
+  });
 
-const results = [];
-const check = (n, p, d) => {
-  results.push({ n, p });
-  console.log(`${p ? "PASS" : "FAIL"}  ${n}\n        ${d}`);
+let failures = 0;
+const check = (ok, label) => {
+  console.log(`${ok ? "PASS" : "FAIL"}  ${label}`);
+  if (!ok) failures++;
 };
 
-const snap = () => page.evaluate(() => window.__game.matchSnapshot());
-const frame = () => page.evaluate(() => window.__game.simFrame);
-
-const start = await snap();
-console.log("player :", start.player.name, JSON.stringify({
-  hp: start.player.currentHealth, max: start.player.maxHealth,
-}));
-console.log("opponent:", start.opponent.name, JSON.stringify({
-  hp: start.opponent.currentHealth, max: start.opponent.maxHealth,
-}));
-
-check(
-  "both wrestlers start at 255 health",
-  start.player.currentHealth === 255 && start.opponent.currentHealth === 255 &&
-    start.player.maxHealth === 255 && start.opponent.maxHealth === 255,
-  `player ${start.player.currentHealth}/${start.player.maxHealth}, opponent ${start.opponent.currentHealth}/${start.opponent.maxHealth}`
-);
-
-check(
-  "all joint stamina pools start at 50",
-  Object.values(start.opponent.jointStamina).every((v) => v === 50),
-  JSON.stringify(start.opponent.jointStamina)
-);
-
-// The simulation clock must be advancing on its own.
-const f1 = await frame();
-await page.waitForTimeout(600);
-const f2 = await frame();
-check(
-  "the simulation clock advances at roughly 60Hz",
-  f2 - f1 >= 25 && f2 - f1 <= 45,
-  `${f2 - f1} frames in ~600ms (expect ~36)`
-);
-
-// ------------------------------------------------ punching out of range
-await page.evaluate(() => window.__game.teleportPlayer(0, -2.4, 0));
-await page.waitForTimeout(300);
-await page.keyboard.press("j");
-await page.waitForTimeout(900);
-const afterMiss = await snap();
-check(
-  "a punch thrown from across the ring misses",
-  afterMiss.opponent.currentHealth === 255 &&
-    afterMiss.last && !afterMiss.last.connected,
-  `opponent still ${afterMiss.opponent.currentHealth} hp; last: ${afterMiss.last?.moveName} - ${afterMiss.last?.missReason ?? "connected"}`
-);
-
-// ------------------------------------------------ punching in range
-// Stand just in front of the opponent, facing them.
-await page.evaluate(() => {
-  const opp = window.__game.opponentPosition;
-  window.__game.teleportPlayer(opp.x, opp.z - 1.0, 0);
+await page.goto(URL, { waitUntil: "networkidle" });
+await page.waitForFunction(() => window.__combat?.currentAnimation, null, {
+  timeout: 120000,
 });
-await page.waitForTimeout(400);
-const beforeHit = await snap();
-await page.keyboard.press("j");
-await page.waitForTimeout(1200);
-const afterHit = await snap();
+await page.waitForTimeout(1500);
 
-const dealt = beforeHit.opponent.currentHealth - afterHit.opponent.currentHealth;
-check(
-  "a punch in range deals damage",
-  dealt > 0 && afterHit.last?.connected === true,
-  `opponent ${beforeHit.opponent.currentHealth} -> ${afterHit.opponent.currentHealth} (${dealt} damage)`
-);
+const start = await state();
+console.log("BOUNDS  :", JSON.stringify(start.bounds));
+console.log("PLAYER  :", JSON.stringify(start.pos));
+console.log("OPPONENT:", JSON.stringify(start.opponent));
+await page.screenshot({ path: `${OUT}/01-loaded.png` });
 
-const b = afterHit.last?.breakdown;
-check(
-  "the damage matches the four-factor formula",
-  !!b && b.factor1 + b.factor2 + b.factor3 === b.subtotal &&
-    b.mainHealthDamage === b.subtotal &&
-    b.maxHealthDamage === Math.floor(b.mainHealthDamage / 4),
-  b
-    ? `F1 ${b.factor1} + F2 ${b.factor2} + F3 ${b.factor3} = ${b.subtotal}; ` +
-      `main ${b.mainHealthDamage}, max ${b.maxHealthDamage}`
-    : "no breakdown"
-);
+check(start.bounds !== null, "ring bounds measured from the RAW arena's ropes");
+check(Math.abs(start.pos.y) < 1e-3, "player stands on the mat (y = 0)");
+check(start.anim === "Idle_Loop", `player idles at rest (${start.anim})`);
+check(start.opponentAnim === "Idle_Loop", `opponent idles (${start.opponentAnim})`);
 
-check(
-  "max health drops by a quarter of the damage",
-  afterHit.opponent.maxHealth === 255 - Math.floor(dealt / 4),
-  `max ${beforeHit.opponent.maxHealth} -> ${afterHit.opponent.maxHealth}`
-);
+// --- walking --------------------------------------------------------------
+// D is Control Stick Right by default. Walk sideways so he never meets the
+// opponent, and sample mid-stride.
+await page.keyboard.down("d");
+await page.waitForTimeout(900);
+const walking = await state();
+await page.screenshot({ path: `${OUT}/02-walking.png` });
+await page.waitForTimeout(600);
+await page.keyboard.up("d");
+const walked = await state();
+check(walking.anim === "Walk_Loop", `stick walks (${walking.anim})`);
+check(walked.pos.x > start.pos.x + 0.5, `walked right ${(walked.pos.x - start.pos.x).toFixed(2)}`);
 
-check(
-  "the punch takes head joint stamina",
-  afterHit.opponent.jointStamina.head < 50,
-  `head stamina ${afterHit.opponent.jointStamina.head}`
-);
+// The d-pad moves too. Left Arrow is D-Pad Left.
+await page.keyboard.down("ArrowLeft");
+await page.waitForTimeout(800);
+await page.keyboard.up("ArrowLeft");
+const dpad = await state();
+check(dpad.pos.x < walked.pos.x - 0.3, "d-pad walks");
 
-await page.screenshot({ path: `${OUT}/01-after-punch.png` });
+await page.waitForTimeout(800);
+check((await state()).anim === "Idle_Loop", "settles back to idle");
 
-// ------------------------------------------------ a kick uses different parts
-const beforeKick = await snap();
-await page.keyboard.press("k");
-await page.waitForTimeout(1800);
-const afterKick = await snap();
-check(
-  "a kick damages the body pool instead of the head",
-  afterKick.opponent.jointStamina.body < beforeKick.opponent.jointStamina.body &&
-    afterKick.opponent.jointStamina.head === beforeKick.opponent.jointStamina.head,
-  `body ${beforeKick.opponent.jointStamina.body} -> ${afterKick.opponent.jointStamina.body}, ` +
-    `head unchanged at ${afterKick.opponent.jointStamina.head}`
-);
+// --- running the ropes ----------------------------------------------------
+// Run an east-west lane through the middle of the ring. It has to stay more
+// than a corner radius (1.15) from the north and south ropes, or arriving at
+// the east ropes counts as reaching the corner and he climbs it instead; and
+// clear of the opponent, who stands on the z axis at +1.6.
+await page.evaluate(() => window.__combat.teleportPlayer(0, -0.6, Math.PI / 2));
+await page.waitForTimeout(300);
 
-// ------------------------------------------------ sustained exchange
-for (let i = 0; i < 10; i++) {
-  await page.keyboard.press("j");
-  await page.waitForTimeout(1100);
+// Direction first, then Run: a directed run that keeps going while either is
+// held. K is C-Down by default.
+await page.keyboard.down("d");
+await page.waitForTimeout(80);
+await page.keyboard.down("k");
+
+const track = [];
+for (let i = 0; i < 60; i++) {
+  await page.waitForTimeout(120);
+  const s = await state();
+  track.push({ x: +s.pos.x.toFixed(3), anim: s.anim, opp: s.opponent, oppAnim: s.opponentAnim });
+  if (i === 12) await page.screenshot({ path: `${OUT}/03-rope-run.png` });
 }
-const afterMany = await snap();
-console.log("\nafter 10 more punches:", JSON.stringify({
-  hp: afterMany.opponent.currentHealth,
-  max: afterMany.opponent.maxHealth,
-  head: afterMany.opponent.jointStamina.head.toFixed(1),
-  holding: afterMany.opponent.holding,
-}));
+await page.keyboard.up("k");
+await page.keyboard.up("d");
 
-check(
-  "current health never rises above max health",
-  afterMany.opponent.currentHealth <= afterMany.opponent.maxHealth,
-  `${afterMany.opponent.currentHealth} <= ${afterMany.opponent.maxHealth}`
-);
+console.log("\n   x      anim");
+for (const p of track) console.log(String(p.x).padStart(7), " ", p.anim);
 
-check(
-  "damage accumulates across the exchange",
-  afterMany.opponent.currentHealth < afterHit.opponent.currentHealth,
-  `${afterHit.opponent.currentHealth} -> ${afterMany.opponent.currentHealth}`
-);
+const anims = new Set(track.map((p) => p.anim));
+check(anims.has("Sprint_Loop"), "runs with C-Down held");
+check(anims.has("Hit_Chest"), "takes the ropes back-first");
 
-await page.screenshot({ path: `${OUT}/02-worn-down.png` });
-
-console.log("\nrecent exchanges:");
-for (const e of afterMany.history.slice(0, 5)) {
-  console.log(
-    `  f${String(e.frame).padStart(5)}  ${e.moveName.padEnd(14)} ` +
-      (e.connected
-        ? `${e.breakdown.factor1}+${e.breakdown.factor2}+${e.breakdown.factor3}=${e.breakdown.subtotal}  -${e.breakdown.currentHealthDamage}hp`
-        : `miss (${e.missReason})`)
-  );
+// A rebound is a turn in x that happens near a rope wall.
+const moved = track.filter((p, i) => i === 0 || p.x !== track[i - 1].x);
+let turns = 0;
+let dir = 0;
+for (let i = 1; i < moved.length; i++) {
+  const d = Math.sign(moved[i].x - moved[i - 1].x);
+  if (d && dir && d !== dir) {
+    const nearRopes =
+      Math.abs(moved[i - 1].x - start.bounds.maxX) < 0.6 ||
+      Math.abs(moved[i - 1].x - start.bounds.minX) < 0.6;
+    if (nearRopes) turns++;
+  }
+  if (d) dir = d;
 }
+check(turns >= 2, `rebounds off the ropes repeatedly (${turns} rebounds)`);
 
-console.log("\n=== SUMMARY ===");
-const failed = results.filter((r) => !r.p);
-console.log(`${results.length - failed.length}/${results.length} passed`);
-if (failed.length) console.log("failed:", failed.map((f) => f.n).join("; "));
-console.log("ERRORS:", errors.length ? errors.slice(0, 5) : "none");
+const xs = track.map((p) => p.x);
+check(
+  Math.max(...xs) <= start.bounds.maxX + 0.35 && Math.min(...xs) >= start.bounds.minX - 0.35,
+  "stays inside the ropes"
+);
+
+// --- the opponent ---------------------------------------------------------
+const oppMoved = track.some(
+  (p) => Math.hypot(p.opp.x - start.opponent.x, p.opp.z - start.opponent.z) > 1e-3
+);
+check(!oppMoved, "opponent holds his spot");
+check(track.every((p) => p.oppAnim === "Idle_Loop"), "opponent stays in idle");
+
+// --- legend and evade -----------------------------------------------------
+const legend = await page.$$eval(".hud__icon", (imgs) =>
+  imgs.map((img) => img.alt)
+);
+check(
+  ["D-Pad", "C-Down", "B", "A", "R", "L", "Start"].every((b) => legend.includes(b)),
+  `legend shows the pad buttons (${legend.join(", ")})`
+);
+const hudText = await page.$eval(".hud__keys", (el) => el.textContent);
+check(!/Escape|Space|Enter/.test(hudText), "legend shows no keyboard keys");
+
+await page.waitForTimeout(800);
+await page.keyboard.press("q"); // L
+await page.waitForTimeout(150);
+const evade = (await state()).anim;
+check(/roll/i.test(evade), `evades on L (${evade})`);
+await page.waitForTimeout(1500);
+
+// --- pause ----------------------------------------------------------------
+await page.waitForTimeout(800);
+await page.keyboard.press("Space"); // Start
+await page.waitForTimeout(300);
+const pausedAt = (await state()).pos;
+await page.keyboard.down("d");
+await page.waitForTimeout(500);
+await page.keyboard.up("d");
+const stillPaused = (await state()).pos;
+await page.screenshot({ path: `${OUT}/04-paused.png` });
+check(
+  Math.hypot(stillPaused.x - pausedAt.x, stillPaused.z - pausedAt.z) < 1e-3,
+  "Start pauses: the stick does nothing while paused"
+);
+await page.keyboard.press("Escape"); // B resumes
+await page.waitForTimeout(300);
+check(
+  await page.evaluate(() => !window.__combat.isPaused),
+  "B resumes"
+);
+
+check(errors.length === 0, `no page errors${errors.length ? ": " + errors.join(" | ") : ""}`);
 
 await browser.close();
-process.exit(failed.length ? 1 : 0);
+console.log(failures ? `\n${failures} check(s) failed` : "\nall checks passed");
+process.exit(failures ? 1 : 0);

@@ -1,6 +1,7 @@
 import {
   AbstractMesh,
   ArcRotateCamera,
+  ArcRotateCameraPointersInput,
   Color4,
   Engine,
   HemisphericLight,
@@ -41,10 +42,24 @@ import { profileFor } from "../combat/profiles";
 import { FixedStep } from "../sim/FixedStep";
 import { InputBuffer } from "../sim/InputBuffer";
 
-/** The arena Combat System Test 2.0 is staged in. */
+/** How far the mouse may move the camera from its framed ringside view. */
+const CAMERA_ORBIT = {
+  /** Closest zoom, as a fraction of the framed distance. */
+  minZoom: 0.35,
+  /** Furthest zoom, as a multiple of the framed distance. */
+  maxZoom: 2,
+  /** Share of the current distance one scroll notch moves. */
+  wheelStep: 0.01,
+  /** Highest the camera may climb, in radians from straight down. */
+  minBeta: 0.15,
+  /** Lowest it may sink: just above the mat. */
+  maxBeta: Math.PI / 2 - 0.05,
+};
+
+/** The arena Combat System Test is staged in. */
 export const COMBAT_TEST_ARENA = "raw";
 
-/** Both wrestlers in Combat System Test 2.0. */
+/** Both wrestlers in Combat System Test. */
 export const COMBAT_TEST_CHARACTER = "steve-austin";
 
 /** What a finished load reports back to the screen. */
@@ -56,7 +71,7 @@ export interface CombatTestLoadReport {
 }
 
 /**
- * Combat System Test 2.0: Austin against Austin in the RAW arena, driven
+ * Combat System Test: Austin against Austin in the RAW arena, driven
  * through the control mapper's pad bindings.
  *
  * Built from the same parts as the original test - CharacterController for
@@ -70,6 +85,8 @@ export class CombatTestScene {
   readonly input: PadInput;
 
   private readonly camera: ArcRotateCamera;
+  /** Distance that frames the whole ring; the scroll wheel zooms around it. */
+  private framedRadius = 0;
   /** Parent of every arena mesh, moved so the ring's mat sits at y=0. */
   private readonly arenaRoot: TransformNode;
   private arena: LoadedArena | null = null;
@@ -96,10 +113,9 @@ export class CombatTestScene {
     this.scene = new Scene(this.engine);
     this.scene.clearColor = new Color4(0.03, 0.03, 0.05, 1);
 
-    // ArcRotate is used purely as a convenient way to express "sit at this
-    // angle and distance, looking here". No control is attached to it: the
-    // camera is fixed, which is also what keeps camera-relative movement
-    // stable - up on the stick is always the same way on screen.
+    // The mouse orbits the camera around the ring: drag to turn it, scroll to
+    // zoom. It is only a view: the stick is fixed to the ring's compass, so
+    // up is north wherever the camera has been turned to.
     this.camera = new ArcRotateCamera(
       "ringsideCamera",
       -Math.PI / 2,
@@ -108,6 +124,7 @@ export class CombatTestScene {
       new Vector3(0, RING_VIEW.lookHeight, 0),
       this.scene
     );
+    this.attachMouseOrbit(canvas);
 
     // The arena GLBs are lit by a single hemisphere, as in the Arena Viewer,
     // so the RAW arena looks here the way it does there. Austin is unlit and
@@ -123,14 +140,20 @@ export class CombatTestScene {
 
     this.onResize = () => {
       this.engine.resize();
-      // The framing distance depends on the aspect ratio, so re-solve it.
+      // The framing distance depends on the aspect ratio, so re-solve it,
+      // keeping wherever the player has orbited and zoomed to.
+      const { alpha, beta } = this.camera;
+      const zoom = this.framedRadius ? this.camera.radius / this.framedRadius : 1;
       this.frameRing();
+      this.camera.alpha = alpha;
+      this.camera.beta = beta;
+      this.camera.radius = this.framedRadius * zoom;
     };
     window.addEventListener("resize", this.onResize);
 
     if (import.meta.env.DEV) {
       // Handle for automated browser tests to inspect live state.
-      (window as unknown as Record<string, unknown>).__combat2 = this;
+      (window as unknown as Record<string, unknown>).__combat = this;
     }
   }
 
@@ -165,7 +188,6 @@ export class CombatTestScene {
       player.root,
       player.animations,
       this.input,
-      this.camera,
       this.layout?.bounds ?? null,
       this.ropes
     );
@@ -208,8 +230,39 @@ export class CombatTestScene {
     );
   }
 
+  /**
+   * Puts the camera at the ringside view that holds the whole ring, and sets
+   * how far the scroll wheel may zoom either side of it.
+   */
   private frameRing(): void {
-    if (this.layout) frameRingCamera(this.camera, this.engine, this.layout.frame);
+    if (!this.layout) return;
+    frameRingCamera(this.camera, this.engine, this.layout.frame);
+    this.framedRadius = this.camera.radius;
+    this.camera.lowerRadiusLimit = this.framedRadius * CAMERA_ORBIT.minZoom;
+    this.camera.upperRadiusLimit = this.framedRadius * CAMERA_ORBIT.maxZoom;
+    // Scroll steps scale with the distance, so a notch feels the same at any
+    // zoom and in any size of ring.
+    this.camera.wheelDeltaPercentage = CAMERA_ORBIT.wheelStep;
+  }
+
+  /**
+   * Left-drag orbits, the wheel zooms. Only the mouse is wired: the camera's
+   * own keyboard input would steal the arrow keys from the d-pad, and panning
+   * would let the ring drift out of the middle of the screen.
+   */
+  private attachMouseOrbit(canvas: HTMLCanvasElement): void {
+    const camera = this.camera;
+    camera.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
+    camera.attachControl(canvas, true);
+    camera.panningSensibility = 0;
+    const pointers = camera.inputs.attached.pointers as
+      | ArcRotateCameraPointersInput
+      | undefined;
+    // Left button only; right and middle would otherwise orbit too.
+    if (pointers) pointers.buttons = [0];
+    // Above the mat but never under it or straight down on the wrestlers.
+    camera.lowerBetaLimit = CAMERA_ORBIT.minBeta;
+    camera.upperBetaLimit = CAMERA_ORBIT.maxBeta;
   }
 
   /** Loads one wrestler under a node this scene owns. */

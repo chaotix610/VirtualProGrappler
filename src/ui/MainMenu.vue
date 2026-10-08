@@ -102,7 +102,6 @@ const ROUTE_CONTROLS = "commissioner.controls";
 const ROUTE_ARENA_VIEWER = "commissioner.arena_viewer";
 const ROUTE_ARENA_EDITOR = "commissioner.arena_editor";
 const ROUTE_COMBAT_TEST = "test.combat_system";
-const ROUTE_COMBAT_TEST_2 = "test.combat_system_2";
 
 export default defineComponent({
   name: "MainMenu",
@@ -250,7 +249,7 @@ export default defineComponent({
         return;
       }
 
-      if (target.id === ROUTE_COMBAT_TEST || target.id === ROUTE_COMBAT_TEST_2) {
+      if (target.id === ROUTE_COMBAT_TEST) {
         this.$emit("launch", target.id);
         playMenuCue("select");
         return;

@@ -264,15 +264,20 @@ check(
 await press("Escape");
 await page.click('.item:text-is("Smackdown Mall")');
 await page.click('.item:text-is("Combat System Test")');
-await page.waitForSelector(".roster__card", { timeout: 30000 });
-check("Combat System Test launches the existing game screen", true);
+await page.waitForFunction(() => window.__combat?.currentAnimation, null, {
+  timeout: 120000,
+});
+check("Combat System Test launches the combat screen", true);
 
 await page.screenshot({ path: `${OUT}/04-combat-test.png` });
 
-await page.click(".overlay__back");
+// Start opens the pause menu; its Main Menu option leaves the match.
+await page.keyboard.press("Space"); // Start
+await page.waitForSelector(".pause__option", { timeout: 10000 });
+await page.click('.pause__option:text-is("Main Menu")');
 await page.waitForSelector(".item", { timeout: 10000 });
 check(
-  "the game screen returns to the menu",
+  "the combat screen returns to the menu",
   (await items()).includes("Multi Play")
 );
 

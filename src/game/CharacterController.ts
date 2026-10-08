@@ -1,4 +1,4 @@
-import { Camera, Scalar, TransformNode, Vector3 } from "@babylonjs/core";
+import { Scalar, TransformNode, Vector3 } from "@babylonjs/core";
 import { AnimationController } from "../renderer/AnimationController";
 import { CharacterInput, RunMode } from "./InputController";
 import { RingRopes, RopeSide } from "../renderer/RingRopes";
@@ -22,7 +22,7 @@ type State =
 type JumpPhase = "start" | "air" | "land";
 
 /**
- * Drives one character: camera-relative WASD movement, a Shift run modifier,
+ * Drives one character: compass-fixed movement (up is always north, +z), a Shift run modifier,
  * and the punch / kick / jump one-shots. Movement is code-driven, so the
  * in-place (non root-motion) clips are the correct ones to pair with it.
  */
@@ -77,8 +77,6 @@ export class CharacterController {
   private readonly diveTo = new Vector3();
 
   private readonly moveDirection = new Vector3();
-  private readonly forward = new Vector3();
-  private readonly right = new Vector3();
   /** Scratch vector for facing maths, to avoid per-frame allocation. */
   private readonly facingScratch = new Vector3();
   /** Notified when a strike is thrown; wired to the combat simulation. */
@@ -88,7 +86,6 @@ export class CharacterController {
     public readonly root: TransformNode,
     private animations: AnimationController,
     private input: CharacterInput,
-    private camera: Camera,
     private bounds: RingBounds | null = null,
     private ropes: RingRopes | null = null
   ) {
@@ -323,12 +320,9 @@ export class CharacterController {
       // rather than travelling on a fixed 45 degrees.
       if (this.diagonalToCorner(this.moveDirection)) return true;
 
-      // Camera-relative, so "W" is always away from the camera.
-      this.moveDirection.set(0, 0, 0);
-      this.moveDirection.addInPlace(this.forward.scale(this.input.vertical));
-      // `right` is Up x forward, which is screen-right, and `horizontal` is
-      // +1 for D. No negation: that is what had left and right swapped.
-      this.moveDirection.addInPlace(this.right.scale(this.input.horizontal));
+      // Fixed to the ring, not the camera: up is north (+z) and right is
+      // east (+x) however the camera has been turned.
+      this.moveDirection.set(this.input.horizontal, 0, this.input.vertical);
       if (this.moveDirection.lengthSquared() > 1e-6) {
         this.moveDirection.normalize();
         return true;
@@ -360,8 +354,7 @@ export class CharacterController {
     const v = this.input.vertical;
     if (h === 0 || v === 0 || !this.bounds) return false;
 
-    // The camera is fixed and axis-aligned, so screen right is +x and screen
-    // up is +z.
+    // Directions are fixed to the ring: right is +x and up is +z.
     const cornerX = h > 0 ? this.bounds.maxX : this.bounds.minX;
     const cornerZ = v > 0 ? this.bounds.maxZ : this.bounds.minZ;
 
@@ -396,17 +389,6 @@ export class CharacterController {
   }
 
   private move(dt: number): void {
-    // Build a camera-relative basis flattened onto the ground plane, so "W"
-    // always means "away from the camera" regardless of where it is orbiting.
-    this.camera.getDirectionToRef(Vector3.Forward(), this.forward);
-    this.forward.y = 0;
-    if (this.forward.lengthSquared() < 1e-6) {
-      this.forward.set(0, 0, 1);
-    }
-    this.forward.normalize();
-    Vector3.CrossToRef(Vector3.Up(), this.forward, this.right);
-    this.right.normalize();
-
     // The top-rope sequence drives its own position in all three axes and is
     // deliberately not clamped or gravity-affected: he is off the mat.
     if (this.state === "climbing") {

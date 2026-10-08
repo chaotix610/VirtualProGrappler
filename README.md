@@ -138,25 +138,23 @@ can reset to defaults or export the active mapping as JSON.
 
 ## Controls
 
-| Input | Action |
+The Combat System Test is played on the same virtual N64 pad as the menus, so
+whatever Controls binds to a button is what drives it:
+
+| Pad input | Action |
 |---|---|
-| `W` `A` `S` `D` | Move |
-| `Shift` | Run — alone runs ahead; press a direction first to run that way |
-| `J` | Punch |
-| `K` | Kick |
-| `L` | Jump |
-| `P` | Block, or roll while running |
+| Control Stick / D-Pad | Move |
+| `C-Down` | Run. Hold it into the ropes to rebound, or into a corner to climb |
+| `B` | Punch. With a direction held, kick |
+| `R` | Block. While running, roll |
+| `Start` | Pause |
 
-Running into the ropes rebounds across the ring; running into a corner climbs
-to the top rope.
+The mouse moves the camera: drag to orbit the ring, scroll to zoom. Directions
+are fixed to the ring rather than the camera: up is always north, down south,
+and so on, however the camera is turned.
 
-> These are the in-match prototype bindings, and they are **separate from the
-> pad mapping the menus use**. `InputController` still has its own hardcoded
-> keys, while the menus and the control mapper go through the N64 pad mapping
-> in `data/settings/control-mappings.json`. Rebinding in Controls therefore
-> changes menu navigation but not gameplay yet. The move slots in
-> `data/moves/move-slots.json` are written against that same pad, so gameplay
-> is the side still to be reconciled.
+The move slots in [`data/moves/move-slots.json`](data/moves/move-slots.json)
+are written against that same pad.
 
 ## Asset pipeline
 

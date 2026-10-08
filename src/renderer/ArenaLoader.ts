@@ -24,7 +24,7 @@ import { cssColorToRgb } from "./cssColor";
  * and colours applied.
  *
  * Scene-agnostic on purpose. The Arena Viewer owns an orbiting camera around
- * this, and Combat System Test 2.0 plays a match inside it; both need the
+ * this, and Combat System Test plays a match inside it; both need the
  * arena to look the same, so the building lives here rather than in either.
  */
 

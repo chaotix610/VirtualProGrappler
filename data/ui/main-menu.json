@@ -335,21 +335,7 @@
             "blocks": [
               {
                 "type": "paragraph",
-                "text": "Enter the ring and drive the combat systems directly. Movement, strikes, rope rebounds, and the corner climb are live, with the damage and joint stamina readout on screen."
-              }
-            ]
-          }
-        },
-        {
-          "id": "combat_system_test_2",
-          "displayName": "Combat System Test 2.0",
-          "target": "test.combat_system_2",
-          "instructions": {
-            "title": "<< Combat System Test 2.0 >>",
-            "blocks": [
-              {
-                "type": "paragraph",
-                "text": "Austin against Austin in the RAW arena, played with the controls set in the Control Mapper. Walk the ring, run the ropes, and climb the corners while your opponent waits in his stance."
+                "text": "Austin against Austin in the RAW arena, played with the controls set in the Control Mapper. Walk the ring, run the ropes, and climb the corners while your opponent waits in his stance. Drag with the mouse to turn the camera, and scroll to zoom."
               },
               {
                 "type": "definitionList",

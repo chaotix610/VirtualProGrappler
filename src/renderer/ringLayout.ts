@@ -18,7 +18,7 @@ import { RING, RING_VIEW, RingBounds, Tuning } from "../game/config";
  * arena - but must agree on where a wrestler may stand.
  */
 
-/** Extents of the whole ring, used to frame the fixed camera. */
+/** Extents of the whole ring, used to frame the camera. */
 export interface RingFrame {
   centre: Vector3;
   halfWidth: number;
