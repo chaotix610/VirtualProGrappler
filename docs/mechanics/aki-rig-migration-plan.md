@@ -4,8 +4,11 @@
 2026-10-11: the AKI Austin is in the game and the Quaternius models,
 clips, retarget script and source trees are gone. Step 5 is done for
 strikes: their root motion moves the wrestler. Running moves wait on running
-clips (step 8); the roll and the dive are still code-driven. Steps 7
-(per-animation files) and 8 (missing clips) remain.
+clips (step 8); the roll and the dive are still code-driven. Step 8 is
+partly done: idle, the four walks, run, guard and the rope beat are baked
+in from the reference library (`extraClips` in `tools/promote-assets.mjs`).
+Still missing: climb and perch, strike reactions, get-ups, and the receiver
+half of every paired move. Step 7 (per-animation files) remains.
 
 **Decision:** the 19-bone AKI rig and its clips completely replace the
 65-bone Quaternius skeleton and every clip built for it — the Quaternius

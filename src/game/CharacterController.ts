@@ -790,8 +790,27 @@ export class CharacterController {
     } else if (this.speed > (Tuning.walkSpeed + Tuning.runSpeed) / 2) {
       this.animations.play(Anim.RUN, { loop: true });
     } else {
-      this.animations.play(Anim.WALK, { loop: true });
+      this.animations.play(this.walkClip(), { loop: true });
     }
+  }
+
+  /**
+   * The walk for the way he is moving relative to the way he faces. He keeps
+   * squared up to his opponent while walking, so moving away from them is a
+   * backward walk and circling them is a sidestep.
+   */
+  private walkClip(): string {
+    const sin = Math.sin(this.yaw);
+    const cos = Math.cos(this.yaw);
+    const { x, z } = this.moveDirection;
+    // Forward is (sin, cos); his right is (cos, -sin).
+    const forward = x * sin + z * cos;
+    const right = x * cos - z * sin;
+
+    if (Math.abs(forward) >= Math.abs(right)) {
+      return forward >= 0 ? Anim.WALK : Anim.WALK_BACKWARD;
+    }
+    return right > 0 ? Anim.WALK_RIGHT : Anim.WALK_LEFT;
   }
 
   /** Moves `from` toward `to` by at most `maxDelta`, wrapping at +/-PI. */

@@ -7,20 +7,28 @@
  * The clip each game state plays, by `animation_id` - the snake_case name
  * tools/prepare-character-glb.mjs gives the AKI clips.
  *
- * The AKI export has no locomotion, block, rope or corner clips yet, so those
- * states hold the idle pose until they are exported: movement still works, he
- * just slides. Several states naming one clip is expected until then.
+ * Locomotion, guard and the rope beat are shared clips the pipeline adds from
+ * the reference library (`extraClips` in tools/promote-assets.mjs). Corner
+ * clips are not added yet, so climbing and perching hold the idle: the climb
+ * clips raise him themselves, which would double the height the code lifts
+ * him by.
  */
 export const Anim = {
-  /** A held pose rather than a breathing loop. */
   IDLE: "idle",
-  WALK: "idle",
-  RUN: "idle",
+  /**
+   * Walks by direction relative to his facing: he squares up to his opponent
+   * and walks in any direction without turning his back.
+   */
+  WALK: "walk_forward",
+  WALK_BACKWARD: "walk_backward",
+  WALK_LEFT: "walk_left",
+  WALK_RIGHT: "walk_right",
+  RUN: "run",
   PUNCH: "austin_punch",
   KICK: "front_kick_01",
   ROLL: "roll",
   /** The beat against the ropes; the turn and the give are code-driven. */
-  ROPE_HIT: "idle",
+  ROPE_HIT: "rope_hit",
   /** Scaling the corner to the top turnbuckle; the climb is code-driven. */
   CLIMB: "idle",
   /** Balanced on the top rope, waiting. */
@@ -32,7 +40,7 @@ export const Anim = {
    */
   DIVE: "body_splash",
   /** Played once and held on its final frame while the guard key is down. */
-  BLOCK: "idle",
+  BLOCK: "guard",
 } as const;
 
 /** Every clip the game needs baked into each character GLB. */

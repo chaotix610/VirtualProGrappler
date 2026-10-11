@@ -47,6 +47,10 @@
  *  6. Root motion is split out. The root joint's horizontal travel comes out
  *     of each clip, so the body plays in place over its root, and goes onto a
  *     `root_motion` node track instead - see `extractRootMotion`.
+ *
+ *  7. Shared clips are added from skeleton-only GLBs on the same rig -
+ *     walking, running, guarding - which a character's own export does not
+ *     carry. See `addClips`.
  */
 
 import fs from "node:fs";
@@ -692,12 +696,75 @@ function pruneAccessors(json, accessorData) {
   return new Map(used.map((old, index) => [index, accessorData.get(old)]));
 }
 
-/** Fixes 4-6, in the order they depend on each other. */
+/**
+ * Fix 7: adds clips from skeleton-only GLBs on the same rig - the shared
+ * locomotion and reaction clips every wrestler plays, which a character's
+ * own export does not carry.
+ *
+ * Channels are matched to this file's joints by name, so the source's own
+ * root node (`Skeleton`) is ignored; it must share the rig's units, which the
+ * AKI library does (both roots scale 0.022 and `Pelvis` rests at 10 up).
+ * Added after renaming and before root-motion extraction, so the clips keep
+ * the ids given here and have their travel split out like every other clip.
+ */
+function addClips(json, accessorData, extraClips) {
+  const nodeByName = new Map(json.nodes.map((n, i) => [n.name, i]));
+  const added = [];
+
+  for (const { from, as } of extraClips) {
+    if ((json.animations ?? []).some((a) => a.name === as)) {
+      throw new Error(`extra clip "${as}" would replace a clip the export already has`);
+    }
+    if (!fs.existsSync(from)) throw new Error(`extra clip source not found: ${from}`);
+    const source = readGlb(from);
+    const animation = source.json.animations?.[0];
+    if (!animation) throw new Error(`${from} has no animation`);
+
+    // Accessors are copied across as they are referenced, each once.
+    const copied = new Map();
+    const copy = (index) => {
+      if (!copied.has(index)) {
+        // The data is re-packed by rebuildBuffer, so the old placement goes.
+        const accessor = { ...source.json.accessors[index] };
+        delete accessor.bufferView;
+        delete accessor.byteOffset;
+        json.accessors.push(accessor);
+        accessorData.set(json.accessors.length - 1, readAccessor(source.json, source.bin, index));
+        copied.set(index, json.accessors.length - 1);
+      }
+      return copied.get(index);
+    };
+
+    const samplers = [];
+    const channels = [];
+    for (const channel of animation.channels) {
+      const name = source.json.nodes[channel.target.node]?.name;
+      const node = nodeByName.get(name);
+      if (node === undefined) continue;
+      const sampler = animation.samplers[channel.sampler];
+      samplers.push({ ...sampler, input: copy(sampler.input), output: copy(sampler.output) });
+      channels.push({ sampler: samplers.length - 1, target: { node, path: channel.target.path } });
+    }
+    if (!channels.length) throw new Error(`${from} shares no joints with this rig`);
+
+    json.animations.push({
+      name: as,
+      channels,
+      samplers,
+      extras: { source_clip: animation.name, source_file: path.basename(from) },
+    });
+    added.push(as);
+  }
+  return added;
+}
+
+/** Fixes 4-7, in the order they depend on each other. */
 function prepareRig(json, accessorData, rig) {
   const rootIndex = fitRoot(json, rig);
   const dropped = renameClips(json, rig);
+  const added = addClips(json, accessorData, rig.extraClips ?? []);
   const travel = extractRootMotion(json, accessorData, rootIndex, rig.rootJoint ?? "Pelvis");
-  return { dropped, clips: json.animations.length, travel };
+  return { dropped, added, clips: json.animations.length, travel };
 }
 
 // --- rebuild ---------------------------------------------------------------
@@ -787,6 +854,8 @@ export function isPreparedGlb(file) {
  *   rootJoint    the joint whose horizontal travel becomes root motion
  *   clipRenames  source clip name -> id, where snake_case is not wanted
  *   dropClips    source clip names to leave out
+ *   extraClips   [{ from, as }]: clips to add from skeleton-only GLBs on the
+ *                same rig, each under the id `as`
  */
 export function prepareCharacterGlb(inputFile, outputFile, { unlit = true, rig = null } = {}) {
   const { json, bin } = readGlb(inputFile);
