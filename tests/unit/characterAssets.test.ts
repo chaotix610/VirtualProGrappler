@@ -23,15 +23,23 @@ interface GlbJson {
     extensions?: Record<string, unknown>;
   }[];
   nodes?: { name?: string }[];
+  accessors?: { bufferView?: number; byteOffset?: number; count: number }[];
+  bufferViews?: { byteOffset?: number; byteStride?: number }[];
   images?: unknown[];
   meshes?: { name?: string; primitives?: { material?: number }[] }[];
   skins?: { joints?: number[] }[];
-  animations?: { name?: string }[];
+  animations?: {
+    name?: string;
+    channels: { sampler: number; target: { node?: number; path: string } }[];
+    samplers: { output: number }[];
+  }[];
 }
 
-function readGlbJson(path: string): GlbJson {
+function readGlb(path: string): { json: GlbJson; bin: Buffer } {
   const data = readFileSync(path);
   let offset = GLB_HEADER_BYTES;
+  let json: GlbJson | null = null;
+  let bin = Buffer.alloc(0);
 
   while (offset < data.length) {
     const chunkLength = data.readUInt32LE(offset);
@@ -42,19 +50,39 @@ function readGlbJson(path: string): GlbJson {
     );
     offset += GLB_CHUNK_HEADER_BYTES;
 
-    if (chunkType === "JSON") {
-      return JSON.parse(data.subarray(offset, offset + chunkLength).toString("utf8"));
-    }
+    const chunk = data.subarray(offset, offset + chunkLength);
+    if (chunkType === "JSON") json = JSON.parse(chunk.toString("utf8"));
+    else if (chunkType.startsWith("BIN")) bin = chunk;
 
     offset += chunkLength;
   }
 
-  throw new Error(`${path} has no JSON chunk`);
+  if (!json) throw new Error(`${path} has no JSON chunk`);
+  return { json, bin };
 }
+
+/** One VEC3 of a float accessor; negative `element` counts from the end. */
+function vec3At(glb: GlbJson, bin: Buffer, index: number, element: number): number[] {
+  const accessor = glb.accessors![index];
+  const view = glb.bufferViews![accessor.bufferView!];
+  const stride = view.byteStride ?? 12;
+  const k = element < 0 ? accessor.count + element : element;
+  const at = (view.byteOffset ?? 0) + (accessor.byteOffset ?? 0) + k * stride;
+  return [0, 1, 2].map((c) => bin.readFloatLE(at + c * 4));
+}
+
+/** The AKI rig: what every clip is authored against. */
+const AKI_JOINTS = [
+  "Pelvis", "LowerAbdomen", "UpperBody", "Neck", "Head",
+  "LeftUpperArm", "LeftForearm", "LeftHand", "LeftFingers",
+  "RightUpperArm", "RightForearm", "RightHand", "RightFingers",
+  "LeftUpperLeg", "LeftLowerLeg", "LeftFoot",
+  "RightUpperLeg", "RightLowerLeg", "RightFoot",
+];
 
 describe("prepared character GLBs", () => {
   const path = "assets/runtime/models/steve_austin.glb";
-  const glb = readGlbJson(path);
+  const { json: glb, bin } = readGlb(path);
 
   it("ships a single atlased material", () => {
     // One material is what later lets the rigged parts merge into one skinned
@@ -76,7 +104,7 @@ describe("prepared character GLBs", () => {
   it("names every part node in lower case", () => {
     // A single capitalised part is enough to make a bone-mapping table keyed
     // on part names miss it silently. Joints are exempt: bone names are a
-    // contract shared with the animation library, where `Head` is capitalised.
+    // contract shared with the animation clips, and AKI joints are PascalCase.
     const joints = new Set((glb.skins ?? []).flatMap((s) => s.joints ?? []));
     const mixedCase = (glb.nodes ?? [])
       .map((n, i) => ({ name: n.name, joint: joints.has(i) }))
@@ -96,6 +124,47 @@ describe("prepared character GLBs", () => {
     const absent = REQUIRED_CLIPS.filter((c) => !clips.has(c));
 
     expect(absent).toEqual([]);
+  });
+
+  it("is skinned to the 19-joint AKI rig", () => {
+    // Every clip is authored against these joints. A character on any other
+    // skeleton cannot share them.
+    const joints = (glb.skins?.[0]?.joints ?? []).map((i) => glb.nodes?.[i]?.name);
+    expect([...joints].sort()).toEqual([...AKI_JOINTS].sort());
+  });
+
+  it("faces +Z, the way the game turns him", () => {
+    // Yaw 0 faces +Z. The AKI clips face -Z as exported and the pipeline turns
+    // the root round; the punch steps forward, so its root motion shows which
+    // way forward ended up.
+    const motionNode = (glb.nodes ?? []).findIndex((n) => n.name === "root_motion");
+    const punch = (glb.animations ?? []).find((a) => a.name === "austin_punch");
+    const channel = punch?.channels.find((c) => c.target.node === motionNode);
+    expect(channel).toBeDefined();
+
+    const [, , z] = vec3At(glb, bin, punch!.samplers[channel!.sampler].output, -1);
+    expect(z).toBeGreaterThan(0.2);
+  });
+
+  it("keeps every clip's travel off the body", () => {
+    // Root motion is split out in the pipeline, so the pelvis ends every clip
+    // where it started on X/Z - the root carries the travel instead, through
+    // the root_motion track.
+    const pelvis = (glb.nodes ?? []).findIndex((n) => n.name === "Pelvis");
+    const drifting = (glb.animations ?? [])
+      .filter((a) => {
+        const channel = a.channels.find(
+          (c) => c.target.node === pelvis && c.target.path === "translation"
+        );
+        if (!channel) return false;
+        const keys = a.samplers[channel.sampler].output;
+        const [x0, , z0] = vec3At(glb, bin, keys, 0);
+        const [x1, , z1] = vec3At(glb, bin, keys, -1);
+        return Math.abs(x1 - x0) > 1e-4 || Math.abs(z1 - z0) > 1e-4;
+      })
+      .map((a) => a.name);
+
+    expect(drifting).toEqual([]);
   });
 
   it("declares itself unlit", () => {

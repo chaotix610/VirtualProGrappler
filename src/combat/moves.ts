@@ -8,14 +8,15 @@ import { MoveData } from "./types";
  * follow move-slot-overview.md so entries can be looked up by the slot
  * resolver once grappling exists.
  *
- * Frame numbers are derived from the baked clip lengths, converted to
- * simulation frames, so the hit lands when the animation looks like it should.
+ * Frame numbers are derived from the AKI clips - their lengths, and the frame
+ * the striking limb reaches furthest forward - converted to simulation frames,
+ * so the hit lands when the animation looks like it should.
  */
 
 const seconds = (s: number) => Math.round(s * SIM_HZ);
 
 export const MOVES: Record<string, MoveData> = {
-  /** Punch_Cross, 1.00s. A weak arm strike to the head. */
+  /** austin_punch, 1.00s. A weak arm strike to the head. */
   "weak-arm-strike-1": {
     id: "weak-arm-strike-1",
     slot: "weak-arm-strike-1",
@@ -25,15 +26,12 @@ export const MOVES: Record<string, MoveData> = {
     bodyPartHit: "head",
     jointStaminaDamage: { head: 1.5 },
     totalFrames: seconds(1.0),
-    // Contact lands a third of the way in, as the arm extends.
-    hitFrames: [seconds(0.32)],
-    reversalWindow: { start: seconds(0.2), end: seconds(0.32) },
+    // The jab is a feint; contact is the right hand's full extension.
+    hitFrames: [seconds(0.53)],
+    reversalWindow: { start: seconds(0.41), end: seconds(0.53) },
   },
 
-  /**
-   * Sword_Attack standing in for a kick, 1.53s. A leg strike to the body.
-   * Swap the clip and this entry together when a real kick exists.
-   */
+  /** front_kick_01, 0.73s. A leg strike to the body. */
   "weak-leg-strike-1": {
     id: "weak-leg-strike-1",
     slot: "weak-leg-strike-1",
@@ -42,12 +40,16 @@ export const MOVES: Record<string, MoveData> = {
     bodyPartUsed: "legs",
     bodyPartHit: "body",
     jointStaminaDamage: { body: 2 },
-    totalFrames: seconds(1.53),
-    hitFrames: [seconds(0.5)],
-    reversalWindow: { start: seconds(0.34), end: seconds(0.5) },
+    totalFrames: seconds(0.73),
+    // The right foot's full extension.
+    hitFrames: [seconds(0.27)],
+    reversalWindow: { start: seconds(0.13), end: seconds(0.27) },
   },
 
-  /** NinjaJump off the top rope: a flying attack, hence the flying pools. */
+  /**
+   * body_splash off the top rope, 0.80s: a flying attack, hence the flying
+   * pools. Contact is as he comes down onto the mat.
+   */
   "flying-top-turnbuckle-standing-opponent": {
     id: "flying-top-turnbuckle-standing-opponent",
     slot: "flying-top-turnbuckle-standing-opponent",
@@ -56,9 +58,9 @@ export const MOVES: Record<string, MoveData> = {
     bodyPartUsed: "flying",
     bodyPartHit: "body",
     jointStaminaDamage: { body: 3, flying: 2 },
-    totalFrames: seconds(0.75),
-    hitFrames: [seconds(0.45)],
-    reversalWindow: { start: seconds(0.25), end: seconds(0.45) },
+    totalFrames: seconds(0.8),
+    hitFrames: [seconds(0.73)],
+    reversalWindow: { start: seconds(0.53), end: seconds(0.73) },
   },
 };
 

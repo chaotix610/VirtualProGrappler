@@ -7,7 +7,6 @@ import { Anim, RingBounds, Tuning } from "./config";
 type State =
   | "locomotion"
   | "attack"
-  | "jump"
   | "block"
   | "roll"
   /** Pressed against the ropes, back turned, before they throw him off. */
@@ -19,16 +18,15 @@ type State =
   | "perched"
   /** In the air after launching off the top rope. */
   | "diving";
-type JumpPhase = "start" | "air" | "land";
 
 /**
  * Drives one character: compass-fixed movement (up is always north, +z), a Shift run modifier,
- * and the punch / kick / jump one-shots. Movement is code-driven, so the
- * in-place (non root-motion) clips are the correct ones to pair with it.
+ * and the punch / kick one-shots. Movement is code-driven: the asset pipeline
+ * takes each clip's travel out onto a separate root-motion track, so the clips
+ * play in place over the root this moves.
  */
 export class CharacterController {
   private state: State = "locomotion";
-  private jumpPhase: JumpPhase = "start";
   /** Current horizontal speed, eased toward the target for smooth starts. */
   private speed = 0;
   private verticalVelocity = 0;
@@ -71,8 +69,8 @@ export class CharacterController {
   private perchYaw = 0;
   /** Seconds spent so far in the air off the top rope. */
   private diveElapsed = 0;
-  /** Airborne, or on the mat playing out the landing. */
-  private divePhase: "air" | "landing" = "air";
+  /** Length of the dive, taken from its clip when it starts. */
+  private diveDuration: number = Tuning.diveDuration;
   private readonly diveFrom = new Vector3();
   private readonly diveTo = new Vector3();
 
@@ -161,7 +159,7 @@ export class CharacterController {
     const action = this.input.consumeAction();
     if (!action) return;
 
-    // Attacks, jumps and rolls do not interrupt each other. Blocking is
+    // Attacks and rolls do not interrupt each other. Blocking is
     // interruptible, and so is a rope run: throwing a move off the ropes is
     // how the chain of bounces is meant to be broken.
     if (
@@ -189,23 +187,6 @@ export class CharacterController {
 
     if (action === "evade") {
       this.startRoll();
-      return;
-    }
-
-    if (action === "jump") {
-      this.state = "jump";
-      this.jumpPhase = "start";
-      this.verticalVelocity = Tuning.jumpVelocity;
-      this.animations.play(Anim.JUMP_START, {
-        loop: false,
-        restart: true,
-        onEnd: () => {
-          if (this.state === "jump" && this.jumpPhase === "start") {
-            this.jumpPhase = "air";
-            this.animations.play(Anim.JUMP_LOOP, { loop: true });
-          }
-        },
-      });
       return;
     }
 
@@ -483,7 +464,7 @@ export class CharacterController {
   }
 
   private applyGravity(dt: number): void {
-    if (this.state === "jump" || this.root.position.y > 0) {
+    if (this.root.position.y > 0) {
       this.verticalVelocity += Tuning.gravity * dt;
       this.root.position.y += this.verticalVelocity * dt;
     }
@@ -492,17 +473,6 @@ export class CharacterController {
     if (this.root.position.y <= 0) {
       this.root.position.y = 0;
       this.verticalVelocity = 0;
-
-      if (this.state === "jump" && this.jumpPhase !== "land") {
-        this.jumpPhase = "land";
-        this.animations.play(Anim.JUMP_LAND, {
-          loop: false,
-          restart: true,
-          onEnd: () => {
-            if (this.state === "jump") this.state = "locomotion";
-          },
-        });
-      }
     }
   }
 
@@ -625,12 +595,15 @@ export class CharacterController {
     this.startDive();
   }
 
-  /** Leaves the top rope on a fixed arc into the middle of the ring. */
+  /** Leaves the top rope on a fixed line into the middle of the ring. */
   private startDive(): void {
     this.state = "diving";
-    this.divePhase = "air";
     this.diveElapsed = 0;
+    this.diveDuration = this.animations.durationOf(Anim.DIVE) ?? Tuning.diveDuration;
     this.diveFrom.copyFrom(this.root.position);
+    // The clip stands him on the rope from a root on the mat, so the root
+    // drops to meet it rather than lifting him a second time.
+    this.diveFrom.y = Math.max(0, this.diveFrom.y - Tuning.diveClipLift);
 
     // Land inside the ring, clamped so a dive never ends outside the ropes.
     const inward = this.ringCentreDirection(this.diveFrom);
@@ -642,44 +615,25 @@ export class CharacterController {
     this.diveTo.set(target.x, 0, target.z);
 
     this.setFacing(Math.atan2(inward.x, inward.z));
-    this.animations.play(Anim.DIVE_START, {
-      loop: false,
-      restart: true,
-      onEnd: () => {
-        if (this.state === "diving") {
-          this.animations.play(Anim.DIVE_AIR, { loop: true });
-        }
-      },
-    });
+    // Cut, not faded: the root has just dropped to the mat under him.
+    this.animations.play(Anim.DIVE, { loop: false, restart: true, snap: true });
   }
 
-  /** Flies the arc, then lands him on his feet back in the ring. */
+  /**
+   * Carries him across the ring for as long as the clip lasts. The arc and
+   * the fall are the clip's own; this only moves the root under them.
+   */
   private advanceDive(dt: number): void {
-    // Stay in the dive state through the landing. Handing back to locomotion
-    // any earlier would let updateAnimation cut straight to idle.
-    if (this.divePhase === "landing") return;
-
     this.diveElapsed += dt;
-    const t = Math.min(this.diveElapsed / Tuning.diveDuration, 1);
+    const t = Math.min(this.diveElapsed / this.diveDuration, 1);
 
-    this.root.position.x = Scalar.Lerp(this.diveFrom.x, this.diveTo.x, t);
-    this.root.position.z = Scalar.Lerp(this.diveFrom.z, this.diveTo.z, t);
-    // Parabola: rises off the rope, then falls to the mat.
-    const base = Scalar.Lerp(this.diveFrom.y, this.diveTo.y, t);
-    this.root.position.y = base + Math.sin(Math.PI * t) * Tuning.diveArcHeight;
+    Vector3.LerpToRef(this.diveFrom, this.diveTo, t, this.root.position);
 
     if (t >= 1) {
       this.root.position.y = 0;
       this.speed = 0;
       this.verticalVelocity = 0;
-      this.divePhase = "landing";
-      this.animations.play(Anim.DIVE_LAND, {
-        loop: false,
-        restart: true,
-        onEnd: () => {
-          if (this.state === "diving") this.state = "locomotion";
-        },
-      });
+      this.state = "locomotion";
     }
   }
 
@@ -805,7 +759,7 @@ export class CharacterController {
     this.reboundDirection.normalize();
   }
 
-  /** Selects the locomotion clip; attacks and jumps drive their own. */
+  /** Selects the locomotion clip; attacks and other moves drive their own. */
   private updateAnimation(): void {
     if (this.state !== "locomotion") return;
 

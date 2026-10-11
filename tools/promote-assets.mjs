@@ -2,8 +2,8 @@
  * Copies the shipped subset of assets/source into the trees the build can
  * actually reach.
  *
- * `assets/source` is the authoring tree: ~265MB of Blender, Quaternius, Mixamo
- * and raw GLB originals, deliberately excluded from both Vite's publicDir and
+ * `assets/source` is the authoring tree: Blender and raw GLB
+ * originals, deliberately excluded from both Vite's publicDir and
  * the glob in src/data/assets.ts. Nothing there is reachable at runtime.
  *
  * Rather than leaving "which files did we copy out, and to where" as tribal
@@ -36,6 +36,27 @@ import { isPreparedGlb, prepareCharacterGlb } from "./prepare-character-glb.mjs"
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const at = (...parts) => path.join(root, ...parts);
+
+/**
+ * Fits the AKI export of Austin to the game.
+ *
+ * The export stands 3.635m tall in its clips (feet to crown, measured on the
+ * idle pose); the previous Austin stood 1.812m, which the ring, the camera and
+ * every movement constant are tuned around. Scaling on the root keeps the
+ * clips valid, since their translations scale with it.
+ *
+ * Every clip faces -Z, the opposite of the glTF +Z forward the game assumes
+ * (yaw 0 faces +Z), so the root is turned round.
+ */
+const AUSTIN_RIG = {
+  scale: 1.812 / 3.635,
+  yawDegrees: 180,
+  rootJoint: "Pelvis",
+  // The idle is exported as an unnamed held pose.
+  clipRenames: { NONE: "idle" },
+  // Exported with a single key: no length, nothing to play.
+  dropClips: ["Baseball Slide"],
+};
 
 /**
  * The shipped subset. Everything the build needs out of assets/source, and
@@ -71,9 +92,10 @@ const MANIFEST = [
     to: "assets/runtime/models/steve_austin.glb",
     // Unlit: the shading is painted into the textures, so the scene lights
     // must not apply a second pass of it.
-    via: (from, to) => prepareCharacterGlb(from, to, { unlit: true }),
-    why: "playable character; the Blender export needs its material flags " +
-      "cleared and its thirteen textures atlased before it is usable",
+    via: (from, to) =>
+      prepareCharacterGlb(from, to, { unlit: true, rig: AUSTIN_RIG }),
+    why: "playable character; the AKI export needs its material flags " +
+      "cleared, its 23 textures atlased, and its rig fitted before it is usable",
   },
 ];
 

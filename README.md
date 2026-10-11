@@ -53,7 +53,7 @@ npm run dev        # http://localhost:8080
 │   ├── artwork/         # Logo and menu backgrounds
 │   ├── textures/        # Arena, ring and UI art, plus menu fonts
 │   ├── schema/          # Measured geometry manifests for the ring assets
-│   └── source/          # Blender, Quaternius and Mixamo originals, never shipped
+│   └── source/          # Blender and raw GLB originals, never shipped
 ├── data/                # JSON content and JSON schemas
 │   ├── moves/           # Move catalog and slot definitions
 │   ├── arenas/          # One file per arena
@@ -80,8 +80,8 @@ npm run dev        # http://localhost:8080
 
 ### Assets
 
-`assets/source` is the authoring tree — ~265MB of Blender, Quaternius, Mixamo
-and raw GLB originals. **Nothing there reaches the browser.** The shipped
+`assets/source` is the authoring tree — Blender and raw GLB
+originals. **Nothing there reaches the browser.** The shipped
 subset is copied out by:
 
 ```bash
@@ -158,59 +158,31 @@ are written against that same pad.
 
 ## Asset pipeline
 
-For now, Character GLBs are built by retargeting the source (Quaternius) animation libraries
-onto the base characters:
+Character GLBs live in `assets/source/characters` and are copied to
+`assets/runtime/models` by `npm run assets:promote`.
 
-```bash
-blender --background --python tools/blender_retarget.py
-```
+Every character is on the 19-joint AKI rig (`Pelvis`, `LowerAbdomen`,
+`UpperBody`, `Neck`, `Head`, and the arm and leg chains), the rig the N64 AKI
+games used, so a clip made for one wrestler plays on all of them.
+[`prepare-character-glb.mjs`](tools/prepare-character-glb.mjs) fits each export
+to the game on its way out of the source tree:
 
-This reads from `assets/source` and writes to `assets/runtime/models`. See the
-script's header for why the retarget is delta-based rather than a direct
-channel copy.
+- clears the `alphaMode: MASK` and `doubleSided` flags on every material;
+- packs the per-part textures into one atlas. The AKI export places its UVs
+  outside [0, 1] and relies on mirrored-repeat samplers, so each atlas cell
+  holds its texture already tiled over the range its UVs cover;
+- marks the material unlit, since the shading is painted into the textures;
+- scales and turns the root node: the export stands 3.635m tall and faces −Z,
+  the game wants 1.812m facing +Z;
+- renames clips to snake_case `animation_id`s (`Austin Punch` → `austin_punch`,
+  the unnamed idle → `idle`), keeping the original name in the clip's
+  `extras.source_clip`;
+- takes each clip's horizontal `Pelvis` travel out onto a separate
+  `root_motion` track, so the body plays in place over its root.
 
-Characters modelled as separate body parts — one mesh and one texture each —
-go through a second step, which
-[`prepare-character-glb.mjs`](tools/prepare-character-glb.mjs) applies on the
-way out of the source tree:
-
-- clears the `alphaMode: MASK` and `doubleSided` flags Blender puts on every
-  material, neither of which the model needs;
-- packs the per-part textures into one atlas and rewrites the UVs into it, so
-  the parts share a material and can later merge into a single skinned mesh;
-- lower-cases node names, so a bone-mapping table keyed on part names cannot
-  miss one.
-
-It runs as part of `npm run assets:promote` rather than by hand, because a
-re-export undoes all three. `tests/unit/characterAssets.test.ts` fails if a raw
-export reaches `assets/runtime` unprepared, and `assets:promote` rebuilds it.
-
-### Rigging a modular character
-
-Austin is rigged to the same 65-bone skeleton the Quaternius characters use,
-lifted straight out of `Superhero_Male.glb` — which matters, because that
-armature already carries all sixteen clips. Reusing it means the clips apply
-directly and no retarget is needed.
-
-Two things make that work:
-
-- **The bind is rigid.** Each of the 21 body parts is weighted 1.0 to exactly
-  one bone, with no weight painting. On a blocky model that is not a
-  compromise, it is the point: the hard edges survive, and it is how the
-  console-era models were built.
-- **The mesh was moved to the skeleton, not the other way round.** Austin was
-  authored in an A-pose and the clips are authored against a T-pose rest. Bending
-  the skeleton to match him would have invalidated every clip, so his arm
-  chains were rotated up into the T-pose instead — exact, on rigid boxes, and
-  it leaves the rest pose untouched.
-
-Only along-axis joint fitting was applied on top of that (the elbow along X,
-the ankle along Z), which changes segment lengths without re-orienting a bone,
-so the clips stay valid.
-
-The rigged scene is kept at `assets/source/characters/steve_austin_rigged.blend`
-so the rig can be edited without redoing it.
-
-> His part names are mirrored: the mesh called `arm_left` sits at −X, which is
-> anatomically his right. The bind map in the .blend is by position, not by
-> name — worth knowing before trusting a `_left`/`_right` suffix on this model.
+The settings for each character sit in its entry in
+[`promote-assets.mjs`](tools/promote-assets.mjs). It runs as part of
+`npm run assets:promote` rather than by hand, because a re-export undoes all of
+it. `tests/unit/characterAssets.test.ts` fails if a raw export reaches
+`assets/runtime` unprepared, if the skeleton is not the AKI rig, or if the
+character ends up facing the wrong way.

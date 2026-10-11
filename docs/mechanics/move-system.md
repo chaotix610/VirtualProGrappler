@@ -25,7 +25,11 @@ Two more documents feed the pipeline and are referenced below:
 [REVERSALS](REVERSALS.md) (grapple reversal odds, built in
 `src/combat/reversal.ts` but never called) and the
 [state vocabulary stress test](state-vocabulary-stress-test.md) (the
-`actor` / `target` vocabulary and the named changes A–I for schema v3).
+`actor` / `target` vocabulary and the named changes A–I for the effects
+schema: `move-slots.json` v3, `moves.json` v4). The
+[No Mercy HFSM plan](no-mercy-hfsm-plan.md) is a reference for how the
+original game behaves; its §2 is cartridge data, while its tuning formulas
+(§8) are proposals and lose to these documents where they conflict.
 
 ---
 
@@ -46,7 +50,7 @@ and the code or data that implements it, if any.
 | 4 | **Slot.** State + input + context resolve to one `slot_id` — a slot whose `actor_state`, `target_state`, `range`, `requires_special` and `input_pattern` all match. | move-slots.json; HSFM §4.4 | Data complete; no resolver |
 | 5 | **Moveset.** The character's moveset maps the slot to one move. An empty slot does nothing. | move-animation-plan §7 | Not built. `data/characters/` is empty |
 | 6 | **Move.** The move supplies power, `ko`, `bleed`, `feature`, and (planned) damage values. | moves.json; move-damage §3 | 878 moves load; 3 different ones in `combat/moves.ts` are played |
-| 7 | **Animation.** The move's `animation_id` names a manifest entry, which supplies the clip(s), hit frames, counter window, and for paired moves the target clip and offset. | move-animation-plan §4–5 | `animation_id` null everywhere; clips baked into the character GLB |
+| 7 | **Animation.** The move's `actor_animation_id` and `target_animation_id` name manifest entries, which supply the clips, hit frames, counter window, and for paired moves the target's offset. A null target means an engine-chosen reaction. | move-animation-plan §4–5 | `animation_id` null everywhere; clips baked into the character GLB |
 | 8 | **Execute.** The move runs on the fixed 60 Hz clock. Damage is scheduled for the hit frame, not applied on the button press. | HSFM §4.8, §7; `data/AGENT.md` "How time works" | `Match.throwMove` / `Match.step` |
 | 9 | **Reversal.** Strikes: the target may fire a counter slot inside the counter window. Grapples: the defender's press during the hold triggers a spirit-weighted RNG roll. | REVERSALS; HSFM §5 — see [disagreement 2](#2-when-grapple-reversals-are-decided) | Odds built, never rolled |
 | 10 | **Damage.** Four factors: stamina-adjusted base, parameter bonus, spirit bonus, Special! ×1.2. Then current health, max health (¼), joint stamina. | move-damage §4–6; Parameters §3–5 | `resolveMove` in `damage.ts` |
@@ -80,12 +84,13 @@ data/characters/steve-austin.json        (planned)
         ▼                 ▼
 data/moves/move-slots.json    data/moves/moves.json
   slot_id, actor_state,         move_key (planned), slot_ids[],
-  target_state, input_pattern   power, damage (planned), animation_id
+  target_state, input_pattern   power, damage (planned),
+                                actor_ / target_animation_id
                                         │
                                         ▼
                          data/animations/animations.json   (planned)
                            animation_id → file, kind, events,
-                                          target_offset
+                                          pairs_with, target_offset
                                         │
                                         ▼
                          assets/animations/{moves,reactions,common}/*.glb
@@ -217,6 +222,31 @@ rule, and `damage.ts` follows it. The example needs correcting.
 - move-damage §1.1 says current health regenerates "to a certain extent"
   with no rate. Not implemented.
 
+### 8. How much the last move helps a pin
+
+- **no-mercy-hfsm-plan §8.4:** kick-out chance is *divided* by the last
+  move's Pin value (1 light … 5+ heavy), so a Pin 5 move makes kicking out
+  five times less likely whatever state the defender is in.
+- **Parameters §5.2 / §6.2:** pins depend entirely on damage dealt. A
+  higher offense takes fewer hits to pin; a higher defense takes more.
+
+**Parameters wins; the Pin value is a small, capped bonus on top.** In the
+AKI games a fresh opponent kicks out of a cover after a piledriver as
+easily as after a punch. Damage decides whether a pin can work at all; the
+last move only nudges it. So:
+
+- Kick-out chance comes from the defender's health and spirit, as the other
+  documents describe.
+- The last move's Pin value lowers it by a few percent at most, capped.
+- The bonus fades over a few seconds, so it only rewards covering straight
+  after the move.
+
+On a fresh opponent it changes nothing; late in a match, covering after a
+DDT is slightly better than after a punch. Keeping it small is also the safe
+side of an unknown: the HFSM plan's reading of the cartridge's Pin field
+(values 1, 2, 3, 5, 7) is inferred, not confirmed (its §13). If the field
+turns out to mean something else, a small bonus has barely affected play.
+
 ---
 
 ## Built, partly built, on paper
@@ -236,7 +266,7 @@ rule, and `damage.ts` follows it. The example needs correcting.
 | Animation files and manifest | Planned — move-animation-plan §2–5 |
 | Base damage for catalog moves | No data, no agreed rule |
 | Repeating-move second entries | No data (move-damage §3 requires them; stress test gap) |
-| Effects / outcomes (schema v3) | Designed in the stress test, not applied |
+| Effects / outcomes (`move-slots.json` v3, `moves.json` v4) | Designed in the stress test, not applied |
 
 ---
 

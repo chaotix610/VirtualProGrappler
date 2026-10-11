@@ -4,44 +4,39 @@
  */
 
 /**
- * Names of the animation clips as they are exported from Blender onto each
- * character rig. These must match the Blender export exactly.
+ * The clip each game state plays, by `animation_id` - the snake_case name
+ * tools/prepare-character-glb.mjs gives the AKI clips.
+ *
+ * The AKI export has no locomotion, block, rope or corner clips yet, so those
+ * states hold the idle pose until they are exported: movement still works, he
+ * just slides. Several states naming one clip is expected until then.
  */
 export const Anim = {
-  IDLE: "Idle_Loop",
-  WALK: "Walk_Loop",
-  RUN: "Sprint_Loop",
-  JUMP_START: "Jump_Start",
-  JUMP_LOOP: "Jump_Loop",
-  JUMP_LAND: "Jump_Land",
-  PUNCH: "Punch_Cross",
-  // The Quaternius library ships no kick clip. Sword_Attack stands in as a
-  // placeholder: swap this single value once a real kick is authored.
-  KICK: "Sword_Attack",
-  ROLL: "Roll",
+  /** A held pose rather than a breathing loop. */
+  IDLE: "idle",
+  WALK: "idle",
+  RUN: "idle",
+  PUNCH: "austin_punch",
+  KICK: "front_kick_01",
+  ROLL: "roll",
+  /** The beat against the ropes; the turn and the give are code-driven. */
+  ROPE_HIT: "idle",
+  /** Scaling the corner to the top turnbuckle; the climb is code-driven. */
+  CLIMB: "idle",
+  /** Balanced on the top rope, waiting. */
+  PERCH: "idle",
   /**
-   * Played during the beat against the ropes. The wrestler has turned so his
-   * back takes them, and this clip throws the torso backwards - which reads
-   * as absorbing the ropes before they throw him off.
+   * The whole dive off the top rope, played once: launch, flight and fall.
+   * It starts with his feet at top-rope height over a root on the mat, so the
+   * clip supplies the drop and the code only carries him across the ring.
    */
-  ROPE_HIT: "Hit_Chest",
-  /** Scaling the corner to the top turnbuckle. */
-  CLIMB: "ClimbUp_1m",
-  /** Crouched on the top rope, waiting. */
-  PERCH: "Crouch_Idle_Loop",
-  /** Launching off the top rope, flying, and landing. */
-  DIVE_START: "NinjaJump_Start",
-  DIVE_AIR: "NinjaJump_Idle_Loop",
-  DIVE_LAND: "NinjaJump_Land",
-  // A real block, from the second animation library. Played once and held on
-  // its final frame for as long as the guard key is down.
-  BLOCK: "Sword_Block",
+  DIVE: "body_splash",
+  /** Played once and held on its final frame while the guard key is down. */
+  BLOCK: "idle",
 } as const;
 
 /** Every clip the game needs baked into each character GLB. */
-export const REQUIRED_CLIPS: string[] = Object.values(Anim);
-
-export type SkinTone = "light" | "dark";
+export const REQUIRED_CLIPS: string[] = [...new Set(Object.values(Anim))];
 
 export interface CharacterDefinition {
   /** Stable id used by the selection UI. */
@@ -50,103 +45,23 @@ export interface CharacterDefinition {
   label: string;
   /** GLB file holding the rigged mesh plus every clip in REQUIRED_CLIPS. */
   file: string;
-  /**
-   * Material whose albedo texture gets swapped for the skin tone.
-   *
-   * Only meaningful for the Quaternius roster, where one shared mesh is
-   * re-skinned per variant. A bespoke character - one modelled and textured as
-   * itself, rather than as a tone of a base body - has no such material and
-   * leaves this unset, along with `bodyTexture` and `tint`.
-   */
-  bodyMaterial?: string;
-  /**
-   * Albedo texture file for this variant, resolved against TEXTURE_ROOT.
-   * Omitted for
-   * models that already ship the right texture.
-   */
-  bodyTexture?: string;
-  /** Which tone this variant represents, where the model is a re-skin. */
-  tone?: SkinTone;
-  /**
-   * Albedo multiplier applied over the texture, as [r, g, b].
-   *
-   * Quaternius ships "Light" and "Dark" body textures, but measured against
-   * each other they differ on only ~10% of texels and are near-identical
-   * across the skin itself, so the two variants render almost the same. This
-   * tint is what actually separates them on screen. Set to [1, 1, 1] to see
-   * the untouched source textures.
-   */
-  tint?: [number, number, number];
-  /** Colour shown on the selection card; kept in step with the tint. */
+  /** Colour shown on the selection card. */
   swatch: string;
 }
 
-const LIGHT_TINT: [number, number, number] = [1.08, 1.02, 0.96];
-const DARK_TINT: [number, number, number] = [0.62, 0.5, 0.42];
-
 /**
- * Runtime asset roots. These are URLs from the web root: everything under
+ * Runtime asset root. A URL from the web root: everything under
  * assets/runtime is served there by Vite, while assets/source holds the
  * Blender originals and is never shipped.
  */
 export const MODEL_ROOT = "models/";
-export const TEXTURE_ROOT = "textures/";
 
 /**
- * Four roster entries built from two meshes. Light and dark variants share a
- * GLB and differ only by the albedo texture swapped in at load time.
+ * The playable roster. Austin is modelled and textured as himself; his
+ * shading is painted into the texture and his material is marked unlit, which
+ * is what gives the low-poly roster its flat look.
  */
 export const CHARACTERS: CharacterDefinition[] = [
-  {
-    id: "male-light",
-    label: "Ranger",
-    file: "Superhero_Male.glb",
-    bodyMaterial: "MI_Superhero_Male",
-    bodyTexture: "T_Superhero_Male_Light.png",
-    tone: "light",
-    tint: LIGHT_TINT,
-    swatch: "#c98f66",
-  },
-  {
-    id: "male-dark",
-    label: "Sentinel",
-    file: "Superhero_Male.glb",
-    bodyMaterial: "MI_Superhero_Male",
-    bodyTexture: "T_Superhero_Male_Dark.png",
-    tone: "dark",
-    tint: DARK_TINT,
-    swatch: "#6b452e",
-  },
-  {
-    id: "female-light",
-    label: "Scout",
-    file: "Superhero_Female.glb",
-    bodyMaterial: "MI_Superhero_Female",
-    bodyTexture: "T_Superhero_Female_Light.png",
-    tone: "light",
-    tint: LIGHT_TINT,
-    swatch: "#cb9269",
-  },
-  {
-    id: "female-dark",
-    label: "Vanguard",
-    file: "Superhero_Female.glb",
-    bodyMaterial: "MI_Superhero_Female",
-    bodyTexture: "T_Superhero_Female_Dark.png",
-    tone: "dark",
-    tint: DARK_TINT,
-    swatch: "#6d4830",
-  },
-  /**
-   * The first bespoke character: modelled and textured as himself rather than
-   * as a tone of a shared base body, so he names no `bodyMaterial` and takes
-   * no tint. His shading is painted into the texture and his material is
-   * marked unlit, which is what gives the low-poly roster its flat look.
-   *
-   * Deliberately last: `opponentFor` picks the first entry on a different
-   * mesh, so putting him earlier would hand the Quaternius characters an
-   * opponent that has no animation clips yet.
-   */
   {
     id: "steve-austin",
     label: "Austin",
@@ -154,14 +69,6 @@ export const CHARACTERS: CharacterDefinition[] = [
     swatch: "#2b2b2e",
   },
 ];
-
-/**
- * Picks who the player faces off against. A different model is preferred so
- * the two are easy to tell apart at a glance.
- */
-export function opponentFor(player: CharacterDefinition): CharacterDefinition {
-  return CHARACTERS.find((c) => c.file !== player.file) ?? CHARACTERS[0];
-}
 
 /** Where the two wrestlers start, facing each other down the z axis. */
 export const SPAWN = {
@@ -177,7 +84,6 @@ export const Tuning = {
   turnSpeed: 12,
   /** How quickly speed ramps toward its target, as a per-second rate. */
   acceleration: 12,
-  jumpVelocity: 6.2,
   gravity: -18,
   /** Forward speed carried through a roll. Slightly above a sprint so the
    *  dodge feels like it gains ground. */
@@ -211,16 +117,16 @@ export const Tuning = {
   climbDuration: 0.62,
   /** Where his feet sit relative to the top rope, so he stands on it. */
   perchFootOffset: 0.06,
-  /** Seconds from leaving the top rope to touching the mat. */
-  diveDuration: 0.75,
+  /** Seconds in the air, when the dive clip is not loaded to time it. */
+  diveDuration: 0.8,
   /** How far into the ring the dive carries him, in world units. */
   diveDistance: 2.3,
   /**
-   * Amplitude of the dive's arc. This competes with the ~1.5 unit fall from
-   * the top rope, so it has to exceed it noticeably for him to actually rise
-   * off the rope before dropping; at 0.55 the hop was cancelled out entirely.
+   * Height of his feet on the dive clip's first frame, over a root on the
+   * mat. The clip already stands him on the top rope, so the root starts this
+   * far below the perch and does not lift him a second time.
    */
-  diveArcHeight: 0.95,
+  diveClipLift: 1.36,
   /**
    * Safety cap on a rope run, in seconds. The run normally ends by reaching
    * the opposite ropes and bouncing again, or by the player throwing a move;

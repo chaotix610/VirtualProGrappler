@@ -4,11 +4,18 @@ node_modules/
 # Build output
 dist/
 
-# Asset authoring tree — ~267MB of Blender, Quaternius and Mixamo originals.
+# Asset authoring tree — Blender and raw GLB originals.
 # Nothing here ships. The subset that does is committed under assets/runtime,
 # assets/textures, assets/glb and assets/artwork, and is copied out of this
 # tree by `npm run assets:promote`.
 assets/source/
+
+# Reference assets extracted from the N64 AKI games. Local only: they must not
+# be committed or distributed. assets/animations/ is kept for the game's own
+# clips.
+assets/local/
+/*-local/
+/*-local (*/
 
 # Local env
 .env.local

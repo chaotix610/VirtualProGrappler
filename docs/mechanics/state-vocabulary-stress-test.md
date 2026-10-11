@@ -28,7 +28,9 @@ reproduces finding 5 one layer up.)
 **Applied.** `move-slots.json` and its schema now carry `actor_state` /
 `target_state` in place of `player_state` / `opponent_state`, at
 `schema_version: 2`. The rest of change A — role-keyed *effects* — lands with
-schema v3.
+the next schema version of each file: `move-slots.json` v3 and `moves.json`
+v4. (`moves.json` v3 is the animation-field rename in
+[move-animation-plan §6](move-animation-plan.md#6-changes-to-movesjson).)
 
 ```jsonc
 // slot
@@ -401,7 +403,8 @@ finding any of them later means re-authoring all 138.
 reproduces finding 5 at the effect layer. Non-negotiable.
 
 *Half done.* The slot fields are renamed (`schema_version: 2`); effects do not
-exist yet, so the other half lands with v3.
+exist yet, so the other half lands with `move-slots.json` v3 and
+`moves.json` v4.
 
 **Two senses, two vocabularies — settled.** A first pass renamed the slot fields
 to `attacker_state` / `defender_state`, which collided: on a slot those words

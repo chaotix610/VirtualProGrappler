@@ -28,10 +28,25 @@
  *     call, instead of twenty-one.
  *
  * The atlas is the only step that touches geometry: UVs are remapped into
- * their cell. The source UVs sit in [0,1] apart from sub-texel rounding
- * (max overshoot measured at 0.008, under one texel), so they are clamped
- * before remapping rather than tiled - at NEAREST filtering the clamp moves
- * at most one texel and is not visible.
+ * their cell. Source UVs need not sit in [0,1]: the AKI export puts every part
+ * in [2, 3.5] and lets mirrored-repeat samplers wrap it. An atlas cell cannot
+ * wrap, so each cell holds the image already tiled - mirrored or repeated, as
+ * its sampler says - over the whole tiles its UVs cover, and the UVs are
+ * remapped across that. Clamping them to [0,1] instead collapses every UV onto
+ * one texel and paints each part a flat colour.
+ *
+ * A file exported with its clips (the AKI rig) can also be given a `rig`
+ * option, which fits the export to the game - see `prepareRig`:
+ *
+ *  4. Scale and facing are set on the root node, so every clip's translations
+ *     scale and turn with it. Never per clip.
+ *
+ *  5. Clips are renamed to snake_case `animation_id`s, the original name kept
+ *     in the clip's `extras.source_clip`. Broken clips are dropped.
+ *
+ *  6. Root motion is split out. The root joint's horizontal travel comes out
+ *     of each clip, so the body plays in place over its root, and goes onto a
+ *     `root_motion` node track instead - see `extractRootMotion`.
  */
 
 import fs from "node:fs";
@@ -193,8 +208,8 @@ function fixNodeNames(json) {
   const renamed = [];
 
   // Joints are excluded. Bone names are a contract shared with the animation
-  // library and the retarget script - `Head` is capitalised on the Quaternius
-  // rig and has to stay that way - whereas part names are ours to normalise.
+  // clips - rig joints are PascalCase and have to stay that way - whereas part
+  // names are ours to normalise.
   const joints = new Set((json.skins ?? []).flatMap((skin) => skin.joints ?? []));
 
   (json.nodes ?? []).forEach((node, index) => {
@@ -277,30 +292,112 @@ function blit(atlas, image, cell) {
   }
 }
 
+const REPEAT = 10497;
+const MIRRORED_REPEAT = 33648;
+
+/**
+ * Whole tiles covering a UV span: from the tile the lowest UV falls in to the
+ * one the highest does. Overshoots under 0.01 - sub-texel rounding at a tile's
+ * edge - do not earn a tile of their own.
+ */
+function tileRange(span) {
+  if (!span) return { u0: 0, nu: 1, v0: 0, nv: 1 };
+  const EPS = 0.01;
+  const axis = (lo, hi) => {
+    const start = Math.floor(lo + EPS);
+    const end = Math.max(start + 1, Math.ceil(hi - EPS));
+    return [start, end - start];
+  };
+  const [u0, nu] = axis(span.u0, span.u1);
+  const [v0, nv] = axis(span.v0, span.v1);
+  return { u0, nu, v0, nv };
+}
+
+/**
+ * Lays an image out over `tiles` the way its sampler wraps it, so sampling
+ * the result at [0,1] matches sampling the original across the whole span.
+ * Mirrored repeat flips every odd tile; plain repeat copies it. Clamp is not
+ * handled: an export clamping a span wider than one tile would need its edge
+ * texels stretched, and none does.
+ */
+function tileImage(source, { u0, nu, v0, nv }, wrap) {
+  if (nu === 1 && nv === 1 && u0 % 2 === 0 && v0 % 2 === 0) return source;
+  const { width: w, height: h } = source;
+  const out = new PNG({ width: w * nu, height: h * nv });
+
+  for (let ty = 0; ty < nv; ty++) {
+    const flipY = wrap.t === MIRRORED_REPEAT && (v0 + ty) % 2 !== 0;
+    for (let tx = 0; tx < nu; tx++) {
+      const flipX = wrap.s === MIRRORED_REPEAT && (u0 + tx) % 2 !== 0;
+      for (let y = 0; y < h; y++) {
+        const sy = flipY ? h - 1 - y : y;
+        for (let x = 0; x < w; x++) {
+          const sx = flipX ? w - 1 - x : x;
+          const from = (sy * w + sx) * 4;
+          const to = ((ty * h + y) * out.width + tx * w + x) * 4;
+          source.data.copy(out.data, to, from, from + 4);
+        }
+      }
+    }
+  }
+  return out;
+}
+
 /**
  * Fix 3: one material, one texture. Every primitive's UVs are remapped into
  * its old texture's cell in the atlas.
  */
 function atlasMaterials(json, bin, uvData, { unlit }) {
+  // Material index -> the image it sampled, so a primitive can find its cell;
+  // image index -> how its sampler wraps.
+  const imageOfMaterial = new Map();
+  const wrapOfImage = new Map();
+  (json.materials ?? []).forEach((material, index) => {
+    const texture = material.pbrMetallicRoughness?.baseColorTexture;
+    if (!texture) return;
+    const { source, sampler } = json.textures[texture.index];
+    imageOfMaterial.set(index, source);
+    const s = json.samplers?.[sampler] ?? {};
+    wrapOfImage.set(source, { s: s.wrapS ?? REPEAT, t: s.wrapT ?? REPEAT });
+  });
+
+  // The whole-tile range of UV space each image is sampled across. An export
+  // can place its UVs anywhere and let the sampler wrap them - the AKI file
+  // sits every part in [2, 3.5] - so the cell has to hold that many tiles.
+  const spanOfImage = new Map();
+  for (const mesh of json.meshes ?? []) {
+    for (const primitive of mesh.primitives ?? []) {
+      const uv = primitive.attributes?.TEXCOORD_0;
+      const imageIndex = imageOfMaterial.get(primitive.material);
+      if (uv === undefined || imageIndex === undefined) continue;
+      const span = spanOfImage.get(imageIndex) ?? { u0: Infinity, u1: -Infinity, v0: Infinity, v1: -Infinity };
+      const buffer = uvData.get(uv);
+      for (let i = 0; i < buffer.length; i += 8) {
+        const u = buffer.readFloatLE(i);
+        const v = buffer.readFloatLE(i + 4);
+        span.u0 = Math.min(span.u0, u);
+        span.u1 = Math.max(span.u1, u);
+        span.v0 = Math.min(span.v0, v);
+        span.v1 = Math.max(span.v1, v);
+      }
+      spanOfImage.set(imageIndex, span);
+    }
+  }
+
   const images = (json.images ?? []).map((image, index) => {
-    const png = PNG.sync.read(trimPng(Buffer.from(readBufferView(json, bin, image.bufferView))));
-    return { index, width: png.width, height: png.height, png };
+    const source = PNG.sync.read(trimPng(Buffer.from(readBufferView(json, bin, image.bufferView))));
+    const tiles = tileRange(spanOfImage.get(index));
+    const png = tileImage(source, tiles, wrapOfImage.get(index) ?? { s: REPEAT, t: REPEAT });
+    return { index, width: png.width, height: png.height, png, tiles };
   });
   if (!images.length) return null;
+  const tilesOfImage = new Map(images.map((image) => [image.index, image.tiles]));
 
   const { cells, usedHeight } = packCells(images);
 
   const atlas = new PNG({ width: ATLAS_SIZE, height: ATLAS_SIZE });
   atlas.data.fill(0);
   for (const image of images) blit(atlas, image.png, cells.get(image.index));
-
-  // Material index -> the image it sampled, so a primitive can find its cell.
-  const imageOfMaterial = new Map();
-  (json.materials ?? []).forEach((material, index) => {
-    const texture = material.pbrMetallicRoughness?.baseColorTexture;
-    if (!texture) return;
-    imageOfMaterial.set(index, json.textures[texture.index].source);
-  });
 
   // Rewrite each UV accessor into its cell. Accessors are per-primitive here,
   // but guard anyway: a shared accessor pulled into two different cells would
@@ -326,10 +423,13 @@ function atlasMaterials(json, bin, uvData, { unlit }) {
       }
       remapped.set(uv, imageIndex);
 
+      const { u0, nu, v0, nv } = tilesOfImage.get(imageIndex);
       const buffer = uvData.get(uv);
       for (let i = 0; i < buffer.length; i += 8) {
-        const u = Math.min(Math.max(buffer.readFloatLE(i), 0), 1);
-        const v = Math.min(Math.max(buffer.readFloatLE(i + 4), 0), 1);
+        // Into the cell's own [0,1], across however many tiles it holds. The
+        // clamp only absorbs sub-texel rounding at the cell's edge.
+        const u = Math.min(Math.max((buffer.readFloatLE(i) - u0) / nu, 0), 1);
+        const v = Math.min(Math.max((buffer.readFloatLE(i + 4) - v0) / nv, 0), 1);
         // glTF UV origin is top-left and PNG rows run top-down, so V needs no
         // flip - the cell's y is already measured from the top.
         buffer.writeFloatLE((cell.x + u * cell.width) / ATLAS_SIZE, i);
@@ -376,6 +476,228 @@ function atlasMaterials(json, bin, uvData, { unlit }) {
   json.samplers = [{ magFilter: 9728, minFilter: 9987, wrapS: 33071, wrapT: 33071 }];
 
   return { atlas, usedHeight, count: images.length };
+}
+
+// --- rig -------------------------------------------------------------------
+
+/** Name of the node the extracted root motion is keyed onto. */
+export const ROOT_MOTION_NODE = "root_motion";
+
+/** `Austin Punch` -> `austin_punch`, `Stomp (16868)` -> `stomp_16868`. */
+export function clipId(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+}
+
+/** Per-component min and max of packed float VEC3s, as an accessor wants. */
+function vec3Bounds(buffer) {
+  const min = [Infinity, Infinity, Infinity];
+  const max = [-Infinity, -Infinity, -Infinity];
+  for (let i = 0; i < buffer.length; i += 12) {
+    for (let c = 0; c < 3; c++) {
+      const v = buffer.readFloatLE(i + c * 4);
+      min[c] = Math.min(min[c], v);
+      max[c] = Math.max(max[c], v);
+    }
+  }
+  return { min, max };
+}
+
+/** Hamilton product, [x, y, z, w]. */
+function multiplyQuat(a, b) {
+  const [ax, ay, az, aw] = a;
+  const [bx, by, bz, bw] = b;
+  return [
+    aw * bx + ax * bw + ay * bz - az * by,
+    aw * by - ax * bz + ay * bw + az * bx,
+    aw * bz + ax * by - ay * bx + az * bw,
+    aw * bw - ax * bx - ay * by - az * bz,
+  ];
+}
+
+/** Rotates vector `v` by unit quaternion `q`. */
+function rotateVector(q, v) {
+  const [x, y, z] = multiplyQuat(multiplyQuat(q, [...v, 0]), [-q[0], -q[1], -q[2], q[3]]);
+  return [x, y, z];
+}
+
+/**
+ * Fix 4: scale and turn the whole character on its root node.
+ *
+ * Applied to the root rather than baked into vertices or keys, so the bind
+ * pose, the skin and every clip stay exactly as exported and simply inherit
+ * it.
+ */
+function fitRoot(json, { scale = 1, yawDegrees = 0 }) {
+  const roots = json.scenes?.[json.scene ?? 0]?.nodes ?? [];
+  if (roots.length !== 1) {
+    throw new Error(`expected one scene root to fit, found ${roots.length}`);
+  }
+  const root = json.nodes[roots[0]];
+
+  const half = (yawDegrees * Math.PI) / 360;
+  const yaw = [0, Math.sin(half), 0, Math.cos(half)];
+  root.rotation = multiplyQuat(yaw, root.rotation ?? [0, 0, 0, 1]);
+  root.scale = (root.scale ?? [1, 1, 1]).map((s) => s * scale);
+
+  return roots[0];
+}
+
+/** Fix 5: snake_case ids, original names kept, broken clips dropped. */
+function renameClips(json, { clipRenames = {}, dropClips = [] }) {
+  const dropped = [];
+  json.animations = (json.animations ?? []).filter((animation) => {
+    if (dropClips.includes(animation.name)) {
+      dropped.push(animation.name);
+      return false;
+    }
+    return true;
+  });
+
+  const seen = new Set();
+  for (const animation of json.animations) {
+    const id = clipRenames[animation.name] ?? clipId(animation.name);
+    if (seen.has(id)) throw new Error(`two clips map to the id "${id}"`);
+    seen.add(id);
+    animation.extras = { ...animation.extras, source_clip: animation.name };
+    animation.name = id;
+  }
+
+  // Dropped clips leave their accessors behind; rebuildBuffer prunes them.
+  return dropped;
+}
+
+/**
+ * Fix 6: take the root joint's horizontal travel out of every clip.
+ *
+ * The exported clips walk the body away from its root: a punch steps 0.4m
+ * forward, a clothesline runs 2.5m. Left in, the wrestler drifts off his own
+ * root node during a move and snaps back when it ends, and the game cannot
+ * know where he finished.
+ *
+ * So each clip's root joint is pinned to its first-frame X/Z - height and
+ * rotation stay, which keeps the bob, the sway and every drop to the mat -
+ * and the travel goes onto a `root_motion` node of its own, keyed on the same
+ * times. That node is a scene root, so its keys are already in model space:
+ * metres, after the root's scale and facing, with +Z forward. It starts every
+ * clip at zero. The game reads it and moves the wrestler's root by the change
+ * each frame.
+ */
+function extractRootMotion(json, accessorData, rootIndex, jointName) {
+  const joint = json.nodes.findIndex((n) => n.name === jointName);
+  if (joint < 0) throw new Error(`no root joint named ${jointName}`);
+  if (!(json.nodes[rootIndex].children ?? []).includes(joint)) {
+    throw new Error(`${jointName} must be a direct child of the scene root`);
+  }
+
+  const root = json.nodes[rootIndex];
+  const rotation = root.rotation ?? [0, 0, 0, 1];
+  const scale = root.scale ?? [1, 1, 1];
+  const toModel = ([x, y, z]) => rotateVector(rotation, [x * scale[0], y * scale[1], z * scale[2]]);
+
+  json.nodes.push({ name: ROOT_MOTION_NODE });
+  const motionNode = json.nodes.length - 1;
+  json.scenes[json.scene ?? 0].nodes.push(motionNode);
+
+  const claimed = new Set();
+  const travel = [];
+
+  for (const animation of json.animations ?? []) {
+    const channel = animation.channels.find(
+      (c) => c.target.node === joint && c.target.path === "translation"
+    );
+    if (!channel) continue;
+
+    const sampler = animation.samplers[channel.sampler];
+    if ((sampler.interpolation ?? "LINEAR") !== "LINEAR") {
+      throw new Error(`${animation.name}: root joint keys are ${sampler.interpolation}, not LINEAR`);
+    }
+    // Pinning edits the keys in place, which would corrupt any other clip
+    // reading the same accessor.
+    if (claimed.has(sampler.output)) {
+      throw new Error(`${animation.name}: root joint keys are shared with another clip`);
+    }
+    claimed.add(sampler.output);
+
+    const keys = accessorData.get(sampler.output);
+    const startX = keys.readFloatLE(0);
+    const startZ = keys.readFloatLE(8);
+    const motion = Buffer.alloc(keys.length);
+
+    for (let i = 0; i < keys.length; i += 12) {
+      const dx = keys.readFloatLE(i) - startX;
+      const dz = keys.readFloatLE(i + 8) - startZ;
+      keys.writeFloatLE(startX, i);
+      keys.writeFloatLE(startZ, i + 8);
+
+      const [mx, , mz] = toModel([dx, 0, dz]);
+      motion.writeFloatLE(mx, i);
+      motion.writeFloatLE(0, i + 4);
+      motion.writeFloatLE(mz, i + 8);
+    }
+
+    const count = keys.length / 12;
+    const last = (count - 1) * 12;
+    const end = [motion.readFloatLE(last), 0, motion.readFloatLE(last + 8)];
+    json.accessors.push({ componentType: 5126, count, type: "VEC3", ...vec3Bounds(motion) });
+    accessorData.set(json.accessors.length - 1, motion);
+
+    animation.samplers.push({
+      input: sampler.input,
+      output: json.accessors.length - 1,
+      interpolation: "LINEAR",
+    });
+    animation.channels.push({
+      sampler: animation.samplers.length - 1,
+      target: { node: motionNode, path: "translation" },
+    });
+
+    travel.push({ clip: animation.name, distance: Math.hypot(end[0], end[2]) });
+  }
+
+  return travel;
+}
+
+/**
+ * Drops accessors nothing references any more - those of a dropped clip - and
+ * renumbers the rest. Returns the accessor data under the new indices.
+ */
+function pruneAccessors(json, accessorData) {
+  const refs = [];
+  for (const mesh of json.meshes ?? []) {
+    for (const primitive of mesh.primitives ?? []) {
+      refs.push([primitive, "indices"]);
+      for (const key of Object.keys(primitive.attributes ?? {})) refs.push([primitive.attributes, key]);
+      for (const target of primitive.targets ?? []) {
+        for (const key of Object.keys(target)) refs.push([target, key]);
+      }
+    }
+  }
+  for (const skin of json.skins ?? []) refs.push([skin, "inverseBindMatrices"]);
+  for (const animation of json.animations ?? []) {
+    for (const sampler of animation.samplers) refs.push([sampler, "input"], [sampler, "output"]);
+  }
+
+  const used = [...new Set(refs.map(([o, k]) => o[k]).filter((i) => i !== undefined))].sort(
+    (a, b) => a - b
+  );
+  const renumber = new Map(used.map((old, index) => [old, index]));
+  for (const [owner, key] of refs) {
+    if (owner[key] !== undefined) owner[key] = renumber.get(owner[key]);
+  }
+
+  json.accessors = used.map((old) => json.accessors[old]);
+  return new Map(used.map((old, index) => [index, accessorData.get(old)]));
+}
+
+/** Fixes 4-6, in the order they depend on each other. */
+function prepareRig(json, accessorData, rig) {
+  const rootIndex = fitRoot(json, rig);
+  const dropped = renameClips(json, rig);
+  const travel = extractRootMotion(json, accessorData, rootIndex, rig.rootJoint ?? "Pelvis");
+  return { dropped, clips: json.animations.length, travel };
 }
 
 // --- rebuild ---------------------------------------------------------------
@@ -458,7 +780,15 @@ export function isPreparedGlb(file) {
   }
 }
 
-export function prepareCharacterGlb(inputFile, outputFile, { unlit = true } = {}) {
+/**
+ * `rig`, when given, fits a file exported with its clips to the game:
+ *   scale        multiplies the root node's scale
+ *   yawDegrees   turns the root node about +Y
+ *   rootJoint    the joint whose horizontal travel becomes root motion
+ *   clipRenames  source clip name -> id, where snake_case is not wanted
+ *   dropClips    source clip names to leave out
+ */
+export function prepareCharacterGlb(inputFile, outputFile, { unlit = true, rig = null } = {}) {
   const { json, bin } = readGlb(inputFile);
   const before = fs.statSync(inputFile).size;
 
@@ -480,7 +810,8 @@ export function prepareCharacterGlb(inputFile, outputFile, { unlit = true } = {}
   }
 
   const atlas = atlasMaterials(json, bin, uvData, { unlit });
-  const rebuilt = rebuildBuffer(json, accessorData, atlas?.atlas ?? null);
+  const rigged = rig ? prepareRig(json, accessorData, rig) : null;
+  const rebuilt = rebuildBuffer(json, pruneAccessors(json, accessorData), atlas?.atlas ?? null);
 
   json.asset = {
     ...json.asset,
@@ -491,7 +822,7 @@ export function prepareCharacterGlb(inputFile, outputFile, { unlit = true } = {}
   writeGlb(outputFile, json, rebuilt);
   const after = fs.statSync(outputFile).size;
 
-  return { materialsFixed, renamed, atlas, unlit, before, after };
+  return { materialsFixed, renamed, atlas, rigged, unlit, before, after };
 }
 
 if (process.argv[1] && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {

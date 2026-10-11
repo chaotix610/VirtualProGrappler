@@ -1,6 +1,9 @@
 # AKI Rig Migration Plan
 
-**Status:** decided 2026-10-09, not built.
+**Status:** decided 2026-10-09. Work order (§7) steps 1–4 and 6 done
+2026-10-11: the AKI Austin is in the game and the Quaternius models,
+clips, retarget script and source trees are gone. Steps 5 (root motion),
+7 (per-animation files) and 8 (missing clips) remain.
 
 **Decision:** the 19-bone AKI rig and its clips completely replace the
 65-bone Quaternius skeleton and every clip built for it — the Quaternius

@@ -58,12 +58,16 @@ export class AnimationController {
    * Crossfades to `name`. Re-requesting the clip that is already active is a
    * no-op unless `restart` is set, which is what makes repeated punches replay
    * from the first frame.
+   *
+   * `snap` cuts to the clip instead of fading. For a clip whose first frame
+   * is not where the last one left the body - the dive stands him on the top
+   * rope over a root on the mat - a fade would show the drop in between.
    */
   play(
     name: string,
-    options: { loop?: boolean; restart?: boolean; onEnd?: () => void } = {}
+    options: { loop?: boolean; restart?: boolean; snap?: boolean; onEnd?: () => void } = {}
   ): void {
-    const { loop = true, restart = false, onEnd } = options;
+    const { loop = true, restart = false, snap = false, onEnd } = options;
     const track = this.tracks.get(name);
     if (!track) return;
 
@@ -74,7 +78,16 @@ export class AnimationController {
 
     for (const [otherName, other] of this.tracks) {
       other.target = otherName === name ? 1 : 0;
+      if (snap) {
+        other.weight = other.target;
+        other.group.weight = other.weight;
+        if (other.weight === 0 && other.group.isPlaying) other.group.stop();
+      }
     }
+
+    // The first clip has nothing to fade from but the bind pose, which on the
+    // AKI rig stands the feet 0.8m under the floor. Start it fully weighted.
+    if (this.activeName === null) track.weight = 1;
 
     if (restart || !track.group.isPlaying) {
       track.group.stop();
@@ -115,8 +128,10 @@ export class AnimationController {
 
       track.group.weight = track.weight;
 
-      // Fully faded out: stop it so it stops consuming update time.
-      if (track.weight === 0 && track.group.isPlaying) {
+      // Fully faded out: stop it so it stops consuming update time. A track
+      // still at zero because it has only just been asked to fade in - a
+      // zero-length frame does that - is left playing.
+      if (track.weight === 0 && track.target === 0 && track.group.isPlaying) {
         track.group.stop();
       }
     }
