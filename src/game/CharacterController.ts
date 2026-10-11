@@ -21,9 +21,10 @@ type State =
 
 /**
  * Drives one character: compass-fixed movement (up is always north, +z), a Shift run modifier,
- * and the punch / kick one-shots. Movement is code-driven: the asset pipeline
- * takes each clip's travel out onto a separate root-motion track, so the clips
- * play in place over the root this moves.
+ * and the punch / kick one-shots. Locomotion is code-driven. The asset
+ * pipeline takes each clip's travel out onto a separate root-motion track, so
+ * clips play in place over the root; during a strike that track moves him, so
+ * he ends where the move ends.
  */
 export class CharacterController {
   private state: State = "locomotion";
@@ -77,6 +78,8 @@ export class CharacterController {
   private readonly moveDirection = new Vector3();
   /** Scratch vector for facing maths, to avoid per-frame allocation. */
   private readonly facingScratch = new Vector3();
+  /** Scratch vector for the clip's root motion. */
+  private readonly motionScratch = new Vector3();
   /** Notified when a strike is thrown; wired to the combat simulation. */
   private strikeHandler: ((moveId: string) => void) | null = null;
 
@@ -204,6 +207,22 @@ export class CharacterController {
         if (this.state === "attack") this.state = "locomotion";
       },
     });
+  }
+
+  /**
+   * Moves the wrestler by however far his move's clip travelled this frame.
+   * A punch steps forward, a clothesline runs; the clips play in place and
+   * this carries the body with them, so he ends where the move ends.
+   */
+  private applyRootMotion(): void {
+    const local = this.motionScratch;
+    if (!this.animations.rootMotionDelta(local)) return;
+
+    // From his own space, where +Z is forward, to the ring's.
+    const sin = Math.sin(this.yaw);
+    const cos = Math.cos(this.yaw);
+    this.root.position.x += local.x * cos + local.z * sin;
+    this.root.position.z += -local.x * sin + local.z * cos;
   }
 
   /**
@@ -431,6 +450,9 @@ export class CharacterController {
 
     if (this.state === "roll") {
       this.advanceRoll(dt);
+    }
+    if (this.state === "attack") {
+      this.applyRootMotion();
     }
 
     this.applyGravity(dt);

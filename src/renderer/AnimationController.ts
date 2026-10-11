@@ -1,5 +1,19 @@
-import { AnimationGroup } from "@babylonjs/core";
+import {
+  Animation,
+  AnimationGroup,
+  Matrix,
+  Quaternion,
+  TransformNode,
+  Vector3,
+} from "@babylonjs/core";
 import { Tuning } from "../game/config";
+
+/**
+ * Node the asset pipeline keys each clip's travel onto. See
+ * tools/prepare-character-glb.mjs: its keys are metres in glTF model space,
+ * starting every clip at zero.
+ */
+const ROOT_MOTION_NODE = "root_motion";
 
 interface Track {
   group: AnimationGroup;
@@ -7,6 +21,8 @@ interface Track {
   weight: number;
   /** Weight this track is easing toward. */
   target: number;
+  /** This clip's root-motion curve, when it has one. */
+  motion?: { animation: Animation; node: TransformNode };
 }
 
 /**
@@ -22,12 +38,32 @@ export class AnimationController {
   /** Resolved when the current non-looping clip finishes. */
   private endCallback: (() => void) | null = null;
 
+  /** Where the active clip's root motion was last read, and on which clip. */
+  private readonly motionLast = new Vector3();
+  private motionClip: string | null = null;
+  private motionFrame = 0;
+  private readonly motionScratch = new Vector3();
+  private readonly motionMatrix = new Matrix();
+
   constructor(groups: AnimationGroup[]) {
     for (const group of groups) {
       // Take manual control: nothing plays until we ask for it.
       group.stop();
       group.weight = 0;
-      this.tracks.set(group.name, { group, weight: 0, target: 0 });
+
+      const curve = group.targetedAnimations.find(
+        (t) =>
+          (t.target as TransformNode)?.name === ROOT_MOTION_NODE &&
+          t.animation.targetProperty === "position"
+      );
+      this.tracks.set(group.name, {
+        group,
+        weight: 0,
+        target: 0,
+        motion: curve
+          ? { animation: curve.animation, node: curve.target as TransformNode }
+          : undefined,
+      });
     }
   }
 
@@ -109,6 +145,54 @@ export class AnimationController {
       void observer;
       this.endCallback = onEnd ?? null;
     }
+  }
+
+  /**
+   * How far the active clip's root motion moved since the last call, written
+   * into `out` in the wrestler's own space: metres, +Z forward, before his
+   * facing is applied. False when the active clip has no root motion.
+   *
+   * Read from the active clip's curve rather than the animated node. During
+   * a crossfade the node blends toward the next clip's zero, which would drag
+   * the wrestler back to where the move began.
+   */
+  rootMotionDelta(out: Vector3): boolean {
+    const name = this.activeName;
+    const track = name ? this.tracks.get(name) : undefined;
+    const animatable = track?.group.animatables[0];
+    if (!track?.motion || !animatable) {
+      this.motionClip = null;
+      return false;
+    }
+
+    const frame = animatable.masterFrame;
+    const value = track.motion.animation.evaluate(frame) as Vector3;
+
+    // A different clip, or the same one restarted or looped: measure from
+    // its start, which is zero by construction.
+    if (this.motionClip !== name || frame < this.motionFrame) {
+      this.motionLast.setAll(0);
+    }
+    value.subtractToRef(this.motionLast, this.motionScratch);
+    this.motionLast.copyFrom(value);
+    this.motionClip = name;
+    this.motionFrame = frame;
+
+    // The keys are in glTF space; the loader's __root__ node converts to
+    // Babylon's handedness. Apply its rotation and scale, not its position.
+    const root = track.motion.node.parent as TransformNode | null;
+    if (root) {
+      Matrix.ComposeToRef(
+        root.scaling,
+        root.rotationQuaternion ?? Quaternion.FromEulerVector(root.rotation),
+        Vector3.ZeroReadOnly,
+        this.motionMatrix
+      );
+      Vector3.TransformNormalToRef(this.motionScratch, this.motionMatrix, out);
+    } else {
+      out.copyFrom(this.motionScratch);
+    }
+    return true;
   }
 
   /** Advances all blend weights. Call once per frame. */
