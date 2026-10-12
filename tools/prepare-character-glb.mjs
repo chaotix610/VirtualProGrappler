@@ -702,8 +702,11 @@ function pruneAccessors(json, accessorData) {
  * own export does not carry.
  *
  * Channels are matched to this file's joints by name, so the source's own
- * root node (`Skeleton`) is ignored; it must share the rig's units, which the
- * AKI library does (both roots scale 0.022 and `Pelvis` rests at 10 up).
+ * root node (`Skeleton`, `Armature`) and any extra leaf bones (`Head_end`)
+ * are ignored. The source must share the rig's units, which the AKI library
+ * does (both roots scale 0.022 and `Pelvis` rests at 10 up), or say how far
+ * off it is: `translationScale` multiplies its translation keys. A Blender
+ * round trip of an AKI clip comes back at 0.01, so it takes 100.
  * Added after renaming and before root-motion extraction, so the clips keep
  * the ids given here and have their travel split out like every other clip.
  */
@@ -711,7 +714,7 @@ function addClips(json, accessorData, extraClips) {
   const nodeByName = new Map(json.nodes.map((n, i) => [n.name, i]));
   const added = [];
 
-  for (const { from, as } of extraClips) {
+  for (const { from, as, translationScale = 1 } of extraClips) {
     if ((json.animations ?? []).some((a) => a.name === as)) {
       throw new Error(`extra clip "${as}" would replace a clip the export already has`);
     }
@@ -722,14 +725,20 @@ function addClips(json, accessorData, extraClips) {
 
     // Accessors are copied across as they are referenced, each once.
     const copied = new Map();
-    const copy = (index) => {
+    const copy = (index, scale = 1) => {
       if (!copied.has(index)) {
         // The data is re-packed by rebuildBuffer, so the old placement goes.
         const accessor = { ...source.json.accessors[index] };
         delete accessor.bufferView;
         delete accessor.byteOffset;
+        const data = readAccessor(source.json, source.bin, index);
+        if (scale !== 1) {
+          for (let i = 0; i < data.length; i += 4) data.writeFloatLE(data.readFloatLE(i) * scale, i);
+          if (accessor.min) accessor.min = accessor.min.map((v) => v * scale);
+          if (accessor.max) accessor.max = accessor.max.map((v) => v * scale);
+        }
         json.accessors.push(accessor);
-        accessorData.set(json.accessors.length - 1, readAccessor(source.json, source.bin, index));
+        accessorData.set(json.accessors.length - 1, data);
         copied.set(index, json.accessors.length - 1);
       }
       return copied.get(index);
@@ -742,7 +751,8 @@ function addClips(json, accessorData, extraClips) {
       const node = nodeByName.get(name);
       if (node === undefined) continue;
       const sampler = animation.samplers[channel.sampler];
-      samplers.push({ ...sampler, input: copy(sampler.input), output: copy(sampler.output) });
+      const scale = channel.target.path === "translation" ? translationScale : 1;
+      samplers.push({ ...sampler, input: copy(sampler.input), output: copy(sampler.output, scale) });
       channels.push({ sampler: samplers.length - 1, target: { node, path: channel.target.path } });
     }
     if (!channels.length) throw new Error(`${from} shares no joints with this rig`);
@@ -854,8 +864,8 @@ export function isPreparedGlb(file) {
  *   rootJoint    the joint whose horizontal travel becomes root motion
  *   clipRenames  source clip name -> id, where snake_case is not wanted
  *   dropClips    source clip names to leave out
- *   extraClips   [{ from, as }]: clips to add from skeleton-only GLBs on the
- *                same rig, each under the id `as`
+ *   extraClips   [{ from, as, translationScale? }]: clips to add from GLBs
+ *                on the same rig, each under the id `as`
  */
 export function prepareCharacterGlb(inputFile, outputFile, { unlit = true, rig = null } = {}) {
   const { json, bin } = readGlb(inputFile);

@@ -63,11 +63,14 @@ export class CharacterController {
 
   /** Seconds spent so far scaling the corner. */
   private climbElapsed = 0;
+  /** Length of the climb, taken from its clip when it starts. */
+  private climbDuration: number = Tuning.climbDuration;
   private readonly climbFrom = new Vector3();
-  /** Perch position on the top rope. */
+  /**
+   * Where his root sits while perched: under the turnbuckle, on the mat. The
+   * climb clip lifts his body onto the top rope above it.
+   */
   private readonly climbTo = new Vector3();
-  /** Facing while perched: into the ring. */
-  private perchYaw = 0;
   /** Seconds spent so far in the air off the top rope. */
   private diveElapsed = 0;
   /** Length of the dive, taken from its clip when it starts. */
@@ -566,42 +569,42 @@ export class CharacterController {
     this.state = "climbing";
     this.climbElapsed = 0;
     this.speed = 0;
+    this.climbDuration = this.animations.durationOf(Anim.CLIMB) ?? Tuning.climbDuration;
 
+    // The clip ends with his feet straight under his pelvis, so his root has
+    // to finish under the turnbuckle itself. `corner` is the corner of the
+    // play area, a body radius inside the ropes on each axis; step back out
+    // to where the ropes meet, then in by the perch inset.
+    const inward = this.ringCentreDirection(corner);
     this.climbFrom.copyFrom(this.root.position);
     this.climbTo.set(
-      corner.x,
-      (this.bounds?.topRopeY ?? 1.4) + Tuning.perchFootOffset,
-      corner.z
+      corner.x - Math.sign(inward.x) * Tuning.bodyRadius + inward.x * Tuning.perchInset,
+      0,
+      corner.z - Math.sign(inward.z) * Tuning.bodyRadius + inward.z * Tuning.perchInset
     );
 
-    // Perched wrestlers face the ring, not the crowd.
-    const inward = this.ringCentreDirection(corner);
-    this.perchYaw = Math.atan2(inward.x, inward.z);
+    // Perched wrestlers face the ring, not the crowd. The clip turns him
+    // round as he climbs, so he starts squared to the post - facing away from
+    // the ring - and the clip brings him round to face it.
+    this.setFacing(Math.atan2(inward.x, inward.z) + Math.PI);
 
     this.animations.play(Anim.CLIMB, { loop: false, restart: true });
   }
 
-  /** Carries him up the post, handing over to the perch at the top. */
+  /**
+   * Carries him to the corner while the clip climbs him up it. The height and
+   * the turn are the clip's; only the root's place on the mat is moved here.
+   */
   private advanceClimb(dt: number): void {
     this.climbElapsed += dt;
-    const t = Math.min(this.climbElapsed / Tuning.climbDuration, 1);
+    const t = Math.min(this.climbElapsed / this.climbDuration, 1);
 
-    // Ease out so he settles onto the rope rather than snapping to it.
+    // Ease out so he settles into the corner rather than snapping to it.
     const eased = 1 - (1 - t) * (1 - t);
     Vector3.LerpToRef(this.climbFrom, this.climbTo, eased, this.root.position);
 
-    this.yaw = this.approachAngle(
-      this.yaw,
-      this.perchYaw,
-      Tuning.ropeTurnSpeed * dt
-    );
-    this.root.rotation.y = this.yaw;
-
-    if (t >= 1) {
-      this.state = "perched";
-      this.setFacing(this.perchYaw);
-      this.animations.play(Anim.PERCH, { loop: true });
-    }
+    // The clip ends crouched on the top rope and holds there as the perch.
+    if (t >= 1) this.state = "perched";
   }
 
   /**
@@ -622,10 +625,11 @@ export class CharacterController {
     this.state = "diving";
     this.diveElapsed = 0;
     this.diveDuration = this.animations.durationOf(Anim.DIVE) ?? Tuning.diveDuration;
+    // The perch and the dive are both authored from a root on the mat - the
+    // climb's last frame and the dive's first stand him on the top rope - so
+    // the root stays there and the clip does the flying.
     this.diveFrom.copyFrom(this.root.position);
-    // The clip stands him on the rope from a root on the mat, so the root
-    // drops to meet it rather than lifting him a second time.
-    this.diveFrom.y = Math.max(0, this.diveFrom.y - Tuning.diveClipLift);
+    this.diveFrom.y = 0;
 
     // Land inside the ring, clamped so a dive never ends outside the ropes.
     const inward = this.ringCentreDirection(this.diveFrom);

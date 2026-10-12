@@ -77,6 +77,14 @@ const AUSTIN_RIG = {
     { as: "run", from: `${LIBRARY}/locomotion/run-movement-styles-0-to-3-bacb0f0bd6dd.glb` },
     { as: "guard", from: `${LIBRARY}/guard/guard-movement-styles-0-4-5-and-6-877eecc46924.glb` },
     { as: "rope_hit", from: `${LIBRARY}/ropes/bouncing-off-the-ropes-into-them-d335db33f1b6.glb` },
+    // "Springing onto the turnbuckle, kind 3", Austin's own, via Blender -
+    // which brings it back at 0.01 scale. Starts on the mat, ends crouched on
+    // the top rope facing back into the ring.
+    {
+      as: "climb",
+      from: "assets/animation/turnbuckle_climbing_climb.glb",
+      translationScale: 100,
+    },
   ],
 };
 

@@ -5,10 +5,10 @@
 clips, retarget script and source trees are gone. Step 5 is done for
 strikes: their root motion moves the wrestler. Running moves wait on running
 clips (step 8); the roll and the dive are still code-driven. Step 8 is
-partly done: idle, the four walks, run, guard and the rope beat are baked
-in from the reference library (`extraClips` in `tools/promote-assets.mjs`).
-Still missing: climb and perch, strike reactions, get-ups, and the receiver
-half of every paired move. Step 7 (per-animation files) remains.
+partly done: idle, the four walks, run, guard, the rope beat and the
+turnbuckle climb (whose last frame is the perch) are baked in
+(`extraClips` in `tools/promote-assets.mjs`). Still missing: strike
+reactions, get-ups, and the receiver half of every paired move. Step 7 (per-animation files) remains.
 
 **Decision:** the 19-bone AKI rig and its clips completely replace the
 65-bone Quaternius skeleton and every clip built for it — the Quaternius

@@ -7,11 +7,8 @@
  * The clip each game state plays, by `animation_id` - the snake_case name
  * tools/prepare-character-glb.mjs gives the AKI clips.
  *
- * Locomotion, guard and the rope beat are shared clips the pipeline adds from
- * the reference library (`extraClips` in tools/promote-assets.mjs). Corner
- * clips are not added yet, so climbing and perching hold the idle: the climb
- * clips raise him themselves, which would double the height the code lifts
- * him by.
+ * Locomotion, guard, the rope beat and the climb are clips the pipeline adds
+ * from outside his own export (`extraClips` in tools/promote-assets.mjs).
  */
 export const Anim = {
   IDLE: "idle",
@@ -29,10 +26,12 @@ export const Anim = {
   ROLL: "roll",
   /** The beat against the ropes; the turn and the give are code-driven. */
   ROPE_HIT: "rope_hit",
-  /** Scaling the corner to the top turnbuckle; the climb is code-driven. */
-  CLIMB: "idle",
-  /** Balanced on the top rope, waiting. */
-  PERCH: "idle",
+  /**
+   * Scaling the corner onto the top turnbuckle, from a root on the mat. It
+   * lifts him and turns him to face the ring itself, and its final frame -
+   * crouched on the top rope - is held as the perch.
+   */
+  CLIMB: "climb",
   /**
    * The whole dive off the top rope, played once: launch, flight and fall.
    * It starts with his feet at top-rope height over a root on the mat, so the
@@ -121,20 +120,17 @@ export const Tuning = {
    * running along a rope still bounces normally.
    */
   cornerRadius: 1.15,
-  /** Seconds spent scaling the corner to the top rope. */
-  climbDuration: 0.62,
-  /** Where his feet sit relative to the top rope, so he stands on it. */
-  perchFootOffset: 0.06,
+  /** Seconds spent scaling the corner, when the climb clip is not loaded. */
+  climbDuration: 2.67,
+  /**
+   * How far in from where the ropes meet his feet land when perched, along
+   * the diagonal into the ring. Zero would stand him on the post itself.
+   */
+  perchInset: 0.1,
   /** Seconds in the air, when the dive clip is not loaded to time it. */
   diveDuration: 0.8,
   /** How far into the ring the dive carries him, in world units. */
   diveDistance: 2.3,
-  /**
-   * Height of his feet on the dive clip's first frame, over a root on the
-   * mat. The clip already stands him on the top rope, so the root starts this
-   * far below the perch and does not lift him a second time.
-   */
-  diveClipLift: 1.36,
   /**
    * Safety cap on a rope run, in seconds. The run normally ends by reaching
    * the opposite ropes and bouncing again, or by the player throwing a move;
