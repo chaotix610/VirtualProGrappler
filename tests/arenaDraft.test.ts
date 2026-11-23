@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { ArenaData, arenaById, arenaParts } from "@/data/arenas";
+import { afterEach, describe, expect, it } from "vitest";
+import { ArenaData, arenaById, arenaParts, isBundledArena, publishUserArenas } from "@/data/arenas";
 import {
   ArenaDraft,
   cloneArena,
@@ -10,6 +10,7 @@ import {
   idProblem,
   isColorKey,
   pieceOptions,
+  saveDestination,
   selectBarricade,
   selectStage,
   texturesForSlot,
@@ -176,6 +177,41 @@ describe("ring selection", () => {
     const draft = base({ ring: STANDARD_2 });
     selectStage(draft, "royal_rumble");
     expect(draft.ring).toBe(STANDARD_2);
+  });
+});
+
+describe("where a draft saves", () => {
+  const custom: ArenaData = { ...arenaById("raw")!, id: "my_arena", displayName: "My Arena" };
+  afterEach(() => publishUserArenas([]));
+
+  it("saves a bundled arena back to the project files", () => {
+    expect(saveDestination("raw", "local", true)).toBe("project");
+  });
+
+  it("saves an arena from the local save back there, even under the dev server", () => {
+    publishUserArenas([custom]);
+    expect(saveDestination("my_arena", "project", true)).toBe("local");
+  });
+
+  it("sends a new arena where it was told, while the project can be written", () => {
+    expect(saveDestination(null, "project", true)).toBe("project");
+    expect(saveDestination(null, "local", true)).toBe("local");
+  });
+
+  it("keeps everything new in the local save without the dev server", () => {
+    expect(saveDestination(null, "project", false)).toBe("local");
+  });
+
+  it("keeps a just-created arena bound for where it went until that lists it", () => {
+    // Written to the project a moment ago; the hot update has not landed.
+    expect(saveDestination("brand_new", "project", true)).toBe("project");
+  });
+
+  it("lists the save's custom arenas with the bundled ones, and counts their ids as taken", () => {
+    publishUserArenas([custom]);
+    expect(existingIds()).toContain("my_arena");
+    expect(isBundledArena("my_arena")).toBe(false);
+    expect(isBundledArena("raw")).toBe(true);
   });
 });
 

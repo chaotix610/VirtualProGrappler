@@ -5,10 +5,20 @@
 > `tests/save/`). Wired so far: the local save opens at startup and holds
 > controls and audio, with temporary mode for a second tab or blocked storage;
 > Commissioner -> Options -> Save Data selects, creates, renames and deletes
-> saves and downloads and restores `.vpg` backups; and Exit on the main menu
-> flushes and offers a backup. Custom arenas in the save with recovery drafts,
-> and imported textures, are wired in the stages that follow - their sections
-> are left off Save Data until then. Differences from V2: the database is `vpg-saves` rather than
+> saves and downloads and restores `.vpg` backups; Exit on the main menu
+> flushes and offers a backup; and the Arena Editor keeps player-made arenas
+> in the selected save, with an unfinished draft as the save's recovery
+> record, and Save Data lists and deletes them. Imported textures are wired
+> next; their Save Data section is left off until then.
+>
+> Unlike V2, the editor has a second destination: under `vite serve` a
+> bundled arena saves back to `data/environments/arenas/<id>.json`, and a new
+> arena may choose the project files instead of the save
+> (`saveDestination()` in `src/data/arenaDraft.ts`). Drafts bound for the
+> project are parked in sessionStorage, not the save, because a save may hold
+> recovery only for its own arenas; for the same reason the legacy
+> `vpg.arenaEditor.draft` migration is not run. Without the dev server, as in
+> V2, choosing a bundled arena starts a copy in the save. Differences from V2: the database is `vpg-saves` rather than
 > `vpg-player-data` (both projects were served from the same localhost
 > origin), arena drafts carry this project's `ring` field, and saved arenas
 > must name a ring from `data/environments/rings.json`.

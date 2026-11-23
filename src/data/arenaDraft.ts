@@ -1,4 +1,4 @@
-import { ArenaData, arenaParts, availableArenas } from "./arenas";
+import { ArenaData, arenaById, arenaParts, availableArenas, isBundledArena } from "./arenas";
 import { knownAssetPaths } from "./assets";
 import { resolveRing } from "./rings";
 import {
@@ -75,9 +75,37 @@ export function idProblem(id: string, taken: Iterable<string>): string | null {
   return null;
 }
 
-/** Every saved arena's id. */
+/** Every saved arena's id, bundled and in the selected local save. */
 export function existingIds(): string[] {
   return availableArenas({ includeHidden: true }).map((arena) => arena.id);
+}
+
+/**
+ * Where saving a draft writes: the selected local save, or the project's
+ * data/environments/arenas/ through the dev server.
+ *
+ * Project files are for authoring the bundled arenas; the local save is for
+ * player-made ones. So a bundled arena saves back to its file, and an arena
+ * from the local save saves back there. A new arena goes where the editor was
+ * told - but only the local save exists without the dev server.
+ *
+ * An id that is neither bundled nor in the save was just created by this
+ * draft and is waiting for its destination to list it - the dev server's hot
+ * update after a project write, say - so it keeps the destination it was
+ * created in rather than flipping to the other one in that moment.
+ */
+export type SaveDestination = "local" | "project";
+
+export function saveDestination(
+  editingId: string | null,
+  chosenForNew: SaveDestination,
+  projectAvailable: boolean
+): SaveDestination {
+  if (editingId !== null) {
+    if (isBundledArena(editingId)) return "project";
+    if (arenaById(editingId)) return "local";
+  }
+  return projectAvailable ? chosenForNew : "local";
 }
 
 /**

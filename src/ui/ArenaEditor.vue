@@ -15,6 +15,7 @@
             @mouseenter="startCursor = index"
           >
             <span class="row__name">{{ arena.displayName }}</span>
+            <span v-if="!isBundled(arena.id)" class="row__tag">Local save</span>
             <button
               v-if="index === startCursor"
               class="row__clone"
@@ -51,9 +52,19 @@
         <kbd>{{ keyFor("b") }}</kbd> back
       </p>
 
-      <p v-if="!canSave" class="start__warning">
-        Saving is unavailable: the editor writes arena files through the dev
-        server. Run <code>npm run serve</code> to enable it.
+      <p class="start__note">
+        <template v-if="projectAvailable">
+          Bundled arenas save back to the project files. Clones and arenas
+          marked Local save are kept in “{{ saves.activeSave.name }}”.
+        </template>
+        <template v-else>
+          Your arenas are kept in your local save, “{{ saves.activeSave.name }}”.
+          Choosing a bundled arena starts a copy there.
+        </template>
+      </p>
+      <p v-if="saves.status.mode === 'temporary'" class="start__warning">
+        Temporary session: arenas saved now last until this tab closes. Download
+        a backup from Commissioner -> Options -> Save Data to keep them.
       </p>
     </div>
 
@@ -274,6 +285,17 @@
           </button>
         </footer>
 
+        <!-- Where Save goes. A new arena can choose while the dev server can
+             write project files; an existing one saves back where it lives. -->
+        <label v-if="creating && projectAvailable" class="panel__destination">
+          Save to
+          <select v-model="newDestination" class="field__input">
+            <option value="local">Local save “{{ saves.activeSave.name }}”</option>
+            <option value="project">Project files (data/environments/arenas)</option>
+          </select>
+        </label>
+        <p v-else class="panel__destination">Saves to {{ destinationLabel }}</p>
+
         <p v-if="status" class="panel__status" :class="{ 'panel__status--bad': statusBad }">
           {{ status }}
         </p>
@@ -287,10 +309,11 @@
 
 <script lang="ts">
 import { defineComponent, markRaw } from "vue";
-import { ArenaSummary, arenaById, availableArenas } from "@/data/arenas";
+import { ArenaSummary, arenaById, availableArenas, isBundledArena } from "@/data/arenas";
 import {
   ArenaDraft,
   PIECE_KINDS,
+  SaveDestination,
   TextureSlot,
   availablePreviews,
   cloneArena,
@@ -300,6 +323,7 @@ import {
   existingIds,
   idProblem,
   pieceOptions,
+  saveDestination,
   selectBarricade,
   selectStage,
   slotTextureOptions,
@@ -307,8 +331,10 @@ import {
 } from "@/data/arenaDraft";
 import { slotSections } from "@/data/textureSlots";
 import { PieceKind, availableStages } from "@/data/stages";
-import { availableRings } from "@/data/rings";
-import { saveArena, saveAvailable } from "@/data/arenaStore";
+import { availableRings, defaultRing } from "@/data/rings";
+import { projectSaveAvailable, saveLocalArena, saveProjectArena } from "@/data/arenaStore";
+import { saves } from "@/data/save/runtime";
+import { copy } from "@/data/save/types";
 import { resolveAsset } from "@/data/assets";
 import { ArenaScene } from "@/renderer/ArenaScene";
 import {
@@ -343,18 +369,27 @@ const CAMERA_INPUTS = [
 const PREVIEW_DEBOUNCE_MS = 600;
 
 /**
- * Where an in-progress draft is parked across a remount.
+ * Where a draft bound for the project files is parked across a remount.
  *
- * Saving writes data/environments/arenas/<id>.json, which Vite sees as a source change and
- * hot-updates - and a hot update remounts this component with a fresh data(),
- * discarding whatever was being edited. Rather than suppress the update (it is
- * what makes a newly saved arena appear in the list), the draft is stashed and
- * picked back up on the way in, so the reload is invisible.
+ * A project save writes data/environments/arenas/<id>.json, which Vite sees as
+ * a source change and hot-updates - and a hot update remounts this component
+ * with a fresh data(), discarding whatever was being edited. Rather than
+ * suppress the update (it is what makes a newly saved arena appear in the
+ * list), the draft is stashed and picked back up on the way in.
  *
  * sessionStorage rather than localStorage: a draft belongs to the tab that was
- * editing it, and should not outlive the session.
+ * editing it, and should not outlive the session. A draft bound for the local
+ * save is kept in the save instead, as its recovery record, so it survives a
+ * closed tab and travels in a backup - but a save may only hold recovery for
+ * its own arenas, never for a bundled one, which is why the two are separate.
  */
 const DRAFT_KEY = "vpg.arenaEditor.draft";
+
+/** A draft parked before rings were selectable has none; it gets the default. */
+function withRing(draft: ArenaDraft): ArenaDraft {
+  if (!draft.ring) draft.ring = defaultRing().glb;
+  return draft;
+}
 
 /** How the three piece dropdowns are labelled. */
 const PIECE_LABELS: Record<PieceKind, string> = {
@@ -427,7 +462,6 @@ export default defineComponent({
 
   data() {
     return {
-      arenas: availableArenas() as ArenaSummary[],
       draft: null as ArenaDraft | null,
       /** The id being edited, or null while creating a new arena. */
       editingId: null as string | null,
@@ -436,7 +470,14 @@ export default defineComponent({
       rings: availableRings(),
       slotSections: slotSections(),
       textureOptions: slotTextureOptions() as Record<string, string[]>,
-      canSave: false,
+      // markRaw: the coordinator keeps its own reactive status and workspace.
+      saves: markRaw(saves),
+      /** Whether the dev server can write project files; checked on mount. */
+      projectAvailable: false,
+      /** Where a new arena goes when both destinations exist. */
+      newDestination: "local" as SaveDestination,
+      /** Whether this draft has put a recovery record in the local save. */
+      recoveryInSave: false,
       saving: false,
       loading: false,
       previewReady: false,
@@ -460,6 +501,31 @@ export default defineComponent({
   computed: {
     creating(): boolean {
       return this.editingId === null;
+    },
+
+    /**
+     * Bundled arenas and the selected save's custom ones. Computed, so a save
+     * that loads, switches or gains an arena updates the list.
+     */
+    arenas(): ArenaSummary[] {
+      return availableArenas();
+    },
+
+    /** Where Save writes this draft. */
+    destination(): SaveDestination {
+      return saveDestination(this.editingId, this.newDestination, this.projectAvailable);
+    },
+
+    /** The local save is always there; the project only under the dev server. */
+    canSave(): boolean {
+      return this.destination === "project" ? this.projectAvailable : this.saves.status.ready;
+    },
+
+    /** The footer's account of where Save goes. */
+    destinationLabel(): string {
+      return this.destination === "project"
+        ? "Project files (data/environments/arenas)"
+        : `Local save “${this.saves.activeSave.name}”`;
     },
 
     /** The Back row sits after the arenas. */
@@ -537,14 +603,25 @@ export default defineComponent({
         if (this.autoPreview) this.schedulePreview();
       },
     },
+
+    // A new arena switched between the local save and the project files: its
+    // draft moves to the matching store, leaving nothing behind in the other.
+    destination(next: SaveDestination, previous: SaveDestination) {
+      if (!this.draft || next === previous) return;
+      if (next === "project") this.clearSaveRecovery();
+      else this.clearSessionDraft();
+      this.persistDraft();
+    },
   },
 
   async mounted() {
     window.addEventListener("keydown", this.onKeyDown);
     window.addEventListener("pointerdown", this.onPointerDown);
     this.stopGamepadPolling = pollGamepadBindings(this.onGamepadBinding);
+    // Before restoring: a parked project draft only makes sense under the dev
+    // server, and the destination it restores into depends on knowing that.
+    this.projectAvailable = await projectSaveAvailable();
     this.restoreDraft();
-    this.canSave = await saveAvailable();
   },
 
   beforeUnmount() {
@@ -854,11 +931,19 @@ export default defineComponent({
      * option under "Canvas" comes from the canvas folder - so repeating it
      * would only make the names harder to tell apart.
      */
+    /** Shipped with the game, as opposed to kept in the local save. */
+    isBundled(id: string): boolean {
+      return isBundledArena(id);
+    },
+
     fileLabel(path: string): string {
       return path.split("/").pop()?.replace(/\.[^.]+$/, "") ?? path;
     },
 
     editArena(id: string) {
+      // Without the dev server a bundled arena has nowhere to save back to,
+      // so editing it means making it yours: a copy in the local save.
+      if (isBundledArena(id) && !this.projectAvailable) return this.startClone(id);
       const arena = arenaById(id);
       if (!arena) return playMenuCue("deny");
       playMenuCue("select");
@@ -878,6 +963,8 @@ export default defineComponent({
       let suggested = `${id}_copy`;
       for (let n = 2; existingIds().includes(suggested); n++) suggested = `${id}_copy_${n}`;
       this.editingId = null;
+      // A copy is player-made unless the project files are chosen for it.
+      this.newDestination = "local";
       this.draft = cloneArena(source, suggested, `${source.displayName} copy`);
       this.beginEditing();
       this.openPreview();
@@ -1029,17 +1116,23 @@ export default defineComponent({
     async save() {
       const draft = this.draft;
       // A save blocked by a bad id is silent on screen, so it says so here.
-      if (!draft || this.idError) return playMenuCue("deny");
+      if (!draft || this.idError || !this.canSave) return playMenuCue("deny");
 
       this.saving = true;
       try {
-        const result = await saveArena(draftToJson(draft));
+        const arena = draftToJson(draft);
+        const result =
+          this.destination === "project"
+            ? await saveProjectArena(arena)
+            : await saveLocalArena(arena);
+        // The save dropped its recovery record for this arena on commit.
+        if (this.destination === "local") this.recoveryInSave = false;
         this.setStatus(`${result.created ? "Created" : "Saved"} ${result.path}`, false);
         playMenuCue("confirm");
-        // The file now exists, so this is no longer a new arena: fixing the id
-        // stops a second save from writing a duplicate under another name. The
-        // hot update that follows the write reloads the registry, so the new
-        // arena is already in the lists by the time this is read.
+        // The arena now exists, so this is no longer a new one: fixing the id
+        // stops a second save from writing a duplicate under another name.
+        // saveDestination() keeps it bound for where it was just written while
+        // a project file waits for the hot update to list it.
         if (result.created) this.editingId = draft.id;
       } catch (error) {
         this.setStatus(String(error instanceof Error ? error.message : error), true);
@@ -1052,17 +1145,21 @@ export default defineComponent({
     setStatus(message: string, bad: boolean) {
       this.status = message;
       this.statusBad = bad;
-      this.persistDraft();
+      // The parked project draft carries its status across the hot update a
+      // project write triggers, so the result is still on screen afterwards.
+      if (this.destination === "project") this.persistDraft();
     },
 
-    /** Parks the draft so a hot update does not lose it. */
+    /** Keeps the draft where it will survive: the local save, or the session. */
     persistDraft() {
       if (!this.draft) return;
+      if (this.destination === "local") return this.persistSaveRecovery();
       try {
         sessionStorage.setItem(
           DRAFT_KEY,
           JSON.stringify({
             editingId: this.editingId,
+            newDestination: this.newDestination,
             draft: this.draft,
             status: this.status,
             statusBad: this.statusBad,
@@ -1074,7 +1171,33 @@ export default defineComponent({
       }
     },
 
+    /**
+     * Records the draft as the local save's recovery record. The coordinator
+     * debounces these, so a burst of edits becomes one write.
+     */
+    persistSaveRecovery() {
+      if (!this.draft) return;
+      try {
+        this.saves.draftChanged(this.saves.activeSave.id, {
+          id: "editor",
+          editingId: this.editingId,
+          draft: copy(this.draft),
+        });
+        this.recoveryInSave = true;
+      } catch (error) {
+        // Refused by validation - a resource that does not exist, say. The
+        // draft is still on screen; only its recovery copy is missing.
+        this.status = `Draft recovery unavailable: ${error instanceof Error ? error.message : String(error)}`;
+        this.statusBad = true;
+      }
+    },
+
     clearPersistedDraft() {
+      this.clearSessionDraft();
+      this.clearSaveRecovery();
+    },
+
+    clearSessionDraft() {
       try {
         sessionStorage.removeItem(DRAFT_KEY);
       } catch {
@@ -1082,29 +1205,56 @@ export default defineComponent({
       }
     },
 
-    /** Picks a parked draft back up, if this mount followed a hot update. */
+    /** Only writes when there is a record to remove: every write is a commit. */
+    clearSaveRecovery() {
+      if (!this.recoveryInSave && !this.saves.activeSave.drafts.length) return;
+      this.saves.draftChanged(this.saves.activeSave.id, null);
+      this.recoveryInSave = false;
+    },
+
+    /**
+     * Picks an unfinished draft back up: one parked for the project files if
+     * this mount followed a hot update, otherwise the local save's recovery
+     * record from an earlier visit or a closed tab.
+     */
     restoreDraft() {
+      if (this.projectAvailable && this.restoreSessionDraft()) return;
+      const recovery = this.saves.activeSave.drafts[0];
+      if (!recovery) return;
+      this.draft = withRing(copy(recovery.draft));
+      this.editingId = recovery.editingId;
+      this.recoveryInSave = true;
+      this.status = "Recovered your unfinished arena draft.";
+      this.statusBad = false;
+      this.beginEditing();
+      void this.openPreview();
+    },
+
+    restoreSessionDraft(): boolean {
       let parked: string | null;
       try {
         parked = sessionStorage.getItem(DRAFT_KEY);
       } catch {
-        return;
+        return false;
       }
-      if (!parked) return;
+      if (!parked) return false;
 
       try {
         const saved = JSON.parse(parked);
-        if (!saved?.draft) return;
-        this.draft = saved.draft as ArenaDraft;
+        if (!saved?.draft) return false;
+        this.draft = withRing(saved.draft as ArenaDraft);
         this.editingId = saved.editingId ?? null;
+        this.newDestination = saved.newDestination === "project" ? "project" : "local";
         this.status = saved.status ?? "";
         this.statusBad = !!saved.statusBad;
         this.beginEditing();
         void this.openPreview();
+        return true;
       } catch {
         // A draft written by an older build. Dropping it is better than
         // failing to open the editor at all.
-        this.clearPersistedDraft();
+        this.clearSessionDraft();
+        return false;
       }
     },
   },
@@ -1210,12 +1360,39 @@ export default defineComponent({
 }
 
 .start__hint,
+.start__note,
 .start__warning {
   margin: 0;
   font-size: 14px;
   opacity: 0.75;
   text-align: center;
   max-width: 60ch;
+}
+
+/* Marks an arena kept in the local save rather than shipped with the game. */
+.row__tag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border: 1px solid rgba(228, 194, 143, 0.6);
+  border-radius: 3px;
+  color: #e4c28f;
+  font-family: var(--vpg-font-body);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0;
+  vertical-align: middle;
+}
+
+.panel__destination {
+  display: block;
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.panel__destination .field__input {
+  margin-top: 4px;
 }
 
 .start__warning {

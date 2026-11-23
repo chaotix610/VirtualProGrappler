@@ -22,10 +22,11 @@ export async function startSaves(): Promise<void> {
   const changed = () => saves.settingsChanged({ ...saves.effectiveSettings, controls: exportMapping(), audio: exportAudioSettings() });
   setMappingPersistence(changed);
   setAudioPersistence(changed);
-  // migrateArenaDraft() is not called yet. The arena editor still parks its
-  // draft in sessionStorage across hot reloads and only reads it back from
-  // there; moving it into the save before the editor reads recovery records
-  // from the save (save-system stage 3) would hide the draft from the editor.
+  // migrateArenaDraft() is deliberately not called. In V2 the sessionStorage
+  // key it reads was a leftover from before drafts lived in the save; here
+  // the arena editor still uses it for drafts bound for the project files,
+  // which a save may not hold. Migrating it would turn a developer's parked
+  // project draft into a player copy on the next full reload.
 }
 
 if (import.meta.hot) import.meta.hot.dispose(() => saves.dispose());
@@ -34,7 +35,7 @@ export const LEGACY_DRAFT_KEY = "vpg.arenaEditor.draft";
 
 /**
  * Only a supported, resource-valid draft migrates, and its original survives
- * until commit. Wired in with save-backed editor recovery; see startSaves().
+ * until commit. Kept from V2 but not called here; see startSaves().
  */
 export async function migrateArenaDraft(): Promise<void> {
   if (saves.status.mode !== "persistent" || saves.activeSave.drafts.length) return;

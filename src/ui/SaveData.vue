@@ -45,8 +45,23 @@
       <label><input :checked="saves.effectiveSettings.preferences.remindOnExit" type="checkbox" @change="setReminder" /> Remind me to back up on Exit</label>
     </section>
 
-    <!-- Custom arenas and imported images join this screen when the arena
-         editor saves into the local save and texture slots accept imports. -->
+    <section>
+      <h2>Custom arenas</h2>
+      <p v-if="!active.arenas.length">No custom arenas in this save. Clone an arena in Commissioner -> Arena Editor to make one.</p>
+      <ul class="arenas">
+        <li v-for="arena in active.arenas" :key="arena.id">
+          <span>{{ arena.displayName }} <span class="muted">({{ arena.id }})</span></span>
+          <button :disabled="busy" @click="deleteArenaId = arena.id">Delete…</button>
+        </li>
+      </ul>
+      <div v-if="deleteArenaId" class="confirmation" role="group" aria-label="Confirm arena deletion">
+        <p>Delete custom arena “{{ deleteArenaName }}” from this save? Its unfinished editor draft goes with it. This cannot be undone without a backup.</p>
+        <button :disabled="busy" @click="deleteArena">Delete Arena</button>
+        <button @click="deleteArenaId = null">Cancel</button>
+      </div>
+    </section>
+
+    <!-- Imported images join this screen when texture slots accept imports. -->
 
     <section>
       <h2>Browser storage</h2>
@@ -77,7 +92,7 @@ const emit = defineEmits<{ back: [] }>();
 const root = ref<HTMLElement | null>(null);
 const picker = ref<HTMLInputElement | null>(null);
 const busy = ref(false), notice = ref(""), saveName = ref("");
-const confirmDelete = ref(false);
+const confirmDelete = ref(false), deleteArenaId = ref<string | null>(null);
 const staged = ref<StagedBackup | null>(null);
 const replace = ref(false), restoreSettings = ref(false), usage = ref("Storage usage unavailable.");
 const workspace = computed(() => saves.workspace.value!);
@@ -88,7 +103,12 @@ const modeLabel = computed(() => saves.status.mode === "persistent" ? "Browser s
 watch(() => [active.value.id, active.value.name], ([, name]) => {
   saveName.value = name;
   confirmDelete.value = false;
+  deleteArenaId.value = null;
 }, { immediate: true });
+
+const deleteArenaName = computed(() =>
+  active.value.arenas.find((arena) => arena.id === deleteArenaId.value)?.displayName ?? deleteArenaId.value
+);
 
 const libraryBytes = (images: LibraryImage[]) => images.reduce((sum, image) => sum + image.byteLength, 0);
 
@@ -113,6 +133,11 @@ function retry() { void run(() => saves.flush()); }
 function rename() { void run(() => saves.renameSave(saveName.value)); }
 function create() { void run(() => saves.createSave(saveName.value)); }
 function deleteSave() { void run(async () => { await saves.deleteSave(active.value.id); confirmDelete.value = false; }); }
+function deleteArena() {
+  const id = deleteArenaId.value;
+  if (!id) return;
+  void run(async () => { await saves.deleteArena(id); deleteArenaId.value = null; notice.value = `Deleted custom arena “${id}”.`; });
+}
 function setReminder(event: Event) {
   saves.settingsChanged({ ...saves.effectiveSettings, preferences: { remindOnExit: (event.target as HTMLInputElement).checked } });
 }
@@ -160,4 +185,5 @@ input[hidden] { display: none; }
 button, input, select { font: inherit; color: inherit; background: #202938; border: 1px solid #738197; border-radius: .25rem; }
 button { padding: .5rem .8rem; cursor: pointer; } button:disabled { opacity: .5; } :focus-visible { outline: 3px solid #e4c28f; outline-offset: 3px; }
 .warning { color: #ffbb9c; } .confirmation { border: 1px solid #e4c28f; padding: 1rem; margin: 1rem 0; } .hint { color: #b9c4d2; }
+.arenas { list-style: none; padding: 0; } .arenas li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin: .5rem 0; } .muted { color: #b9c4d2; }
 </style>

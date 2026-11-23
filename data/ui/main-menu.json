@@ -314,7 +314,7 @@
             "blocks": [
               {
                 "type": "paragraph",
-                "text": "Create and edit arenas: parts, textures and placement, with a live preview. Saves to data/environments/arenas/ through the dev server, so changes land in the project."
+                "text": "Create and edit arenas: parts, textures and placement, with a live preview. Your arenas are kept in your local save; under the dev server, bundled arenas save back to data/environments/arenas/."
               }
             ]
           }

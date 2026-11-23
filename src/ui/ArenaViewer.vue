@@ -109,7 +109,6 @@ export default defineComponent({
 
   data() {
     return {
-      arenas: availableArenas(),
       cursor: 0,
       sceneOpen: false,
       loading: false,
@@ -128,6 +127,14 @@ export default defineComponent({
   },
 
   computed: {
+    /**
+     * Bundled arenas and the selected save's custom ones. Computed, so a save
+     * that loads or switches while this screen is open updates the list.
+     */
+    arenas(): ArenaSummary[] {
+      return availableArenas();
+    },
+
     /** The Back row sits after the arenas. */
     backIndex(): number {
       return this.arenas.length;

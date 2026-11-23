@@ -1,25 +1,31 @@
 import { ArenaData } from "./arenas";
+import { saves } from "./save/runtime";
+import { libraryIds, validateArena } from "./save/validation";
 
 /**
- * Talks to the dev-only endpoint that writes data/environments/arenas/*.json.
+ * Where the arena editor writes, and the two places it can.
  *
- * Saving is a development affordance, not a game feature: the endpoint comes
- * from a Vite plugin that only applies on `serve`. In a production build the
- * calls here fail, which is why `saveAvailable()` exists - the editor asks
- * first and says so plainly rather than offering a Save that cannot work.
+ * Player-made arenas go into the selected local save (the browser's IndexedDB,
+ * see src/data/save/). That works in every build, and backs up with the save.
+ *
+ * The bundled arenas in data/environments/arenas/ are authored through the
+ * dev-only endpoint from tools/vite-arena-editor.mjs, which exists only under
+ * `vite serve`. A production build has no endpoint, so `projectSaveAvailable()`
+ * says so and the editor copies bundled arenas into the local save instead.
+ * Neither destination is ever written as a side effect of the other.
  */
 
 const ENDPOINT = "/__arena-editor";
 
 export interface SaveResult {
-  /** Whether the file did not exist before this save. */
+  /** Whether this arena did not exist in that destination before. */
   created: boolean;
-  /** Repository-relative path that was written. */
+  /** Where it went, as the editor should report it. */
   path: string;
 }
 
-/** Whether the arena files can be written from here. */
-export async function saveAvailable(): Promise<boolean> {
+/** Whether the project's arena files can be written from here. */
+export async function projectSaveAvailable(): Promise<boolean> {
   try {
     const res = await fetch(`${ENDPOINT}/status`);
     if (!res.ok) return false;
@@ -34,11 +40,13 @@ export async function saveAvailable(): Promise<boolean> {
 /**
  * Writes an arena to data/environments/arenas/<id>.json.
  *
- * Throws with the server's own message on a rejected save, so a schema
- * violation reaches the editor as the specific field that was wrong rather
- * than a generic failure.
+ * Checked here first, without a save's image library, so a draft naming an
+ * imported image - which only a local save can hold - is refused before it
+ * reaches the project. The server checks the schema again, and its message
+ * comes back as the specific field that was wrong.
  */
-export async function saveArena(arena: ArenaData): Promise<SaveResult> {
+export async function saveProjectArena(arena: ArenaData): Promise<SaveResult> {
+  validateArena(arena);
   const res = await fetch(`${ENDPOINT}/save`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -53,4 +61,19 @@ export async function saveArena(arena: ArenaData): Promise<SaveResult> {
   }
 
   return { created: !!body.created, path: String(body.path ?? "") };
+}
+
+/**
+ * Writes an arena into the selected local save.
+ *
+ * The coordinator validates and commits it in one transaction, and drops the
+ * save's recovery draft for this arena on the way, since the draft is now the
+ * saved arena. In a temporary session it lasts until the tab closes.
+ */
+export async function saveLocalArena(arena: ArenaData): Promise<SaveResult> {
+  validateArena(arena, libraryIds(saves.activeSave));
+  const created = !saves.activeSave.arenas.some((candidate) => candidate.id === arena.id);
+  await saves.putArena(arena);
+  const where = saves.status.mode === "persistent" ? "in" : "for this session in";
+  return { created, path: `${arena.id} ${where} “${saves.activeSave.name}”` };
 }
