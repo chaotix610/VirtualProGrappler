@@ -54,19 +54,32 @@ describe("move catalog", () => {
     expect(CATALOG_MOVES.length).toBeGreaterThan(100);
   });
 
-  it("keeps every variant when ids repeat", () => {
-    // moves.json calls (position, move_id) unique, but 14 ids repeat within a
-    // position as weak/strong variants. The loader must surface every one, not
-    // silently pick one - so this asserts nothing is lost rather than that ids
-    // are unique.
+  it("keeps every variant, each under its own id", () => {
+    // The loader must surface every move rather than silently pick one per
+    // (position, move_id), so this asserts nothing is lost.
     const total = CATALOG_MOVES.reduce((n, m) => {
       return n + (movesById(m.position, m.move_id).includes(m) ? 0 : 1);
     }, 0);
     expect(total).toBe(0);
 
-    const slam = movesById("grappling", "fallaway_slam");
-    expect(slam).toHaveLength(3);
-    expect(slam.map((m) => m.power).sort()).toEqual(["D", "E", "E"]);
+    // The version-3 catalog gives each weak/strong variant its own id, so
+    // the pair is unique now; variants share a display name instead.
+    expect(validateCatalog().duplicateIds).toEqual([]);
+    const slams = CATALOG_MOVES.filter((m) => m.position === "grappling" && m.name === "Fallaway Slam");
+    expect(slams.map((m) => m.move_id).sort()).toEqual([
+      "fallaway_slam_front_strong",
+      "fallaway_slam_front_weak_b",
+    ]);
+  });
+
+  it("reads the version-3 text fields into typed values", () => {
+    const move = CATALOG_MOVES.find((m) => m.move_id === "arm_drag")!;
+    expect(move.slot_ids.length).toBeGreaterThan(1);
+    expect(typeof move.ko).toBe("boolean");
+    expect(move.feature).toBeNull();
+    expect(move.actor_animation_id).toBe("arm-drag.glb");
+    expect(move.target_animation_id).toBe("arm-drag-target.glb");
+    expect(move.slot_animation_overrides).toEqual({});
   });
 
   it("gives every move at least one group", () => {
@@ -85,39 +98,27 @@ describe("move catalog", () => {
 
 describe("catalog cross-references", () => {
   /**
-   * KNOWN DATA ISSUE. 58 moves reference a `running_strike` group that no
-   * slot defines, so none of them can currently be selected. Asserted as-is
-   * rather than as an empty list so the suite stays honest: it will fail if
-   * the problem spreads, and also once it is fixed, prompting this to become
-   * `toEqual([])`.
+   * The version-1 catalog had 58 moves pointing at a `running_strike` group no
+   * slot defined. The version-3 rework fixed it, so any dangling group now is
+   * a regression: a move that can never be selected.
    */
-  it("has one dangling group reference, and only one", () => {
-    expect(validateCatalog().unknownGroups).toEqual(["running_strike"]);
+  it("has no dangling group references", () => {
+    expect(validateCatalog().unknownGroups).toEqual([]);
   });
 
   /**
-   * KNOWN DATA ISSUE. slot_ids decide eligibility, and two moves point at
-   * lower-body submission slots move-slots.json does not define (it has
-   * facing_up and facing_down only), so neither move can be selected.
-   * Asserted as-is for the same reason as the group case above.
+   * slot_ids decide eligibility. The version-1 catalog pointed two moves at
+   * lower-body submission slots move-slots.json never defined; version 3
+   * fixed that too, so none should reappear.
    */
-  it("has two dangling slot references, and only two", () => {
-    expect(validateCatalog().unknownSlots.sort()).toEqual([
-      "lower_body_submission_kneeling_all_fours",
-      "lower_body_submission_sitting_up",
-    ]);
+  it("has no dangling slot references", () => {
+    expect(validateCatalog().unknownSlots).toEqual([]);
   });
 
-  it("reuses standing and running strikes in turnbuckle slots by design", () => {
-    // moves.json says a move's position must match its groups', but strikes
-    // are deliberately shared into turnbuckle slots. Recorded, not enforced.
-    const cross = validateCatalog().crossPositionGroups.sort();
-    expect(cross).toEqual([
-      "running -> running_tree_of_woe_strike (turnbuckle)",
-      "running -> running_turnbuckle_strike (turnbuckle)",
-      "standing -> tree_of_woe_strike (turnbuckle)",
-      "standing -> turnbuckle_strike (turnbuckle)",
-    ]);
+  it("keeps every move in groups of its own position", () => {
+    // Version 1 shared standing and running strikes into turnbuckle groups;
+    // version 3 gives the turnbuckle its own, so positions line up again.
+    expect(validateCatalog().crossPositionGroups).toEqual([]);
   });
 
   it("resolves moves to slots and back", () => {

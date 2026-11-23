@@ -55,12 +55,68 @@ export interface CatalogMove {
   ko: boolean;
   bleed: boolean;
   feature: "pin" | "submit" | null;
-  /** Animation clip id, or null while the move is unanimated. */
-  animation_id: string | null;
+  /** The performing wrestler's clip (a GLB file name), or null while unanimated. */
+  actor_animation_id: string | null;
+  /** The receiving wrestler's clip, or null while unanimated. */
+  target_animation_id: string | null;
+  /** Per-slot replacement clips, keyed by slot id; empty for most moves. */
+  slot_animation_overrides: Record<string, string | null>;
+}
+
+/**
+ * A move as the version-3 catalog stores it: every field a string, the way a
+ * spreadsheet row holds it. Lists are comma-separated, booleans are "true" or
+ * "false", absent values are the literal "null", and slot overrides are
+ * "slot_id:clip;slot_id:clip". data/schemas/moves.schema.json checks that
+ * shape, so this loader parses it without re-validating.
+ */
+interface StoredMove {
+  move_id: string;
+  name: string;
+  position: string;
+  groups: string;
+  slot_ids: string;
+  power: string;
+  ko: string;
+  bleed: string;
+  feature: string;
+  actor_animation_id: string;
+  target_animation_id: string;
+  slot_animation_overrides: string;
+}
+
+const nullable = (value: string): string | null => (value === "null" ? null : value);
+const list = (value: string): string[] => value.split(",").filter(Boolean);
+
+function parseOverrides(value: string): Record<string, string | null> {
+  const overrides: Record<string, string | null> = {};
+  for (const pair of value.split(";").filter(Boolean)) {
+    const at = pair.indexOf(":");
+    overrides[pair.slice(0, at)] = nullable(pair.slice(at + 1));
+  }
+  return overrides;
+}
+
+/** One stored row as the typed move everything else works with. */
+export function parseMove(stored: StoredMove): CatalogMove {
+  return {
+    move_id: stored.move_id,
+    name: stored.name,
+    position: stored.position,
+    groups: list(stored.groups),
+    slot_ids: list(stored.slot_ids),
+    power: nullable(stored.power),
+    ko: stored.ko === "true",
+    bleed: stored.bleed === "true",
+    feature: nullable(stored.feature) as CatalogMove["feature"],
+    actor_animation_id: nullable(stored.actor_animation_id),
+    target_animation_id: nullable(stored.target_animation_id),
+    slot_animation_overrides: parseOverrides(stored.slot_animation_overrides),
+  };
 }
 
 const slots = (moveSlotsJson as { slots: MoveSlot[] }).slots;
-const moves = (movesJson as { moves: CatalogMove[] }).moves;
+const moves = (movesJson as { moves: StoredMove[] }).moves.map(parseMove);
 
 export const MOVE_SLOTS: readonly MoveSlot[] = slots;
 export const CATALOG_MOVES: readonly CatalogMove[] = moves;
@@ -91,10 +147,10 @@ for (const move of moves) {
 /**
  * Moves indexed by (position, move_id).
  *
- * moves.json describes that pair as unique, but it is not: 14 ids repeat
- * within a position as deliberate variants of the same move - a Fallaway Slam
- * exists as both a power D and a power E grapple. So this maps to a list
- * rather than a single entry; keying to one would silently drop variants.
+ * The version-3 catalog makes that pair unique - weak and strong variants of
+ * a move have their own ids now and share only a display name - but this still
+ * maps to a list, so a repeated pair would be reported by validateCatalog()
+ * rather than one of its moves being silently dropped.
  */
 const movesByKey = new Map<string, CatalogMove[]>();
 for (const move of moves) {
