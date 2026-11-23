@@ -104,8 +104,8 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from "vue";
-import type { MatchSnapshot } from "@/combat/Match";
-import { BODY_PARTS } from "@/combat/types";
+import type { MatchSnapshot } from "@/game/combat/Match";
+import { BODY_PARTS } from "@/game/combat/types";
 
 /**
  * Read-only view of the combat simulation.

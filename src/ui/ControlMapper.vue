@@ -116,10 +116,10 @@ import {
 import { eventCode, isMenuDown, isMenuUp, virtualInputFor } from "@/game/VirtualController";
 import { playMenuCue } from "@/audio/menuAudio";
 
-import controllerImage from "../../assets/textures/ui/controller/n64-controller.svg";
+import controllerImage from "../../assets/ui/textures/controller/n64-controller.svg";
 
 const controllerIcons = import.meta.glob<string>(
-  "../../assets/textures/ui/controller/ButtonIcon-N64-*.svg",
+  "../../assets/ui/textures/controller/ButtonIcon-N64-*.svg",
   { eager: true, query: "?url", import: "default" }
 );
 
@@ -226,7 +226,7 @@ export default defineComponent({
         : control.startsWith("controlStick") ? "Control_Stick"
         : control.startsWith("c") ? "C"
         : control === "start" ? "Start" : control.toUpperCase();
-      return controllerIcons[`../../assets/textures/ui/controller/ButtonIcon-N64-${name}.svg`];
+      return controllerIcons[`../../assets/ui/textures/controller/ButtonIcon-N64-${name}.svg`];
     },
 
     direction(control: PadControl): string {
@@ -406,7 +406,7 @@ export default defineComponent({
   overflow-y: auto;
   background-color: #0b0e14;
   background-image: linear-gradient(rgba(11, 14, 20, 0.65), rgba(11, 14, 20, 0.8)),
-    url("../../assets/artwork/crowd-1.png");
+    url("../../assets/ui/textures/artwork/crowd-1.png");
   background-size: cover;
   background-position: center;
   color: #f2f5f8;

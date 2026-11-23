@@ -70,13 +70,13 @@
 <script lang="ts">
 import { defineComponent, markRaw } from "vue";
 import { CombatTestScene } from "@/renderer/CombatTestScene";
-import dpadIcon from "../../assets/textures/ui/controller/ButtonIcon-N64-D-Pad.svg";
-import cDownIcon from "../../assets/textures/ui/controller/ButtonIcon-N64-C-Down.svg";
-import aIcon from "../../assets/textures/ui/controller/ButtonIcon-N64-A.svg";
-import bIcon from "../../assets/textures/ui/controller/ButtonIcon-N64-B.svg";
-import lIcon from "../../assets/textures/ui/controller/ButtonIcon-N64-L.svg";
-import rIcon from "../../assets/textures/ui/controller/ButtonIcon-N64-R.svg";
-import startIcon from "../../assets/textures/ui/controller/ButtonIcon-N64-Start.svg";
+import dpadIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-D-Pad.svg";
+import cDownIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-C-Down.svg";
+import aIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-A.svg";
+import bIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-B.svg";
+import lIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-L.svg";
+import rIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-R.svg";
+import startIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-Start.svg";
 import { isMenuDown, isMenuUp, virtualInputFor } from "@/game/VirtualController";
 import { playMenuCue } from "@/audio/menuAudio";
 import CombatDebug from "./CombatDebug.vue";

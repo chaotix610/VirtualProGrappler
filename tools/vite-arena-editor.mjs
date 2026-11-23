@@ -1,8 +1,9 @@
 /**
  * Dev-only endpoints backing the Arena Editor.
  *
- * The editor runs in the browser, but arenas live in data/arenas/*.json, which
- * is outside publicDir and imported at build time - so there is no way for the
+ * The editor runs in the browser, but arenas live in
+ * data/environments/arenas/*.json, which is imported at build time rather
+ * than served - so there is no way for the
  * page to persist a change on its own. This plugin gives it one, over the dev
  * server that is already running.
  *
@@ -11,8 +12,8 @@
  * built app the editor's save simply has nowhere to call, which is why it
  * checks availability before offering to save.
  *
- * Writes are confined to data/arenas/<id>.json, with the id re-derived from
- * the schema's own pattern rather than taken from the request, so a crafted
+ * Writes are confined to data/environments/arenas/<id>.json, with the id
+ * re-derived from the schema's own pattern rather than taken from the request, so a crafted
  * body cannot address a path outside that directory.
  */
 
@@ -78,7 +79,7 @@ export function arenaEditorPlugin() {
         // Lets the editor tell "running under the dev server, saving works"
         // from "built app, saving is unavailable" without attempting a write.
         if (url.pathname === `${ENDPOINT}/status` && req.method === "GET") {
-          return send(res, 200, { writable: true, dir: "data/arenas" });
+          return send(res, 200, { writable: true, dir: "data/environments/arenas" });
         }
 
         if (url.pathname === `${ENDPOINT}/save` && req.method === "POST") {
@@ -118,7 +119,7 @@ export function arenaEditorPlugin() {
             return send(res, 200, {
               ok: true,
               created,
-              path: `data/arenas/${id}.json`,
+              path: `data/environments/arenas/${id}.json`,
             });
           } catch (error) {
             return send(res, 400, { error: String(error.message ?? error) });

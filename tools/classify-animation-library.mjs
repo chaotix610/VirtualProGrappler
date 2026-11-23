@@ -49,7 +49,7 @@ import { fileURLToPath } from "node:url";
  * wins, so the narrower families come first.
  *
  * The families are the No Mercy cartridge's own, from the animation
- * vocabulary in docs/mechanics/no-mercy-hfsm-plan.md §2.6, so a folder maps to
+ * vocabulary in docs/combat/no-mercy-hfsm-plan.md §2.6, so a folder maps to
  * the HFSM states that play it. `pin`, `reversal` and `irish-whip` are added:
  * the plan gives them states of their own (§6.3, §2.4).
  */

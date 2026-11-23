@@ -266,9 +266,9 @@ function save(): void {
 
 /** All stems run together; navigation changes gains, never playback position. */
 const MUSIC_URLS = [
-  new URL("../../assets/sound/music/menu/menu-music-basetrack.mp3", import.meta.url).href,
-  new URL("../../assets/sound/music/menu/menu-music-overlay-1.mp3", import.meta.url).href,
-  new URL("../../assets/sound/music/menu/menu-music-overlay-2.mp3", import.meta.url).href,
+  new URL("../../assets/ui/audio/music/menu-music-basetrack.mp3", import.meta.url).href,
+  new URL("../../assets/ui/audio/music/menu-music-overlay-1.mp3", import.meta.url).href,
+  new URL("../../assets/ui/audio/music/menu-music-overlay-2.mp3", import.meta.url).href,
 ];
 
 let musicDepth = 0;

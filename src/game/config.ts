@@ -57,11 +57,11 @@ export interface CharacterDefinition {
 }
 
 /**
- * Runtime asset root. A URL from the web root: everything under
- * assets/runtime is served there by Vite, while assets/source holds the
- * Blender originals and is never shipped.
+ * Where the character GLBs live, as a repository path. Resolve a full path
+ * with `requireAsset()` from src/data/assets.ts to get a fetchable URL;
+ * assets/source holds the Blender originals and is never shipped.
  */
-export const MODEL_ROOT = "models/";
+export const CHARACTER_MODEL_DIR = "assets/characters/models/";
 
 /**
  * The playable roster. Austin is modelled and textured as himself; his
@@ -170,8 +170,8 @@ export const Tuning = {
 
 /** The wrestling ring the match takes place in. */
 export const RING = {
-  /** Full URL from the web root. */
-  file: MODEL_ROOT + "ring-standard.glb",
+  /** Repository path; resolve it with `requireAsset()` before loading. */
+  file: "assets/environments/arenas/shared/ring/models/ring-standard.glb",
   /** Mesh name holding the mat; used to find the standing surface. */
   canvasMesh: "canvas",
   /** Prefix of the rope meshes; used to derive the rebound boundary. */

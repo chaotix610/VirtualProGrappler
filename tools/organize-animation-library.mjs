@@ -13,7 +13,7 @@
  *   moves/actor/<moveset category>/   the performer's side of a move
  *   moves/target/<moveset category>/  the receiver's side, paired with it
  *   common/<family>/                  shared by every wrestler; families from
- *                                     docs/mechanics/no-mercy-hfsm-plan.md §2.6
+ *                                     docs/combat/no-mercy-hfsm-plan.md §2.6
  *   taunts/<group>/
  *   unknown/unnamed/                  no game names it
  *   unknown/unassigned-move/          named, but no moveset or rule places it

@@ -28,10 +28,10 @@ import { cssColorToRgb } from "./cssColor";
  * arena to look the same, so the building lives here rather than in either.
  */
 
-/** The ring is served from publicDir; resolveAsset maps it to its URL. */
-const RING_PATH = `assets/runtime/${RING.file}`;
+/** The ring model's repository path; resolveAsset maps it to its URL. */
+const RING_PATH = RING.file;
 
-const RING_STEPS_PATH = "assets/glb/arena/ring-steps.glb";
+const RING_STEPS_PATH = "assets/environments/arenas/shared/ring/models/ring-steps.glb";
 
 /**
  * Trusses, lights and hanging banners over the ring.
@@ -47,7 +47,7 @@ const RING_STEPS_PATH = "assets/glb/arena/ring-steps.glb";
  * `arenaTextures`; `mat_ceiling_lights` and `mat_ceiling_truss` are reachable
  * the same way.
  */
-const CEILING_TRUSSES_PATH = "assets/glb/arena/ceiling_trusses.glb";
+const CEILING_TRUSSES_PATH = "assets/environments/arenas/shared/models/ceiling_trusses.glb";
 
 /**
  * The steps GLB ships with a 1x1 placeholder baked into `mat_ring_steps`, so
@@ -59,12 +59,12 @@ const CEILING_TRUSSES_PATH = "assets/glb/arena/ceiling_trusses.glb";
  * Applied before the arena's own textures, so a future arena file that names
  * `mat_ring_steps` still wins.
  */
-const DEFAULT_STEPS_TEXTURE = "assets/textures/arena/ring_steps.png";
+const DEFAULT_STEPS_TEXTURE = "assets/environments/arenas/shared/textures/ring_steps.png";
 
 const DEFAULT_RING_TEXTURES: Record<string, string> = {
-  mat_turnbuckle_bolt_1: "assets/textures/ring/shared/turnbuckle-bolt-1.png",
-  mat_turnbuckle_bolt_2: "assets/textures/ring/shared/turnbuckle-bolt-2.png",
-  mat_turnbuckle_bolt_cover: "assets/textures/ring/shared/turnbuckle-bolt-cover.png",
+  mat_turnbuckle_bolt_1: "assets/environments/arenas/shared/ring/textures/shared/turnbuckle-bolt-1.png",
+  mat_turnbuckle_bolt_2: "assets/environments/arenas/shared/ring/textures/shared/turnbuckle-bolt-2.png",
+  mat_turnbuckle_bolt_cover: "assets/environments/arenas/shared/ring/textures/shared/turnbuckle-bolt-cover.png",
 };
 
 /**

@@ -1,5 +1,5 @@
 /**
- * The stages an arena can be built on, loaded from data/stages.json.
+ * The stages an arena can be built on, loaded from data/environments/stages.json.
  *
  * A stage is the entrance set - ramp, screens, curtain, whatever the GLB
  * carries - and it decides more than its own look: the floor, barricade and
@@ -9,10 +9,10 @@
  * editor offers only those.
  *
  * Imported rather than fetched, for the same reason as the arenas: `data/` sits
- * outside Vite's publicDir.
+ * outside the bundled asset trees.
  */
 
-import stagesFile from "../../data/stages.json";
+import stagesFile from "../../data/environments/stages.json";
 
 export interface StageData {
   id: string;

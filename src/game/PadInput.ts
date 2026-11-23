@@ -12,7 +12,7 @@ import {
  *
  * Every key is looked up in the control mapper's bindings, so rebinding a
  * control there changes how the wrestler is driven with no further work. The
- * layout follows the move slots in data/moves/move-slots.json:
+ * layout follows the move slots in data/combat/move-slots.json:
  *
  * - Control Stick or D-Pad: move.
  * - C-Down: Run. The slots write it as `[Run]`; holding it into the ropes

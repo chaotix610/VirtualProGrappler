@@ -1,5 +1,5 @@
 /**
- * Parses the CSS colours used by the `*Color` keys in data/arenas/*.json.
+ * Parses the CSS colours used by the `*Color` keys in data/environments/arenas/*.json.
  *
  * Kept apart from the renderer so it can be tested without loading Babylon.
  * Only the forms the schema's `css_color` allows are handled; alpha is parsed

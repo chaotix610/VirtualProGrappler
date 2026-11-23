@@ -1,0 +1,26 @@
+{
+  "id": "royalrumble",
+  "displayName": "Royal Rumble",
+  "previewImage": "assets/environments/arenas/shared/textures/previews/preview-royalrumble.png",
+  "stage": "royal_rumble",
+  "floor": "assets/environments/arenas/shared/models/floor/royal_rumble_floor.glb",
+  "barricade": "assets/environments/arenas/shared/models/barricade/royal_rumble_barricade.glb",
+  "outer": "assets/environments/arenas/shared/models/outer/royal_rumble_outer.glb",
+  "arenaTextures": {
+    "mat_floor_ringside": "assets/environments/arenas/shared/textures/floor_ringside/floor_mat_1_double.png",
+    "mat_ringside_barricade": "assets/environments/arenas/shared/textures/floor_ringside/floor_mat_1_double.png"
+  },
+  "ringTextures": {
+    "mat_canvas": "assets/environments/arenas/shared/ring/textures/canvas/canvas.png",
+    "mat_apron": "assets/environments/arenas/shared/ring/textures/apron/apron_royal_rumble.png",
+    "mat_rope_top": "assets/environments/arenas/shared/ring/textures/rope/rope.png",
+    "mat_rope_middle": "assets/environments/arenas/shared/ring/textures/rope/rope.png",
+    "mat_rope_bottom": "assets/environments/arenas/shared/ring/textures/rope/rope.png",
+    "ropeTopColor": "rgba(0, 0, 0, 0.4)",
+    "ropeMiddleColor": "rgba(0, 0, 0, 0.4)",
+    "ropeBottomColor": "rgba(0, 0, 0, 0.4)",
+    "postColor": "rgba(0, 0, 0, 0)",
+    "turnbucklePadColor": "rgba(0, 0, 0, 1)",
+    "turnbuckleBoltCoverColor": "rgba(0, 0, 0, 0)"
+  }
+}

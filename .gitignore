@@ -5,9 +5,9 @@ node_modules/
 dist/
 
 # Asset authoring tree — Blender and raw GLB originals.
-# Nothing here ships. The subset that does is committed under assets/runtime,
-# assets/textures, assets/glb and assets/artwork, and is copied out of this
-# tree by `npm run assets:promote`.
+# Nothing here ships. The subset that does is committed under
+# assets/characters, assets/environments and assets/ui, and is copied out of
+# this tree by `npm run assets:promote`.
 assets/source/
 
 # Reference assets extracted from the N64 AKI games. Local only: they must not

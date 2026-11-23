@@ -1,6 +1,6 @@
 # Virtual Pro Grappler
 
-![Virtual Pro Grappler](assets/artwork/vpg-box-art.png)
+![Virtual Pro Grappler](assets/ui/textures/artwork/vpg-box-art.png)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 ![Babylon.js](https://img.shields.io/badge/Babylon.js-9.x-gray?logo=babylondotjs)
@@ -23,8 +23,8 @@ What runs today:
 - Babylon.js arena loading only after an arena is selected/opened.
 - Arena Viewer camera controls for rotate and zoom.
 - JSON schemas for main menu data, moves, and move slots.
-- Move and move-slot data files under `data/moves`.
-- Arena definitions under `data/arenas`.
+- Move and move-slot data files under `data/combat`.
+- Arena definitions under `data/environments/arenas`.
 - Vite build/dev tooling and Vitest test setup.
 
 ## Getting started
@@ -39,44 +39,71 @@ npm run dev        # http://localhost:8080
 | `npm run dev` | Vite dev server |
 | `npm run build` | Typecheck, then production build |
 | `npm run typecheck` | `vue-tsc` over src and tests |
-| `npm test` | Vitest unit suite, including data validation |
+| `npm test` | Vitest suite (`tests/**/*.test.ts`), including data validation |
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run validate:data` | Schemas, asset references and menu targets in `data/` |
 | `npm run assets:promote` | Copy the shipped asset subset out of `assets/source` |
 
-## Layout
+## Project structure
+
+The project is organized by responsibility. Domain-specific resources use the
+same categories across the `data/`, `assets/` and `docs/` trees where possible;
+see [the resource layout guide](docs/resource-layout.md) for the full
+conventions.
 
 ```text
 .
-├── assets/
-│   ├── runtime/         # Served at the site root: GLB models, textures, favicon
-│   ├── artwork/         # Logo and menu backgrounds
-│   ├── textures/        # Arena, ring and UI art, plus menu fonts
-│   ├── schema/          # Measured geometry manifests for the ring assets
-│   └── source/          # Blender and raw GLB originals, never shipped
-├── data/                # JSON content and JSON schemas
-│   ├── moves/           # Move catalog and slot definitions
-│   ├── arenas/          # One file per arena
-│   ├── ui/              # Main menu pages and copy
-│   ├── schemas/         # JSON schemas for the content files
-│   └── settings/        # Default control mappings
-├── docs/                # UI, environment, and mechanics documentation
-├── src/
-│   ├── combat/          # Damage, reversals, wrestler state, match
-│   ├── data/            # Data loading helpers and asset resolution
-│   ├── game/            # Movement, input, virtual controller, tuning
-│   ├── renderer/        # Babylon scenes, arena viewer, ropes, animation
-│   ├── sim/             # Fixed timestep, input buffer, seeded RNG
-│   ├── ui/              # Vue shell, menu, mapper, arena viewer, debug overlay
-│   └── main.ts          # App entry
-├── tests/
-│   ├── unit/            # Vitest
-│   └── browser/         # Playwright scripts driving the real game
-├── tools/               # Asset pipeline (Blender) and data validation
-├── index.html
-├── package.json
-└── vite.config.ts
+├── src/                  Application and game-engine source code
+│   ├── audio/            Menu music and sound playback
+│   ├── data/             Data loading, catalogs, stores, and asset paths
+│   ├── game/             Runtime game systems and virtual controller logic
+│   │   ├── combat/       Damage, reversals, wrestler state, match
+│   │   └── sim/          Fixed timestep, input buffer, seeded RNG
+│   ├── renderer/         Babylon.js scenes, arena loading, and rendering helpers
+│   └── ui/               Vue components for menus, controls, and arena tools
+├── data/                 JSON definitions and schemas used by the application
+│   ├── animations/       Animation metadata (empty; not started)
+│   ├── characters/       Character definitions
+│   ├── combat/           Moves and move slots
+│   ├── environments/     Stages, arenas, and ring geometry manifests
+│   ├── schemas/          JSON Schema files for validating data
+│   ├── settings/         Default control mappings
+│   └── ui/               Menu and interface definitions
+├── assets/               Models, textures, audio, and other runtime resources
+│   ├── animations/       Animation clips baked into the character models
+│   ├── characters/       Character models and textures
+│   ├── combat/           Combat-related resources (empty)
+│   ├── environments/     Arena, ring, stage, and prop resources
+│   ├── settings/         Settings-related resources (empty)
+│   ├── ui/               Fonts, audio, controller textures, artwork, favicon
+│   └── source/           Blender and raw GLB originals; git-ignored, never shipped
+├── docs/                 Design notes and implementation documentation
+│   ├── animations/       AKI rig migration and move-animation plans
+│   ├── characters/       Create-a-Wrestler plan
+│   ├── combat/           HFSM, moves, damage, parameters, and reversal specifications
+│   └── resource-layout.md
+├── tests/                Vitest tests for data, controls, menus, arenas, and assets
+│   ├── combat/           Damage, reversal, and simulation tests
+│   ├── browser/          Playwright scripts driving the menus, arenas, and camera
+│   └── browser-combat/   Playwright script driving the development combat test
+├── tools/                Vite dev-server extensions, asset pipeline, and data validation
+├── index.html            Vite application entry HTML
+├── package.json          npm scripts and dependencies
+├── vite.config.ts        Vite configuration
+├── vitest.config.ts      Vitest configuration
+├── eslint.config.js      ESLint configuration
+└── tsconfig.json         TypeScript configuration
 ```
+
+`data/` contains structured definitions that can be validated and edited as
+JSON. `assets/` contains the files those definitions reference, such as
+textures, audio and models. The app is built from `src/`, while `docs/` records
+the conventions and design work behind the data and systems.
+
+The Playwright scripts in `tests/browser*` are run by hand against a running
+dev server (`node tests/browser/test-menu.mjs`; set `GAME_URL` to use another
+port). The combat scripts rely on a development-only hook, so they need
+`npm run dev` rather than a production build.
 
 ### Assets
 
@@ -93,15 +120,13 @@ The manifest in [`tools/promote-assets.mjs`](tools/promote-assets.mjs) is the
 record of what ships and where it lands, so a working asset tree is
 reproducible from source rather than something assembled by hand.
 
-There are two destinations, because there are two ways a file reaches the
-browser — `assets/runtime/**` is Vite's public directory, served at the site
-root, and `assets/glb/**` and `assets/textures/**` are bundled and referenced
-from JSON by repository path.
-
-Consumers do not need to know which is which:
-[`resolveAsset()`](src/data/assets.ts) takes a path as authored and returns a
-URL either way. That is the single entry point — new code should not build
-asset URLs by hand.
+Vite has no public directory. Models, textures and fonts under
+`assets/characters`, `assets/environments` and `assets/ui` are bundled by the
+glob in [`src/data/assets.ts`](src/data/assets.ts) and referenced from JSON and
+config by repository path; audio, controller icons and the favicon are
+imported directly. [`resolveAsset()`](src/data/assets.ts) takes a path as
+authored and returns its built URL. That is the single entry point — new code
+should not build asset URLs by hand.
 
 ## Menu
 
@@ -120,7 +145,7 @@ Main Menu
     └── Controls        → the control mapper
 ```
 
-The **Arena Viewer** lists the ten arenas in [`data/arenas/`](data/arenas/)
+The **Arena Viewer** lists the ten arenas in [`data/environments/arenas/`](data/environments/arenas/)
 with their preview art, and renders the selected one: the ring, two sets of
 steps, and the environment GLBs the arena file names, with its configured
 textures and colours applied. The control stick orbits the camera, `C-Up`/`C-Down`
@@ -153,13 +178,13 @@ The mouse moves the camera: drag to orbit the ring, scroll to zoom. Directions
 are fixed to the ring rather than the camera: up is always north, down south,
 and so on, however the camera is turned.
 
-The move slots in [`data/moves/move-slots.json`](data/moves/move-slots.json)
+The move slots in [`data/combat/move-slots.json`](data/combat/move-slots.json)
 are written against that same pad.
 
 ## Asset pipeline
 
 Character GLBs live in `assets/source/characters` and are copied to
-`assets/runtime/models` by `npm run assets:promote`.
+`assets/characters/models` by `npm run assets:promote`.
 
 Every character is on the 19-joint AKI rig (`Pelvis`, `LowerAbdomen`,
 `UpperBody`, `Neck`, `Head`, and the arm and leg chains), the rig the N64 AKI
@@ -183,6 +208,6 @@ to the game on its way out of the source tree:
 The settings for each character sit in its entry in
 [`promote-assets.mjs`](tools/promote-assets.mjs). It runs as part of
 `npm run assets:promote` rather than by hand, because a re-export undoes all of
-it. `tests/unit/characterAssets.test.ts` fails if a raw export reaches
-`assets/runtime` unprepared, if the skeleton is not the AKI rig, or if the
+it. `tests/characterAssets.test.ts` fails if a raw export reaches
+`assets/characters/models` unprepared, if the skeleton is not the AKI rig, or if the
 character ends up facing the wrong way.

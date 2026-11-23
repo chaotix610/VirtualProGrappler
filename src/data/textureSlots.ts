@@ -67,7 +67,7 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_canvas"],
-    folders: ["assets/textures/ring/canvas"],
+    folders: ["assets/environments/arenas/shared/ring/textures/canvas"],
     colors: [{ key: "canvasColor", materials: ["mat_canvas"] }],
   },
   {
@@ -76,7 +76,7 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_apron"],
-    folders: ["assets/textures/ring/apron"],
+    folders: ["assets/environments/arenas/shared/ring/textures/apron"],
     colors: [{ key: "apronColor", materials: ["mat_apron"] }],
   },
   {
@@ -85,7 +85,7 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_post"],
-    folders: ["assets/textures/ring/post"],
+    folders: ["assets/environments/arenas/shared/ring/textures/post"],
     colors: [{ key: "postColor", materials: ["mat_post"] }],
   },
   {
@@ -97,7 +97,7 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_rope_top", "mat_rope_middle", "mat_rope_bottom"],
-    folders: ["assets/textures/ring/rope"],
+    folders: ["assets/environments/arenas/shared/ring/textures/rope"],
     colors: [
       { key: "ropeTopColor", label: "Top", materials: ["mat_rope_top"] },
       { key: "ropeMiddleColor", label: "Middle", materials: ["mat_rope_middle"] },
@@ -110,7 +110,7 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_turnbuckle"],
-    folders: ["assets/textures/ring/turnbuckle"],
+    folders: ["assets/environments/arenas/shared/ring/textures/turnbuckle"],
     colors: [{ key: "turnbucklePadColor", materials: ["mat_turnbuckle"] }],
   },
   {
@@ -150,7 +150,7 @@ const ARENA_SLOTS: TextureSlot[] = [
     map: "arenaTextures",
     section: "Ringside",
     materials: ["mat_floor_ringside"],
-    folders: ["assets/textures/arena/floor_ringside"],
+    folders: ["assets/environments/arenas/shared/textures/floor_ringside"],
     colors: [
       { key: "floorRingsideColor", materials: ["mat_floor_ringside"] },
     ],
@@ -164,8 +164,8 @@ const ARENA_SLOTS: TextureSlot[] = [
     section: "Ringside",
     materials: ["mat_ringside_barricade"],
     folders: [
-      "assets/textures/arena/barricade",
-      "assets/textures/arena/floor_ringside",
+      "assets/environments/arenas/shared/textures/barricade",
+      "assets/environments/arenas/shared/textures/floor_ringside",
     ],
     colors: [{ key: "barricadeColor", materials: ["mat_ringside_barricade"] }],
   },
@@ -177,7 +177,7 @@ const ARENA_SLOTS: TextureSlot[] = [
     map: "arenaTextures",
     section: "Ceiling",
     materials: ["mat_ceiling_banners"],
-    folders: ["assets/textures/arena/ceiling_banners"],
+    folders: ["assets/environments/arenas/shared/textures/ceiling_banners"],
     colors: [],
   },
 ];

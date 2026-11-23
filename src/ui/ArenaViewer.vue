@@ -138,7 +138,7 @@ export default defineComponent({
      * text keeps its contrast over the bright spots in the crowd.
      */
     backgroundStyle(): Record<string, string> {
-      const url = resolveAsset("assets/artwork/crowd-1.png");
+      const url = resolveAsset("assets/ui/textures/artwork/crowd-1.png");
       if (!url) return {};
       return {
         backgroundImage:

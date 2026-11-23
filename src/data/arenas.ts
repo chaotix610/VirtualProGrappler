@@ -2,9 +2,9 @@ import { resolveAsset } from "./assets";
 import { PieceKind, defaultPiece, stageById } from "./stages";
 
 /**
- * Arena definitions, loaded from data/arenas/*.json.
+ * Arena definitions, loaded from data/environments/arenas/*.json.
  *
- * Imported rather than fetched: `data/` is outside Vite's publicDir, so
+ * Imported rather than fetched: `data/` is not served as static files, so
  * fetching these paths at runtime would 404 in a production build.
  *
  * The shapes mirror data/schemas/arenas.schema.json. `npm run validate:data`
@@ -29,7 +29,7 @@ export interface ArenaData {
   previewImage?: string;
   /** Leaves the arena out of the viewer and editor menus. It still loads by id. */
   hidden?: boolean;
-  /** Stage id from data/stages.json. The current way to describe an arena. */
+  /** Stage id from data/environments/stages.json. The current way to describe an arena. */
   stage?: string;
   /** Ringside floor GLB. One of the pieces the stage lists. */
   floor?: string;
@@ -53,7 +53,7 @@ export interface ArenaSummary {
   previewUrl: string | null;
 }
 
-const modules = import.meta.glob("../../data/arenas/*.json", {
+const modules = import.meta.glob("../../data/environments/arenas/*.json", {
   eager: true,
   import: "default",
 }) as Record<string, ArenaData>;

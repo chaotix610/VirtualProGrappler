@@ -320,7 +320,7 @@ const PREVIEW_DEBOUNCE_MS = 600;
 /**
  * Where an in-progress draft is parked across a remount.
  *
- * Saving writes data/arenas/<id>.json, which Vite sees as a source change and
+ * Saving writes data/environments/arenas/<id>.json, which Vite sees as a source change and
  * hot-updates - and a hot update remounts this component with a fresh data(),
  * discarding whatever was being edited. Rather than suppress the update (it is
  * what makes a newly saved arena appear in the list), the draft is stashed and
@@ -453,7 +453,7 @@ export default defineComponent({
      * text keeps its contrast over the bright spots in the crowd.
      */
     backgroundStyle(): Record<string, string> {
-      const url = resolveAsset("assets/artwork/crowd-1.png");
+      const url = resolveAsset("assets/ui/textures/artwork/crowd-1.png");
       if (!url) return {};
       return {
         backgroundImage:

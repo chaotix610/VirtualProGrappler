@@ -5,7 +5,7 @@
     "mainMenu": {
       "id": "main_menu",
       "displayName": "Main Menu",
-      "headingImage": "assets/artwork/vpg-logo.png",
+      "headingImage": "assets/ui/textures/artwork/vpg-logo.png",
       "menuItems": [
         {
           "id": "multi_play",
@@ -54,7 +54,7 @@
     "multiPlay": {
       "id": "multi_play",
       "displayName": "Multi Play",
-      "headingImage": "assets/textures/ui/heading_multiplay.png",
+      "headingImage": "assets/ui/textures/heading_multiplay.png",
       "menuItems": [
         {
           "id": "exhibition",
@@ -200,7 +200,7 @@
     "singlePlay": {
       "id": "single_play",
       "displayName": "Single Play",
-      "headingImage": "assets/textures/ui/heading_singleplay.png",
+      "headingImage": "assets/ui/textures/heading_singleplay.png",
       "menuItems": [
         {
           "id": "championship",
@@ -243,7 +243,7 @@
     "commissioner": {
       "id": "commissioner",
       "displayName": "Commissioner",
-      "headingImage": "assets/textures/ui/heading_commissioner.png",
+      "headingImage": "assets/ui/textures/heading_commissioner.png",
       "menuItems": [
         {
           "id": "smackdown_mall",
@@ -300,7 +300,7 @@
             "blocks": [
               {
                 "type": "paragraph",
-                "text": "Create and edit arenas: parts, textures and placement, with a live preview. Saves to data/arenas/ through the dev server, so changes land in the project."
+                "text": "Create and edit arenas: parts, textures and placement, with a live preview. Saves to data/environments/arenas/ through the dev server, so changes land in the project."
               }
             ]
           }
@@ -324,7 +324,7 @@
     "smackdownMall": {
       "id": "smackdown_mall",
       "displayName": "Smackdown Mall",
-      "headingImage": "assets/textures/ui/heading_commissioner.png",
+      "headingImage": "assets/ui/textures/heading_commissioner.png",
       "menuItems": [
         {
           "id": "combat_system_test",

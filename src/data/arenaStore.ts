@@ -1,7 +1,7 @@
 import { ArenaData } from "./arenas";
 
 /**
- * Talks to the dev-only endpoint that writes data/arenas/*.json.
+ * Talks to the dev-only endpoint that writes data/environments/arenas/*.json.
  *
  * Saving is a development affordance, not a game feature: the endpoint comes
  * from a Vite plugin that only applies on `serve`. In a production build the
@@ -32,7 +32,7 @@ export async function saveAvailable(): Promise<boolean> {
 }
 
 /**
- * Writes an arena to data/arenas/<id>.json.
+ * Writes an arena to data/environments/arenas/<id>.json.
  *
  * Throws with the server's own message on a rejected save, so a schema
  * violation reaches the editor as the specific field that was wrong rather

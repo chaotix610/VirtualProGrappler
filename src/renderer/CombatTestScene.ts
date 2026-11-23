@@ -29,18 +29,19 @@ import { PadInput } from "../game/PadInput";
 import {
   CHARACTERS,
   CharacterDefinition,
-  MODEL_ROOT,
+  CHARACTER_MODEL_DIR,
   REQUIRED_CLIPS,
   RING_VIEW,
   SPAWN,
   Tuning,
 } from "../game/config";
 import { arenaById } from "../data/arenas";
-import { Match, Side } from "../combat/Match";
-import { MOVES } from "../combat/moves";
-import { profileFor } from "../combat/profiles";
-import { FixedStep } from "../sim/FixedStep";
-import { InputBuffer } from "../sim/InputBuffer";
+import { requireAsset } from "../data/assets";
+import { Match, Side } from "../game/combat/Match";
+import { MOVES } from "../game/combat/moves";
+import { profileFor } from "../game/combat/profiles";
+import { FixedStep } from "../game/sim/FixedStep";
+import { InputBuffer } from "../game/sim/InputBuffer";
 
 /** How far the mouse may move the camera from its framed ringside view. */
 const CAMERA_ORBIT = {
@@ -280,7 +281,10 @@ export class CombatTestScene {
     nodeName: string,
     spawn: { x: number; z: number }
   ): Promise<{ root: TransformNode; animations: AnimationController }> {
-    const result = await ImportMeshAsync(MODEL_ROOT + definition.file, this.scene);
+    const result = await ImportMeshAsync(
+      requireAsset(CHARACTER_MODEL_DIR + definition.file),
+      this.scene
+    );
 
     // A parent node we own, so movement never fights the glTF's own transforms.
     const root = new TransformNode(nodeName, this.scene);

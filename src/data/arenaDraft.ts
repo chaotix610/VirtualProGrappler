@@ -18,7 +18,7 @@ import {
 
 /**
  * The editable form of an arena, and the rules for turning one back into the
- * JSON that lives in data/arenas/.
+ * JSON that lives in data/environments/arenas/.
  *
  * Kept apart from the editor component so the parts that can be got wrong -
  * what a valid id looks like, which keys survive a save, how a clone differs
@@ -30,7 +30,7 @@ export interface ArenaDraft {
   id: string;
   displayName: string;
   previewImage: string;
-  /** Stage id from data/stages.json. Decides which pieces below are legal. */
+  /** Stage id from data/environments/stages.json. Decides which pieces below are legal. */
   stage: string;
   floor: string;
   barricade: string;
@@ -181,7 +181,7 @@ export function cloneArena(
 }
 
 /**
- * The draft as it should be written to data/arenas/<id>.json.
+ * The draft as it should be written to data/environments/arenas/<id>.json.
  *
  * Empty maps and blank strings are dropped rather than written as `{}` or
  * `""`: the schema makes those fields optional, and an absent key reads as
@@ -275,7 +275,7 @@ export function availablePreviews(): string[] {
   return knownAssetPaths()
     .filter(
       (path) =>
-        path.startsWith("assets/textures/arena/previews/") && isImage(path)
+        path.startsWith("assets/environments/arenas/shared/textures/previews/") && isImage(path)
     )
     .sort();
 }

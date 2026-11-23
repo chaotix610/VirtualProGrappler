@@ -1,5 +1,5 @@
-import moveSlotsJson from "#data/moves/move-slots.json";
-import movesJson from "#data/moves/moves.json";
+import moveSlotsJson from "#data/combat/move-slots.json";
+import movesJson from "#data/combat/moves.json";
 
 /**
  * Loaders for the move catalog in data/.

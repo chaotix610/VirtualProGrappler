@@ -3,8 +3,8 @@
  * actually reach.
  *
  * `assets/source` is the authoring tree: Blender and raw GLB
- * originals, deliberately excluded from both Vite's publicDir and
- * the glob in src/data/assets.ts. Nothing there is reachable at runtime.
+ * originals, deliberately excluded from the glob in src/data/assets.ts.
+ * Nothing there is reachable at runtime.
  *
  * Rather than leaving "which files did we copy out, and to where" as tribal
  * knowledge, the manifest below is the answer, and running this script
@@ -14,18 +14,9 @@
  *   npm run assets:promote          copy anything missing or stale
  *   npm run assets:promote -- --check   report drift, change nothing (CI)
  *
- * There are two runtime homes, because there are two ways an asset reaches the
- * browser:
- *
- *   assets/runtime/**  Vite's publicDir. Served at the site root, so
- *                      assets/runtime/models/x.glb is fetched as /models/x.glb.
- *                      This is where the game's own models and textures live.
- *
- *   assets/glb/**      Bundled by the glob in src/data/assets.ts and referenced
- *                      from JSON content by repository path.
- *
- * Both are resolved by the same `resolveAsset()` call, so consumers do not need
- * to know which tree a file came from.
+ * Every destination is under assets/{characters,environments,ui}/, the trees
+ * bundled by the glob in src/data/assets.ts. Code and JSON name them by
+ * repository path and turn that into a URL with `resolveAsset()`.
  */
 
 import fs from "node:fs";
@@ -82,7 +73,7 @@ const AUSTIN_RIG = {
     // the top rope facing back into the ring.
     {
       as: "climb",
-      from: "assets/animation/turnbuckle_climbing_climb.glb",
+      from: "assets/animations/shared/turnbuckle/climbing/turnbuckle_climbing_climb.glb",
       translationScale: 100,
     },
   ],
@@ -99,27 +90,27 @@ const AUSTIN_RIG = {
 const MANIFEST = [
   {
     from: "assets/source/glb/ring/ring-standard.glb",
-    to: "assets/runtime/models/ring-standard.glb",
+    to: "assets/environments/arenas/shared/ring/models/ring-standard.glb",
     why: "the ring, shared by the match scene and the arena viewer",
   },
   {
     from: "assets/source/glb/arena/ring-steps.glb",
-    to: "assets/glb/arena/ring-steps.glb",
+    to: "assets/environments/arenas/shared/ring/models/ring-steps.glb",
     why: "placed twice by the arena renderer; not referenced by any arena file",
   },
   {
     from: "assets/source/glb/arena/arena-floor.glb",
-    to: "assets/glb/arena/floor/arena_floor.glb",
-    why: "the RAW stage's ringside floor, listed in data/stages.json",
+    to: "assets/environments/arenas/shared/models/floor/arena_floor.glb",
+    why: "the RAW stage's ringside floor, listed in data/environments/stages.json",
   },
   {
     from: "assets/source/glb/arena/barricade.glb",
-    to: "assets/glb/arena/barricade/barricade.glb",
-    why: "the RAW stage's ringside barricade, listed in data/stages.json",
+    to: "assets/environments/arenas/shared/models/barricade/barricade.glb",
+    why: "the RAW stage's ringside barricade, listed in data/environments/stages.json",
   },
   {
     from: "assets/source/characters/steve_austin.glb",
-    to: "assets/runtime/models/steve_austin.glb",
+    to: "assets/characters/models/steve_austin.glb",
     // Unlit: the shading is painted into the textures, so the scene lights
     // must not apply a second pass of it.
     via: (from, to) =>
