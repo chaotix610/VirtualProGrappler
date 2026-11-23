@@ -105,7 +105,7 @@ const MANIFEST = [
   },
   {
     from: "assets/source/glb/arena/barricade.glb",
-    to: "assets/environments/arenas/shared/models/barricade/barricade.glb",
+    to: "assets/environments/arenas/shared/models/barricade/padded_barricade.glb",
     why: "the RAW stage's ringside barricade, listed in data/environments/stages.json",
   },
   {

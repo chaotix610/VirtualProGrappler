@@ -4,7 +4,7 @@
   "previewImage": "assets/environments/arenas/shared/textures/previews/preview-nomercy.png",
   "stage": "raw_is_war",
   "floor": "assets/environments/arenas/shared/models/floor/arena_floor.glb",
-  "barricade": "assets/environments/arenas/shared/models/barricade/barricade.glb",
+  "barricade": "assets/environments/arenas/shared/models/barricade/padded_barricade.glb",
   "outer": "assets/environments/arenas/shared/models/outer/arena_outer.glb",
   "arenaTextures": {
     "mat_floor_ringside": "assets/environments/arenas/shared/textures/floor_ringside/floor_mat_1_double.png",

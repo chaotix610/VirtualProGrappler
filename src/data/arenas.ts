@@ -1,5 +1,5 @@
 import { resolveAsset } from "./assets";
-import { PieceKind, defaultPiece, stageById } from "./stages";
+import { PieceKind, defaultPiece, floorForBarricade, stageById } from "./stages";
 
 /**
  * Arena definitions, loaded from data/environments/arenas/*.json.
@@ -23,6 +23,15 @@ export interface ArenaPartSpec {
   rotation?: [number, number, number];
 }
 
+/** A part ready to load: placement filled in, scale only where one was asked for. */
+export interface PlacedPart {
+  glb: string;
+  position: [number, number, number];
+  rotation: [number, number, number];
+  /** Uniform scale on the GLB's root. Only a stage can set one. */
+  scale?: number;
+}
+
 export interface ArenaData {
   id: string;
   displayName: string;
@@ -37,6 +46,12 @@ export interface ArenaData {
   barricade?: string;
   /** Outer bowl GLB, crowd included. One of the pieces the stage lists. */
   outer?: string;
+  /**
+   * Ring GLB, one of those in data/environments/rings.json. Independent of the
+   * stage - the ring sits in the middle, away from every edge a stage
+   * constrains. Absent or unknown means the default ring.
+   */
+  ring?: string;
   /** Legacy single-GLB field, superseded by the stage fields. */
   arenaGlb?: string;
   /** Legacy free-form part list, superseded by the stage fields. */
@@ -105,23 +120,42 @@ const PIECE_FIELDS: PieceKind[] = ["floor", "barricade", "outer"];
  * The stage form is checked first, so an arena carrying both (a file migrated
  * by hand, say) renders from the fields the editor maintains.
  */
-export function arenaParts(arena: ArenaData): Required<ArenaPartSpec>[] {
+export function arenaParts(arena: ArenaData): PlacedPart[] {
   if (arena.stage) {
-    const stage = stageById(arena.stage);
+    const stageId = arena.stage;
+    const stage = stageById(stageId);
+    // A floor the file leaves out follows the barricade before the stage: the
+    // open metal barricade needs the concrete it was built on, not the raised
+    // mats that are the stage default.
+    const barricade = arena.barricade || defaultPiece(stageId, "barricade");
+    const fallback = (field: PieceKind): string =>
+      (field === "floor" && floorForBarricade(stageId, barricade)) ||
+      defaultPiece(stageId, field);
     const paths: string[] = [];
     for (const field of PIECE_FIELDS) {
-      // A piece the arena does not name falls back to the stage's default, so
-      // a file that only sets `stage` still renders as a complete arena.
-      const glb = arena[field] || defaultPiece(arena.stage, field);
+      // A piece the arena does not name falls back to a default, so a file
+      // that only sets `stage` still renders as a complete arena.
+      const glb = arena[field] || fallback(field);
       if (glb) paths.push(glb);
     }
-    // The stage loads last, matching the order the old arenaParts lists used.
-    if (stage?.glb) paths.push(stage.glb);
-    return paths.map((glb) => ({
+    const parts: PlacedPart[] = paths.map((glb) => ({
       glb,
-      position: [0, 0, 0] as [number, number, number],
-      rotation: [0, 0, 0] as [number, number, number],
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
     }));
+    // The stage loads last, matching the order the old arenaParts lists used.
+    // Pieces are authored in place; a stage GLB may not be, so it can carry
+    // its own placement and scale.
+    if (stage?.glb) {
+      const placed: PlacedPart = {
+        glb: stage.glb,
+        position: stage.position ?? [0, 0, 0],
+        rotation: stage.rotation ?? [0, 0, 0],
+      };
+      if (stage.scale !== undefined) placed.scale = stage.scale;
+      parts.push(placed);
+    }
+    return parts;
   }
 
   const normalise = (

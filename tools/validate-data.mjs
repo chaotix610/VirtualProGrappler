@@ -44,7 +44,7 @@ const PENDING_ASSETS = new Map([]);
 const REQUIRED_ASSETS = new Map([
   [
     "assets/environments/arenas/shared/ring/models/ring-standard.glb",
-    "the ring, loaded by GameScene and the arena viewer",
+    "the default ring, loaded for any arena that names none",
   ],
   [
     "assets/environments/arenas/shared/ring/models/ring-steps.glb",
@@ -64,6 +64,8 @@ function schemaTargets() {
     ["data/schemas/main-menu.schema.json", ["data/ui/main-menu.json"]],
     ["data/schemas/arenas.schema.json", arenas],
     ["data/schemas/stages.schema.json", ["data/environments/stages.json"]],
+    ["data/schemas/rings.schema.json", ["data/environments/rings.json"]],
+    ["data/schemas/control-mappings.schema.json", ["data/settings/control-mappings.json"]],
     ["data/schemas/moves.schema.json", ["data/combat/moves.json"]],
     ["data/schemas/move-slots.schema.json", ["data/combat/move-slots.json"]],
   ];

@@ -10,6 +10,7 @@ import {
   idProblem,
   isColorKey,
   pieceOptions,
+  selectBarricade,
   selectStage,
   texturesForSlot,
   unknownKeys,
@@ -23,8 +24,9 @@ const base = (over: Partial<ArenaDraft> = {}): ArenaDraft => ({
   previewImage: "",
   stage: "raw_is_war",
   floor: "assets/environments/arenas/shared/models/floor/arena_floor.glb",
-  barricade: "assets/environments/arenas/shared/models/barricade/barricade.glb",
+  barricade: "assets/environments/arenas/shared/models/barricade/padded_barricade.glb",
   outer: "assets/environments/arenas/shared/models/outer/arena_outer.glb",
+  ring: "assets/environments/arenas/shared/ring/models/ring-standard.glb",
   arenaTextures: {},
   ringTextures: {},
   ...over,
@@ -147,6 +149,100 @@ describe("stage selection", () => {
       ],
     });
     expect(draft.stage).toBe("royal_rumble");
+  });
+});
+
+describe("ring selection", () => {
+  const STANDARD = "assets/environments/arenas/shared/ring/models/ring-standard.glb";
+  const STANDARD_2 = "assets/environments/arenas/shared/ring/models/ring-standard-2.glb";
+
+  it("gives a file that names no ring the default one", () => {
+    const draft = draftFromArena({ id: "x", displayName: "X", stage: "raw_is_war" });
+    expect(draft.ring).toBe(STANDARD);
+  });
+
+  it("keeps the ring a file names, and writes it back out", () => {
+    const draft = draftFromArena({
+      id: "x",
+      displayName: "X",
+      stage: "raw_is_war",
+      ring: STANDARD_2,
+    });
+    expect(draft.ring).toBe(STANDARD_2);
+    expect(draftToJson(draft).ring).toBe(STANDARD_2);
+  });
+
+  it("leaves the ring alone when the stage changes", () => {
+    const draft = base({ ring: STANDARD_2 });
+    selectStage(draft, "royal_rumble");
+    expect(draft.ring).toBe(STANDARD_2);
+  });
+});
+
+describe("barricade floors", () => {
+  const PADDED = "assets/environments/arenas/shared/models/barricade/padded_barricade.glb";
+  const METAL = "assets/environments/arenas/shared/models/barricade/metal_barricade.glb";
+  const MATS = "assets/environments/arenas/shared/models/floor/arena_floor.glb";
+  const CONCRETE = "assets/environments/arenas/shared/models/floor/concrete_floor.glb";
+
+  it("brings the concrete floor with the metal barricade", () => {
+    const draft = base();
+    selectBarricade(draft, METAL);
+    expect(draft.barricade).toBe(METAL);
+    expect(draft.floor).toBe(CONCRETE);
+  });
+
+  it("brings the mats back with the padded barricade", () => {
+    const draft = base({ barricade: METAL, floor: CONCRETE });
+    selectBarricade(draft, PADDED);
+    expect(draft.floor).toBe(MATS);
+  });
+
+  it("leaves the floor alone for a barricade the stage pairs with nothing", () => {
+    const draft = base({ stage: "royal_rumble" });
+    const stage = stageById("royal_rumble")!;
+    draft.floor = stage.floors[0];
+    selectBarricade(draft, stage.barricades[0]);
+    expect(draft.floor).toBe(stage.floors[0]);
+  });
+
+  it("gives a file that names the metal barricade but no floor the concrete", () => {
+    const draft = draftFromArena({
+      id: "x",
+      displayName: "X",
+      stage: "raw_is_war",
+      barricade: METAL,
+    });
+    expect(draft.floor).toBe(CONCRETE);
+  });
+
+  it("keeps a floor the file names explicitly", () => {
+    const draft = draftFromArena({
+      id: "x",
+      displayName: "X",
+      stage: "raw_is_war",
+      barricade: METAL,
+      floor: MATS,
+    });
+    expect(draft.floor).toBe(MATS);
+  });
+
+  it("pairs only floors and barricades the stage itself lists", () => {
+    const stray: string[] = [];
+    for (const stage of availableStages()) {
+      for (const [barricade, floor] of Object.entries(stage.barricadeFloors ?? {})) {
+        if (!stage.barricades.includes(barricade)) stray.push(`${stage.id}: ${barricade}`);
+        if (!stage.floors.includes(floor)) stray.push(`${stage.id}: ${floor}`);
+      }
+    }
+    expect(stray).toEqual([]);
+  });
+
+  it("lets the barricade colour tint the metal barricade as well as the padded skirt", () => {
+    expect(colorTargets("barricadeColor")).toEqual([
+      "mat_ringside_barricade",
+      "mat_metal_barricade",
+    ]);
   });
 });
 
