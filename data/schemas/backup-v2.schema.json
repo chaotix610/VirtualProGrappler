@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vpg-engine.local/schemas/backup-v2.schema.json",
+  "title": "VPG portable backup manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "formatVersion",
+    "gameVersion",
+    "save",
+    "exportedAt",
+    "settingsRevision",
+    "components",
+    "entries"
+  ],
+  "properties": {
+    "format": {
+      "const": "virtual-pro-grappler"
+    },
+    "formatVersion": {
+      "const": 2
+    },
+    "gameVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "save": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "createdAt",
+        "updatedAt",
+        "revision"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "settingsRevision": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "controls",
+        "audio",
+        "preferences",
+        "arenas",
+        "drafts",
+        "images"
+      ],
+      "properties": {
+        "controls": {
+          "const": 1
+        },
+        "audio": {
+          "const": 1
+        },
+        "preferences": {
+          "const": 1
+        },
+        "arenas": {
+          "const": 1
+        },
+        "drafts": {
+          "const": 1
+        },
+        "images": {
+          "const": 1
+        }
+      }
+    },
+    "entries": {
+      "type": "array",
+      "maxItems": 191,
+      "minItems": 4,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/jsonEntry"
+          },
+          {
+            "$ref": "#/$defs/imageEntry"
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "jsonEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "component",
+        "schemaVersion",
+        "byteLength"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\.json$"
+        },
+        "component": {
+          "enum": [
+            "controls",
+            "audio",
+            "preferences",
+            "arenas",
+            "drafts",
+            "images"
+          ]
+        },
+        "schemaVersion": {
+          "const": 1
+        },
+        "byteLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        }
+      }
+    },
+    "imageEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "component",
+        "schemaVersion",
+        "byteLength",
+        "id",
+        "mime",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^assets/images/[a-f0-9]{64}\\.(png|jpg)$"
+        },
+        "component": {
+          "const": "images"
+        },
+        "schemaVersion": {
+          "const": 1
+        },
+        "byteLength": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4194304
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "mime": {
+          "enum": [
+            "image/png",
+            "image/jpeg"
+          ]
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2048
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2048
+        }
+      }
+    }
+  }
+}

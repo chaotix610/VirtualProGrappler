@@ -32,7 +32,7 @@ describe("controller bindings beyond the keyboard", () => {
   it("moves an occupied binding and updates virtual navigation", () => {
     expect(conflictForBinding("a", "ArrowUp")).toBe("dpadUp");
     expect(bindInput("a", "ArrowUp").displaced).toBe("dpadUp");
-    expect(keysForControl("dpadUp")).toEqual([]);
+    expect(keysForControl("dpadUp")).toEqual(["gamepad:button:12"]);
     expect(controlForBinding("Enter")).toBeNull();
     expect(virtualInputForBinding("ArrowUp")).toBe("a");
     expect(JSON.parse(saved.get(STORAGE_KEY)!).bindings.a).toEqual(["ArrowUp"]);
@@ -78,8 +78,21 @@ describe("controller bindings beyond the keyboard", () => {
     loadSavedBindings();
     expect(keysForControl("a")).toEqual(["mouse:0"]);
     expect(keysForControl("b")).toEqual([]);
-    expect(keysForControl("dpadUp")).toEqual(["ArrowUp"]);
+    expect(keysForControl("dpadUp")).toEqual(["ArrowUp", "gamepad:button:12"]);
     expect(controlForBinding("KeyV")).toBeNull();
+  });
+
+  it("ships a standard-gamepad binding for every control, beside its key", () => {
+    resetBindings();
+    const missing = Object.entries(exportMapping().bindings)
+      .filter(([, inputs]) => !inputs.some((i) => i.startsWith("gamepad:")))
+      .map(([control]) => control);
+    expect(missing).toEqual([]);
+    // N64 layout on a standard pad: A bottom face, B left face, C on the right stick.
+    expect(virtualInputForBinding("gamepad:button:0")).toBe("a");
+    expect(virtualInputForBinding("gamepad:button:2")).toBe("b");
+    expect(virtualInputForBinding("gamepad:axis:3:negative")).toBe("cUp");
+    expect(virtualInputForBinding("gamepad:button:12")).toBe("up");
   });
 
   it("ignores malformed saved JSON", () => {

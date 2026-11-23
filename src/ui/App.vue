@@ -1,14 +1,23 @@
 <template>
-  <MainMenu v-if="screen === 'menu'" @launch="launch" />
-  <CombatTest v-else @exit="exit" />
+  <!-- Screens wait for the local save, so bindings and audio are in force
+       from the first frame rather than changing under the player. -->
+  <div v-if="!saves.status.ready" class="session-screen" role="status">
+    Loading local save…
+  </div>
+  <template v-else>
+    <MainMenu v-if="screen === 'menu'" @launch="launch" />
+    <CombatTest v-else @exit="exit" />
+  </template>
+  <div v-if="storageNotice" class="storage-status" role="status">
+    {{ storageNotice }}
+  </div>
 </template>
 
 <script lang="ts">
-import { defineAsyncComponent, defineComponent, h } from 'vue';
+import { defineAsyncComponent, defineComponent, h, markRaw } from 'vue';
 import MainMenu from './MainMenu.vue';
 import SceneLoading from './SceneLoading.vue';
-import { loadSavedBindings } from '@/data/controls';
-import { loadSavedAudioSettings } from '@/audio/menuAudio';
+import { saves, startSaves } from '@/data/save/runtime';
 
 /**
  * The combat screen pulls in Babylon, which dwarfs everything else in the
@@ -63,15 +72,35 @@ export default defineComponent({
   data() {
     return {
       screen: screenFromLocation(),
+      // markRaw: the coordinator keeps its own reactive status, and wrapping
+      // the whole object in another proxy would only slow every read.
+      saves: markRaw(saves),
     };
   },
 
+  computed: {
+    /**
+     * The banner shown when this session cannot keep what the player
+     * changes - a second tab, blocked storage - or a write has failed.
+     */
+    storageNotice(): string {
+      const status = this.saves.status;
+      if (!status.ready) return '';
+      if (status.error) return `Local save needs attention: ${status.error}`;
+      if (status.mode === 'temporary') {
+        const why = status.reason ? ` ${status.reason}` : '';
+        return `Temporary session - settings changed here will not be kept after this tab closes.${why}`;
+      }
+      return '';
+    },
+  },
+
   created() {
-    // Applied before any screen reads a binding, so a saved remap is in force
-    // from the first keypress.
-    loadSavedBindings();
-    // Likewise for mute and volume: the first cue must already obey them.
-    loadSavedAudioSettings();
+    // Opens the local save, moving any settings still in localStorage into it
+    // the first time, and applies the saved bindings and audio before the
+    // first screen renders. Asynchronous: the template shows a loading screen
+    // until the save is open or a safe temporary session has been made.
+    void startSaves();
   },
 
   methods: {
@@ -97,6 +126,32 @@ export default defineComponent({
 </script>
 
 <style>
+.session-screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 1rem;
+  text-align: center;
+  background: #0b0e14;
+  color: #f2f5f8;
+}
+
+/* Over everything, but never in the way of a click. */
+.storage-status {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0.35rem 0.75rem;
+  background: #503421;
+  color: #fff1dd;
+  text-align: center;
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
 /* Fonts and the shared design tokens are declared in index.html, so they are
    in force before this bundle parses. */
 html,

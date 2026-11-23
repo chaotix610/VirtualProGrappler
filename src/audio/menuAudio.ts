@@ -88,13 +88,36 @@ const ATTACK = 0.008;
  */
 const SILENCE = 0.0001;
 
-interface AudioSettings {
+export interface AudioSettings {
   muted: boolean;
   /** Master level, 0 to 1. */
   volume: number;
 }
 
 const settings: AudioSettings = { muted: false, volume: 0.5 };
+
+/**
+ * Where a settings change is sent instead of localStorage, once the local save
+ * has loaded and taken over (see src/data/save/runtime.ts).
+ */
+let persist: ((settings: AudioSettings) => void) | null = null;
+
+export function exportAudioSettings(): AudioSettings {
+  return { ...settings };
+}
+
+/** Applies settings loaded from the save. Hydration only: it does not persist. */
+export function applyAudioSettings(value: AudioSettings): void {
+  settings.muted = value.muted;
+  settings.volume = value.volume;
+  applyVolume();
+}
+
+export function setAudioPersistence(
+  callback: ((settings: AudioSettings) => void) | null
+): void {
+  persist = callback;
+}
 
 let context: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -259,6 +282,7 @@ function storage(): Storage | null {
 }
 
 function save(): void {
+  if (persist) return persist(exportAudioSettings());
   const store = storage();
   if (!store) return;
   try {

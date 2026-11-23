@@ -123,7 +123,8 @@ describe("rebinding", () => {
     const { displaced } = bindKey("z", "Enter");
     expect(displaced).toBe("a");
     expect(controlForKey("Enter")).toBe("z");
-    expect(keysForControl("a")).toEqual([]);
+    // Only the key moves; A keeps its default gamepad button.
+    expect(keysForControl("a")).toEqual(["gamepad:button:0"]);
   });
 
   it("rebinding a control to its own key changes nothing", () => {
@@ -144,7 +145,7 @@ describe("rebinding", () => {
   it("exports a copy, not the live mapping", () => {
     const exported = exportMapping();
     exported.bindings.a = ["KeyQ"];
-    expect(CONTROL_MAPPING.bindings.a).toEqual(["Enter"]);
+    expect(CONTROL_MAPPING.bindings.a).toEqual(["Enter", "gamepad:button:0"]);
   });
 
   it("exports every control in the shape the mapper file uses", () => {

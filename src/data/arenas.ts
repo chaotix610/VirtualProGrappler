@@ -1,3 +1,4 @@
+import { shallowRef } from "vue";
 import { resolveAsset } from "./assets";
 import { PieceKind, defaultPiece, floorForBarricade, stageById } from "./stages";
 
@@ -81,7 +82,31 @@ for (const [path, data] of Object.entries(modules)) {
 }
 
 /**
- * Every arena, ordered by display name.
+ * Custom arenas from the selected local save, published by the save runtime.
+ *
+ * Reactive, so the viewer and editor lists update when a save loads, switches
+ * or gains an arena. Their ids never collide with the bundled ones - save
+ * validation refuses that - so the two lists simply concatenate.
+ */
+const userArenas = shallowRef<readonly ArenaData[]>([]);
+
+/** Replaces the custom arenas with those of the save now selected. */
+export function publishUserArenas(arenas: readonly ArenaData[]): void {
+  userArenas.value = structuredClone(arenas);
+}
+
+/** Whether an id belongs to an arena shipped in data/environments/arenas/. */
+export function isBundledArena(id: string): boolean {
+  return byId.has(id);
+}
+
+/** Every shipped arena's id, which custom arenas may not reuse. */
+export function bundledArenaIds(): string[] {
+  return [...byId.keys()];
+}
+
+/**
+ * Every arena, bundled and custom, ordered by display name.
  *
  * Arenas marked `hidden` are left out unless asked for, so they stay off the
  * menus while still counting when an id needs to be unique.
@@ -89,7 +114,7 @@ for (const [path, data] of Object.entries(modules)) {
 export function availableArenas(
   { includeHidden = false }: { includeHidden?: boolean } = {}
 ): ArenaSummary[] {
-  return [...byId.values()]
+  return [...byId.values(), ...userArenas.value]
     .filter((arena) => includeHidden || arena.hidden !== true)
     .map((arena) => ({
       id: arena.id,
@@ -102,7 +127,7 @@ export function availableArenas(
 }
 
 export function arenaById(id: string): ArenaData | null {
-  return byId.get(id) ?? null;
+  return userArenas.value.find((arena) => arena.id === id) ?? byId.get(id) ?? null;
 }
 
 /** The piece fields an arena fills in, in the order they are loaded. */
