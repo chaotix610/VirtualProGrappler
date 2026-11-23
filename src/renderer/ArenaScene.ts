@@ -9,7 +9,7 @@ import {
 } from "@babylonjs/core";
 
 import { ArenaData, arenaById } from "../data/arenas";
-import { LoadedArena, disposeArena, loadArena } from "./ArenaLoader";
+import { LoadedArena, disposeArena, isLightCard, loadArena } from "./ArenaLoader";
 
 /**
  * Renders one arena for the Arena Viewer: the ring, two sets of steps, and
@@ -153,8 +153,10 @@ export class ArenaScene {
     this.arenaMeshes = loaded.arena;
     this.ceilingMeshes = loaded.ceiling;
 
-    // Everything loaded is solid to the camera.
-    for (const mesh of this.allMeshes()) mesh.checkCollisions = true;
+    // Everything loaded is solid to the camera, except light cards: a beam
+    // down to the ring or the haze in an entranceway is light, and the camera
+    // should pass through it rather than stop short.
+    for (const mesh of this.allMeshes()) mesh.checkCollisions = !isLightCard(mesh);
 
     this.frameCamera();
 

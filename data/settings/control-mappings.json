@@ -1,4 +1,5 @@
 {
+  "$schema": "../schemas/control-mappings.schema.json",
   "version": "1.0.0",
   "profile": "default",
   "bindings": {

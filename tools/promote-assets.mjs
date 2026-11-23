@@ -63,8 +63,13 @@ const MANIFEST = [
   },
   {
     from: "assets/source/glb/arena/barricade.glb",
+<<<<<<< Updated upstream
     to: "assets/glb/arena/barricade/barricade.glb",
     why: "the RAW stage's ringside barricade, listed in data/stages.json",
+=======
+    to: "assets/environments/arenas/shared/models/barricade/padded_barricade.glb",
+    why: "the RAW stage's ringside barricade, listed in data/environments/stages.json",
+>>>>>>> Stashed changes
   },
   {
     from: "assets/source/characters/steve_austin.glb",

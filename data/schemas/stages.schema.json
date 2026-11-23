@@ -34,7 +34,25 @@
         "glb": { "$ref": "#/$defs/asset_path" },
         "floors": { "$ref": "#/$defs/piece_list" },
         "barricades": { "$ref": "#/$defs/piece_list" },
-        "outers": { "$ref": "#/$defs/piece_list" }
+        "outers": { "$ref": "#/$defs/piece_list" },
+        "position": {
+          "description": "Placement for a stage GLB that is not authored in arena space: scene units, applied to the GLB root after loading. Same convention as an arena's arenaParts position.",
+          "$ref": "#/$defs/vec3"
+        },
+        "rotation": {
+          "description": "Euler radians [x, y, z] for a stage GLB that is not authored in arena space. Same convention as an arena's arenaParts rotation.",
+          "$ref": "#/$defs/vec3"
+        },
+        "scale": {
+          "description": "Uniform scale for a stage GLB authored at a different size, applied to the GLB root about its own origin, before rotation and position.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "barricadeFloors": {
+          "description": "The floor each barricade is built to stand on, keyed by barricade path. Choosing a barricade in the editor re-picks its floor, and an arena that names a barricade but no floor gets this one instead of the stage default. Both paths should also appear in this stage's lists.",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/asset_path" }
+        }
       }
     },
     "piece_list": {
@@ -47,6 +65,12 @@
       "description": "Project-relative asset path.",
       "type": "string",
       "minLength": 1
+    },
+    "vec3": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3
     }
   }
 }

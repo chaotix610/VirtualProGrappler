@@ -1,5 +1,7 @@
 import {
   AbstractMesh,
+  Constants,
+  GlowLayer,
   ImportMeshAsync,
   Material,
   PBRMaterial,
@@ -12,11 +14,13 @@ import {
 // Side-effect import: registers the glTF/GLB loader with the SceneLoader.
 import "@babylonjs/loaders/glTF";
 
-import { RING } from "../game/config";
 import { resolveAsset } from "../data/assets";
 import { ArenaData, arenaParts } from "../data/arenas";
-import { colorTargets } from "../data/textureSlots";
-import { cssColorToRgb } from "./cssColor";
+import { RingData, StepsPlacement, resolveRing } from "../data/rings";
+import { colorBlend, colorTargets, texturedMaterials } from "../data/textureSlots";
+import { applyColorOverlay } from "./colorOverlay";
+import { cssColorToRgba } from "./cssColor";
+import { lightCardKind } from "./lightCards";
 
 /**
  * Builds one arena into a scene: the ring, two sets of steps, whatever
@@ -28,10 +32,25 @@ import { cssColorToRgb } from "./cssColor";
  * arena to look the same, so the building lives here rather than in either.
  */
 
+<<<<<<< Updated upstream
 /** The ring is served from publicDir; resolveAsset maps it to its URL. */
 const RING_PATH = `assets/runtime/${RING.file}`;
 
 const RING_STEPS_PATH = "assets/glb/arena/ring-steps.glb";
+=======
+const RING_STEPS_PATH = "assets/environments/arenas/shared/ring/models/ring-steps.glb";
+>>>>>>> Stashed changes
+
+/**
+ * Materials an arena file may name that the loaded models can lack.
+ *
+ * The ring, floor and barricade are all interchangeable now, and they do not
+ * share material names: RAW dresses the padded barricade's skirt, which the
+ * metal barricade does not have, and ring-standard-2 calls its pads `mat_pad`
+ * where the original ring says `mat_turnbuckle`. A name the editor knows is
+ * therefore only absent, not wrong; a name nothing knows is still reported.
+ */
+const OPTIONAL_MATERIALS = new Set(texturedMaterials());
 
 /**
  * Trusses, lights and hanging banners over the ring.
@@ -46,8 +65,26 @@ const RING_STEPS_PATH = "assets/glb/arena/ring-steps.glb";
  * An arena that wants its own banners names `mat_ceiling_banners` in
  * `arenaTextures`; `mat_ceiling_lights` and `mat_ceiling_truss` are reachable
  * the same way.
+ *
+ * This is the lit copy of `ceiling_trusses.glb`: the same trusses plus a
+ * `glow_*` card on each of the 44 lamp lenses and a `beam_*` shaft from each
+ * lamp card down to the ring. The glows sit on the lenses painted into
+ * `mat_ceiling_lights`, so an arena that swaps that texture for one with the
+ * lamps elsewhere would leave them floating.
  */
+<<<<<<< Updated upstream
 const CEILING_TRUSSES_PATH = "assets/glb/arena/ceiling_trusses.glb";
+=======
+const CEILING_TRUSSES_PATH = "assets/environments/arenas/shared/models/ceiling_trusses_lit.glb";
+
+/** The scene's one bloom layer, shared by every arena loaded into it. */
+const BLOOM_LAYER = "lightCardBloom";
+
+/** True for a light card, which is light rather than something solid. */
+export function isLightCard(mesh: AbstractMesh): boolean {
+  return lightCardKind(mesh.name) !== null;
+}
+>>>>>>> Stashed changes
 
 /**
  * The steps GLB ships with a 1x1 placeholder baked into `mat_ring_steps`, so
@@ -61,6 +98,7 @@ const CEILING_TRUSSES_PATH = "assets/glb/arena/ceiling_trusses.glb";
  */
 const DEFAULT_STEPS_TEXTURE = "assets/textures/arena/ring_steps.png";
 
+<<<<<<< Updated upstream
 const DEFAULT_RING_TEXTURES: Record<string, string> = {
   mat_turnbuckle_bolt_1: "assets/textures/ring/shared/turnbuckle-bolt-1.png",
   mat_turnbuckle_bolt_2: "assets/textures/ring/shared/turnbuckle-bolt-2.png",
@@ -96,6 +134,8 @@ const RING_STEPS_PLACEMENTS: {
   },
 ];
 
+=======
+>>>>>>> Stashed changes
 /** Every mesh one arena load produced, grouped by where it came from. */
 export interface LoadedArena {
   ring: AbstractMesh[];
@@ -126,13 +166,18 @@ export async function loadArena(
     warnings,
   };
 
-  const ringUrl = resolveAsset(RING_PATH);
-  if (!ringUrl) throw new Error(`Ring model is missing: ${RING_PATH}`);
+  // The ring comes from the arena file; one that names none, or names a ring
+  // the registry does not know, gets the default.
+  const ring = resolveRing(arena.ring);
+  const ringUrl = resolveAsset(ring.glb);
+  if (!ringUrl) throw new Error(`Ring model is missing: ${ring.glb}`);
   loaded.ring = (await ImportMeshAsync(ringUrl, scene)).meshes;
 
   const stepsUrl = resolveAsset(RING_STEPS_PATH);
   if (stepsUrl) {
-    for (const placement of RING_STEPS_PLACEMENTS) {
+    // Placements belong to the ring: the steps meet its corners, which are
+    // not in the same place on every ring.
+    for (const placement of ring.steps) {
       const meshes = (await ImportMeshAsync(stepsUrl, scene)).meshes;
       placeSteps(meshes, placement);
       loaded.steps.push(...meshes);
@@ -149,18 +194,22 @@ export async function loadArena(
       continue;
     }
     const meshes = (await ImportMeshAsync(url, scene)).meshes;
-    placePart(meshes, part.position, part.rotation);
+    // Placed before the light cards are set up: billboards are detached from
+    // their parent, so they have to inherit its final placement first.
+    placePart(meshes, part.position, part.rotation, part.scale);
+    applyLightCards(scene, meshes);
     loaded.arena.push(...meshes);
   }
 
   const ceilingUrl = resolveAsset(CEILING_TRUSSES_PATH);
   if (ceilingUrl) {
     loaded.ceiling = (await ImportMeshAsync(ceilingUrl, scene)).meshes;
+    applyLightCards(scene, loaded.ceiling);
   } else {
     warnings.push(`Ceiling trusses not bundled: ${CEILING_TRUSSES_PATH}`);
   }
 
-  warnings.push(...applyTextures(scene, arena, loaded));
+  warnings.push(...applyTextures(scene, arena, ring, loaded));
   return loaded;
 }
 
@@ -181,10 +230,7 @@ export function disposeArena(loaded: LoadedArena): void {
   for (const material of materials) material.dispose();
 }
 
-function placeSteps(
-  meshes: AbstractMesh[],
-  placement: (typeof RING_STEPS_PLACEMENTS)[number]
-): void {
+function placeSteps(meshes: AbstractMesh[], placement: StepsPlacement): void {
   const target = meshes.find((m) => m.name === "ring-steps") ?? meshes[0];
   if (!target) return;
   target.position.set(...placement.position);
@@ -194,17 +240,23 @@ function placeSteps(
 function placePart(
   meshes: AbstractMesh[],
   position: [number, number, number],
-  rotation: [number, number, number]
+  rotation: [number, number, number],
+  scale = 1
 ): void {
   const offset = new Vector3(...position);
   const euler = new Vector3(...rotation);
   const hasOffset = offset.lengthSquared() > 0;
   const hasRotation = euler.lengthSquared() > 0;
-  if (!hasOffset && !hasRotation) return;
+  const hasScale = scale !== 1;
+  if (!hasOffset && !hasRotation && !hasScale) return;
 
   for (const mesh of meshes) {
     // Only roots move; children follow their parent.
     if (mesh.parent) continue;
+
+    // Multiplied in rather than set: the glTF root already carries a -1 on
+    // one axis to change handedness, and that has to survive.
+    if (hasScale) mesh.scaling.scaleInPlace(scale);
 
     if (hasRotation) {
       const spin = Quaternion.RotationYawPitchRoll(euler.y, euler.x, euler.z);
@@ -214,6 +266,103 @@ function placePart(
     }
     if (hasOffset) mesh.position.addInPlace(offset);
   }
+}
+
+/**
+ * Turns a GLB's light cards into light: additive, unpickable, and - for the
+ * kinds that ask - facing the camera, twinkling and blooming.
+ */
+function applyLightCards(scene: Scene, meshes: AbstractMesh[]): void {
+  const cards = meshes.filter((mesh) => lightCardKind(mesh.name));
+  if (!cards.length) return;
+
+  // Billboards are detached below, keeping the world placement they have at
+  // that moment. Nothing has rendered yet, so the cached matrices may predate
+  // placePart moving the root; recomputing every root's tree top-down first
+  // means a scaled, turned stage hands its cards the placement it really has.
+  for (const root of meshes.filter((mesh) => !mesh.parent)) {
+    root.computeWorldMatrix(true);
+    for (const node of root.getDescendants(false)) node.computeWorldMatrix(true);
+  }
+
+  const twinkling: AbstractMesh[] = [];
+  for (const mesh of cards) {
+    const kind = lightCardKind(mesh.name)!;
+    mesh.isPickable = false;
+
+    // Shared by every card of one colour, so this repeats harmlessly.
+    const material = mesh.material;
+    if (material) {
+      material.alphaMode = Constants.ALPHA_ADD;
+      material.disableDepthWrite = true;
+      material.backFaceCulling = false;
+    }
+
+    if (kind.billboard) {
+      // The glTF root mirrors Z to change handedness, and Babylon's billboard
+      // maths mishandles a mirrored parent - every card lands upside down
+      // below the floor. Detaching first keeps the world position it has now.
+      // It must happen before billboarding, which would bake in that error.
+      mesh.setParent(null);
+      mesh.billboardMode = AbstractMesh.BILLBOARDMODE_ALL;
+    }
+    if (kind.twinkle) twinkling.push(mesh);
+  }
+  if (twinkling.length) twinkle(scene, twinkling);
+  ensureBloom(scene);
+}
+
+/**
+ * Adds the bloom layer the first time any arena loads into `scene`.
+ *
+ * Every mesh renders into it - the rest in black, so a truss in front of a
+ * lamp still hides its glow - but only cards whose kind blooms give off
+ * light. Unlit cards keep their colour in the albedo texture rather than an
+ * emissive one, so the layer is pointed there.
+ */
+function ensureBloom(scene: Scene): void {
+  if (scene.getGlowLayerByName(BLOOM_LAYER)) return;
+
+  const bloom = new GlowLayer(BLOOM_LAYER, scene, { blurKernelSize: 32 });
+  bloom.intensity = 0.8;
+  const blooms = (mesh: AbstractMesh) => lightCardKind(mesh.name)?.bloom === true;
+  // Typed as always returning a texture, but Babylon reads null as "none".
+  bloom.customEmissiveTextureSelector = (mesh, _subMesh, material) =>
+    (blooms(mesh) && material instanceof PBRMaterial
+      ? material.albedoTexture
+      : null) as Texture;
+  bloom.customEmissiveColorSelector = (mesh, _subMesh, _material, result) => {
+    if (blooms(mesh)) result.set(1, 1, 1, 1);
+    else result.set(0, 0, 0, 0);
+  };
+}
+
+/**
+ * Pulses each flare's size and brightness on its own rate and phase, so the
+ * truss sparkles rather than breathing in unison.
+ */
+function twinkle(scene: Scene, flares: AbstractMesh[]): void {
+  const pulses = flares.map((mesh) => ({
+    mesh,
+    base: mesh.scaling.clone(),
+    rate: 1.5 + Math.random() * 2.5,
+    phase: Math.random() * Math.PI * 2,
+  }));
+
+  let seconds = 0;
+  const observer = scene.onBeforeRenderObservable.add(() => {
+    seconds += scene.getEngine().getDeltaTime() / 1000;
+    for (const pulse of pulses) {
+      const wave = Math.sin(seconds * pulse.rate + pulse.phase);
+      pulse.mesh.scaling.copyFrom(pulse.base).scaleInPlace(0.85 + 0.15 * wave);
+      pulse.mesh.visibility = 0.9 + 0.1 * wave;
+    }
+  });
+
+  // An arena is torn down by disposing its meshes, so the pulse goes with them.
+  flares[0].onDisposeObservable.addOnce(() => {
+    scene.onBeforeRenderObservable.remove(observer);
+  });
 }
 
 /** Replaces the steps' 1x1 placeholder with the real art. */
@@ -233,11 +382,15 @@ function applyDefaultStepsTexture(scene: Scene, steps: AbstractMesh[]): void {
 function applyTextures(
   scene: Scene,
   arena: ArenaData,
+  ring: RingData,
   loaded: LoadedArena
 ): string[] {
   const warnings: string[] = [];
+  // The ring's own defaults go under the arena's choices. A ring that embeds
+  // all its art lists none, so anything the arena leaves unset keeps the
+  // texture baked into the GLB.
   const ringTextures = { ...arena.ringTextures };
-  for (const [name, path] of Object.entries(DEFAULT_RING_TEXTURES)) {
+  for (const [name, path] of Object.entries(ring.defaultTextures ?? {})) {
     ringTextures[name] ??= path;
   }
   warnings.push(
@@ -283,7 +436,9 @@ function applyTo(
     }
     const materials = byName.get(key);
     if (!materials?.size) {
-      warnings.push(`${label}: no material named "${key}"`);
+      if (!OPTIONAL_MATERIALS.has(key)) {
+        warnings.push(`${label}: no material named "${key}"`);
+      }
       continue;
     }
     for (const material of materials) swapTexture(scene, material, value);
@@ -296,8 +451,10 @@ function applyColor(
   key: string,
   cssColor: string
 ): void {
-  const rgb = cssColorToRgb(cssColor);
-  if (!rgb) return;
+  const rgba = cssColorToRgba(cssColor);
+  if (!rgba) return;
+  const rgb = { r: rgba.r, g: rgba.g, b: rgba.b };
+  const overlay = colorBlend(key) === "overlay";
 
   // The slot registry owns the key -> material mapping, so a new colour
   // control works here without the renderer being told about it.
@@ -305,7 +462,9 @@ function applyColor(
     const materials = byName.get(name);
     if (!materials) continue;
     for (const material of materials) {
-      if (material instanceof PBRMaterial) {
+      if (overlay) {
+        applyColorOverlay(material, rgba);
+      } else if (material instanceof PBRMaterial) {
         material.albedoColor.set(rgb.r, rgb.g, rgb.b);
       } else if (material instanceof StandardMaterial) {
         material.diffuseColor.set(rgb.r, rgb.g, rgb.b);

@@ -1,0 +1,19 @@
+{
+  "id": "mondaynitro",
+  "displayName": "Monday Nitro",
+  "previewImage": "assets/environments/arenas/shared/textures/previews/preview-mondaynitro.png",
+  "stage": "monday_nitro",
+  "floor": "assets/environments/arenas/shared/models/floor/concrete_floor.glb",
+  "barricade": "assets/environments/arenas/shared/models/barricade/metal_barricade.glb",
+  "outer": "assets/environments/arenas/shared/models/outer/arena_outer.glb",
+  "ring": "assets/environments/arenas/shared/ring/models/ring-standard-2.glb",
+  "ringTextures": {
+    "ropeTopColor": "rgba(0, 0, 0, 0.4)",
+    "ropeMiddleColor": "rgba(0, 0, 0, 0.4)",
+    "ropeBottomColor": "rgba(0, 0, 0, 0.4)",
+    "postColor": "rgba(0, 0, 0, 0)",
+    "turnbucklePadColor": "rgba(255, 0, 0, 0.39)",
+    "turnbuckleBoltCoverColor": "rgba(0, 0, 0, 0)",
+    "mat_turnbuckle": "assets/environments/arenas/shared/ring/textures/turnbuckle/turnbuckle_2.png"
+  }
+}

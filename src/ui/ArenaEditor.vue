@@ -135,6 +135,7 @@
                 v-model="draft[piece.kind]"
                 class="field__input"
                 :disabled="piece.options.length < 2"
+                @change="onPieceChange(piece.kind, $event)"
               >
                 <option v-for="g in piece.options" :key="g" :value="g">
                   {{ shortPath(g) }}
@@ -145,7 +146,26 @@
             <p class="field__note">
               The floor, barricade and outer bowl are modelled to meet this
               stage, so only the pieces that fit it are offered. Changing the
-              stage re-picks all three.
+              stage re-picks all three, and changing the barricade re-picks
+              the floor it is built to stand on.
+            </p>
+
+            <!-- The ring is not a stage piece: any stage can use any ring. -->
+            <label class="field">
+              <span class="field__label">Ring</span>
+              <select
+                v-model="draft.ring"
+                class="field__input"
+                :disabled="rings.length < 2"
+              >
+                <option v-for="r in rings" :key="r.glb" :value="r.glb">
+                  {{ r.displayName }}
+                </option>
+              </select>
+            </label>
+            <p class="field__note">
+              Ring parts with no texture set below keep the art baked into the
+              ring's own model.
             </p>
           </section>
 
@@ -280,22 +300,27 @@ import {
   existingIds,
   idProblem,
   pieceOptions,
+  selectBarricade,
   selectStage,
   slotTextureOptions,
   unknownKeys,
 } from "@/data/arenaDraft";
 import { slotSections } from "@/data/textureSlots";
 import { PieceKind, availableStages } from "@/data/stages";
+import { availableRings } from "@/data/rings";
 import { saveArena, saveAvailable } from "@/data/arenaStore";
 import { resolveAsset } from "@/data/assets";
 import { ArenaScene } from "@/renderer/ArenaScene";
 import {
   VirtualInput,
+  isInteractivePointerTarget,
   isMenuDown,
   isMenuUp,
+  pollGamepadBindings,
   virtualInputFor,
+  virtualInputForBinding,
 } from "@/game/VirtualController";
-import { PadControl, keysForControl } from "@/data/controls";
+import { PadControl, describeBinding, keysForControl } from "@/data/controls";
 import { playMenuCue } from "@/audio/menuAudio";
 
 /** Inputs the camera responds to while the preview is up. */
@@ -341,9 +366,11 @@ const PIECE_LABELS: Record<PieceKind, string> = {
 /**
  * A tint the arena files write as `rgba(r, g, b, a)`.
  *
- * The panel edits it as a colour swatch plus a strength slider, because that is
- * what the value means in practice - the overlay is multiplied over the
- * texture, so alpha reads as "how much of this colour" rather than opacity.
+ * The panel edits it as a colour swatch plus a strength slider. For an overlay
+ * colour (the turnbuckle pads) the strength is how far the part is blended
+ * toward the colour, so 100% red is red whatever texture is underneath. The
+ * other colours multiply over their texture and the renderer ignores their
+ * strength.
  */
 interface Tint {
   hex: string;
@@ -406,6 +433,7 @@ export default defineComponent({
       editingId: null as string | null,
       previews: availablePreviews(),
       stages: availableStages(),
+      rings: availableRings(),
       slotSections: slotSections(),
       textureOptions: slotTextureOptions() as Record<string, string[]>,
       canSave: false,
@@ -419,6 +447,7 @@ export default defineComponent({
       scene: null as ArenaScene | null,
       loadToken: 0,
       previewTimer: 0,
+      stopGamepadPolling: null as (() => void) | null,
       /** Cursor on the arena list. */
       startCursor: 0,
       /** Which of the panel's controls the d-pad is on. */
@@ -512,12 +541,16 @@ export default defineComponent({
 
   async mounted() {
     window.addEventListener("keydown", this.onKeyDown);
+    window.addEventListener("pointerdown", this.onPointerDown);
+    this.stopGamepadPolling = pollGamepadBindings(this.onGamepadBinding);
     this.restoreDraft();
     this.canSave = await saveAvailable();
   },
 
   beforeUnmount() {
     window.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("pointerdown", this.onPointerDown);
+    this.stopGamepadPolling?.();
     window.clearTimeout(this.previewTimer);
     this.scene?.dispose();
     this.scene = null;
@@ -526,47 +559,67 @@ export default defineComponent({
   methods: {
     onKeyDown(event: KeyboardEvent) {
       const input = virtualInputFor(event);
+      if (!input) return;
+      this.onMappedInput(input, event);
+    },
 
+    /** A mapped mouse button on empty space; clicks on controls act as clicks. */
+    onPointerDown(event: PointerEvent) {
+      if (isInteractivePointerTarget(event)) return;
+      const input = virtualInputFor(event);
+      if (!input) return;
+      this.onMappedInput(input, event);
+    },
+
+    onGamepadBinding(binding: string) {
+      const input = virtualInputForBinding(binding);
+      if (input) this.onMappedInput(input);
+    },
+
+    /**
+     * What a pad input does here, whatever device it came from. `event` is the
+     * key or click behind it, when there was one, so the browser's own
+     * handling of it can be stopped; a gamepad press has none.
+     */
+    onMappedInput(input: VirtualInput, event?: Event) {
       // While a field is being typed into, the keyboard belongs to it -
       // otherwise navigation would eat the characters. Only Back leaves.
       if (this.fieldEditing) {
         if (input === "b") {
-          event.preventDefault();
+          event?.preventDefault();
           this.stopFieldEditing();
           playMenuCue("toggle");
         }
         return;
       }
 
-      if (!input) return;
-
       if (!this.draft) return this.onStartKey(event, input);
       return this.onEditKey(event, input);
     },
 
     /** The arena list. Moves and selects like any other menu. */
-    onStartKey(event: KeyboardEvent, input: VirtualInput) {
+    onStartKey(event: Event | undefined, input: VirtualInput) {
       if (isMenuUp(input)) {
-        event.preventDefault();
+        event?.preventDefault();
         return this.moveStartCursor(-1);
       }
       if (isMenuDown(input)) {
-        event.preventDefault();
+        event?.preventDefault();
         return this.moveStartCursor(1);
       }
 
       if (input === "a") {
-        event.preventDefault();
+        event?.preventDefault();
         return this.chooseStart(this.startCursor);
       }
 
       const arena = this.arenas[this.startCursor];
       if (input === "z" && arena) {
-        event.preventDefault();
+        event?.preventDefault();
         return this.startClone(arena.id);
       }
       if (input === "b") {
-        event.preventDefault();
+        event?.preventDefault();
         playMenuCue("back");
         return this.$emit("back");
       }
@@ -578,52 +631,48 @@ export default defineComponent({
      * The d-pad drives the panel and the control stick drives the camera, so
      * both are live at once and there is no mode to toggle between them.
      */
-    onEditKey(event: KeyboardEvent, input: VirtualInput) {
+    onEditKey(event: Event | undefined, input: VirtualInput) {
       if (input === "b") {
-        event.preventDefault();
+        event?.preventDefault();
         return this.closeDraft();
       }
 
       if (CAMERA_INPUTS.includes(input)) {
-        event.preventDefault();
+        event?.preventDefault();
         this.scene?.moveCamera(input);
         return;
       }
 
       if (input === "up") {
-        event.preventDefault();
+        event?.preventDefault();
         return this.moveFocus(-1);
       }
       if (input === "down") {
-        event.preventDefault();
+        event?.preventDefault();
         return this.moveFocus(1);
       }
       if (input === "left") {
-        event.preventDefault();
+        event?.preventDefault();
         return this.adjustFocused(-1);
       }
       if (input === "right") {
-        event.preventDefault();
+        event?.preventDefault();
         return this.adjustFocused(1);
       }
       if (input === "a") {
-        event.preventDefault();
+        event?.preventDefault();
         return this.activateFocused();
       }
       if (input === "z") {
-        event.preventDefault();
+        event?.preventDefault();
         return void this.save();
       }
     },
 
-    /** The key currently bound to a pad control, for the on-screen hints. */
+    /** The input currently bound to a pad control, for the on-screen hints. */
     keyFor(control: PadControl): string {
-      const [code] = keysForControl(control);
-      if (!code) return "unbound";
-      if (code.startsWith("Key")) return code.slice(3);
-      if (code.startsWith("Digit")) return code.slice(5);
-      if (code.startsWith("Arrow")) return code.slice(5);
-      return code;
+      const [binding] = keysForControl(control);
+      return binding ? describeBinding(binding) : "unbound";
     },
 
     /**
@@ -824,8 +873,10 @@ export default defineComponent({
       if (!source) return playMenuCue("deny");
       playMenuCue("select");
       // Suggested rather than final - the id field is editable while creating,
-      // and the save is blocked until it is both valid and free.
-      const suggested = `${id}_copy`;
+      // and the save is blocked until it is both valid and free. Numbered when
+      // `_copy` is already taken, so a second clone starts out saveable too.
+      let suggested = `${id}_copy`;
+      for (let n = 2; existingIds().includes(suggested); n++) suggested = `${id}_copy_${n}`;
       this.editingId = null;
       this.draft = cloneArena(source, suggested, `${source.displayName} copy`);
       this.beginEditing();
@@ -854,6 +905,14 @@ export default defineComponent({
       // Pieces are per-stage, so this re-picks the floor, barricade and outer
       // rather than leaving three fields pointing at parts that no longer fit.
       selectStage(draft, stage);
+    },
+
+    onPieceChange(kind: PieceKind, event: Event) {
+      const draft = this.draft;
+      if (!draft || kind !== "barricade") return;
+      // Read from the event rather than the draft: v-model listens to the
+      // same change, and the order the two handlers run in is not promised.
+      selectBarricade(draft, (event.target as HTMLSelectElement).value);
     },
 
     /** The texture a slot currently shows, read from its first material. */

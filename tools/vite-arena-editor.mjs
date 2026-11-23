@@ -22,7 +22,7 @@ import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const ARENA_DIR = path.join(root, "data", "arenas");
+const ARENA_DIR = path.join(root, "data", "environments", "arenas");
 const SCHEMA_PATH = path.join(root, "data", "schemas", "arenas.schema.json");
 
 /** Mirrors the schema's arena_id pattern. */
@@ -56,19 +56,39 @@ function send(res, status, payload) {
   res.end(JSON.stringify(payload));
 }
 
-export function arenaEditorPlugin() {
+/**
+ * The arena schema's validator, recompiled whenever the schema file changes.
+ *
+ * It used to be compiled once per dev-server start, which meant a schema edit
+ * made while the server was running - adding the `ring` field, say - left every
+ * save rejected for "additional properties" until a restart nobody knew was
+ * needed. Checking the file's mtime costs one stat per save.
+ */
+function schemaValidator() {
   let validate = null;
+  let compiledFrom = -1;
+  return () => {
+    const mtime = fs.statSync(SCHEMA_PATH).mtimeMs;
+    if (!validate || mtime !== compiledFrom) {
+      const schema = JSON.parse(fs.readFileSync(SCHEMA_PATH, "utf8"));
+      validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema);
+      compiledFrom = mtime;
+    }
+    return validate;
+  };
+}
+
+export function arenaEditorPlugin() {
+  const currentValidator = schemaValidator();
 
   return {
     name: "vpg-arena-editor",
     apply: "serve",
 
     configureServer(server) {
-      // Compiled once per dev-server start. Re-read per request would pick up
-      // schema edits, but the schema changes far less often than the data and
-      // a stale compile would be confusing rather than helpful.
-      const schema = JSON.parse(fs.readFileSync(SCHEMA_PATH, "utf8"));
-      validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema);
+      // Compiled up front as well, so a schema that will not compile fails at
+      // startup rather than on the first save.
+      currentValidator();
 
       server.middlewares.use(async (req, res, next) => {
         if (!req.url?.startsWith(ENDPOINT)) return next();
@@ -97,6 +117,7 @@ export function arenaEditorPlugin() {
               });
             }
 
+            const validate = currentValidator();
             if (!validate(arena)) {
               return send(res, 422, {
                 error: "Arena does not match the schema.",
