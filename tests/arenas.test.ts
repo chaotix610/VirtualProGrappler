@@ -1,0 +1,368 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { arenaById, arenaParts, availableArenas } from "@/data/arenas";
+import { cssColorToRgb } from "@/renderer/cssColor";
+import { resolveAsset } from "@/data/assets";
+import { availableStages, pieceFitsStage, stageById } from "@/data/stages";
+
+const GLB_HEADER_BYTES = 12;
+const GLB_CHUNK_HEADER_BYTES = 8;
+const GLB_JSON_CHUNK = "JSON";
+
+function materialNamesInGlb(path: string): string[] {
+  const data = readFileSync(path);
+  let offset = GLB_HEADER_BYTES;
+
+  while (offset < data.length) {
+    const chunkLength = data.readUInt32LE(offset);
+    const chunkType = data.toString(
+      "ascii",
+      offset + 4,
+      offset + GLB_CHUNK_HEADER_BYTES
+    );
+    offset += GLB_CHUNK_HEADER_BYTES;
+
+    if (chunkType === GLB_JSON_CHUNK) {
+      const json = JSON.parse(data.subarray(offset, offset + chunkLength).toString("utf8"));
+      return (json.materials ?? [])
+        .map((material: { name?: string }) => material.name)
+        .filter((name: string | undefined): name is string => Boolean(name));
+    }
+
+    offset += chunkLength;
+  }
+
+  return [];
+}
+
+describe("arena catalog", () => {
+  const arenas = availableArenas();
+
+  it("loads every arena file", () => {
+    // Counted from the directory rather than hardcoded: arenas are created
+    // through the editor now, and a fixed number would fail on every new one
+    // while saying nothing about whether the loader saw them all.
+    const files = readdirSync("data/environments/arenas").filter((f) => f.endsWith(".json"));
+    expect(availableArenas({ includeHidden: true })).toHaveLength(files.length);
+  });
+
+  it("leaves hidden arenas off the menu list", () => {
+    for (const summary of arenas) {
+      expect(arenaById(summary.id)?.hidden).not.toBe(true);
+    }
+  });
+
+  it("sorts by display name", () => {
+    const names = arenas.map((a) => a.displayName);
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
+  });
+
+  it("gives every arena a preview the viewer can show", () => {
+    const withoutPreview = arenas.filter((a) => a.previewUrl === null);
+    expect(withoutPreview.map((a) => a.id)).toEqual([]);
+  });
+
+  it("keys arenas by filename, so a stray id field cannot hide one", () => {
+    for (const summary of arenas) {
+      expect(arenaById(summary.id), summary.id).not.toBeNull();
+    }
+  });
+
+  it("returns null for an unknown arena rather than throwing", () => {
+    expect(arenaById("no-such-arena")).toBeNull();
+  });
+});
+
+describe("arena parts", () => {
+  it("normalises bare string parts", () => {
+    const parts = arenaParts({
+      id: "x",
+      displayName: "X",
+      arenaParts: ["assets/environments/arenas/shared/models/floor/arena_floor.glb"],
+    });
+    expect(parts).toEqual([
+      {
+        glb: "assets/environments/arenas/shared/models/floor/arena_floor.glb",
+        position: [0, 0, 0],
+        rotation: [0, 0, 0],
+      },
+    ]);
+  });
+
+  it("keeps a placement when one is given", () => {
+    const parts = arenaParts({
+      id: "x",
+      displayName: "X",
+      arenaParts: [
+        { glb: "assets/environments/arenas/shared/models/barricade/padded_barricade.glb", position: [1, 2, 3], rotation: [0, 1, 0] },
+      ],
+    });
+    expect(parts[0].position).toEqual([1, 2, 3]);
+    expect(parts[0].rotation).toEqual([0, 1, 0]);
+  });
+
+  it("accepts the legacy single-GLB field", () => {
+    const parts = arenaParts({
+      id: "x",
+      displayName: "X",
+      arenaGlb: "assets/environments/arenas/shared/models/floor/arena_floor.glb",
+    });
+    expect(parts).toHaveLength(1);
+    expect(parts[0].glb).toBe("assets/environments/arenas/shared/models/floor/arena_floor.glb");
+  });
+
+  it("drops malformed entries instead of loading undefined", () => {
+    const parts = arenaParts({
+      id: "x",
+      displayName: "X",
+      // Shapes the schema would reject, guarded anyway since this runs first.
+      arenaParts: ["", { glb: "" }, null as never],
+    });
+    expect(parts).toEqual([]);
+  });
+
+  it("reports no parts when the arena lists none", () => {
+    expect(arenaParts({ id: "x", displayName: "X" })).toEqual([]);
+  });
+});
+
+describe("arena parts from a stage", () => {
+  it("expands a stage into its three pieces plus the stage itself", () => {
+    const stage = stageById("royal_rumble")!;
+    const parts = arenaParts({
+      id: "x",
+      displayName: "X",
+      stage: "royal_rumble",
+    }).map((p) => p.glb);
+
+    expect(parts).toEqual([
+      stage.floors[0],
+      stage.barricades[0],
+      stage.outers[0],
+      stage.glb,
+    ]);
+  });
+
+  it("prefers the pieces the arena names over the stage's defaults", () => {
+    const parts = arenaParts({
+      id: "x",
+      displayName: "X",
+      stage: "raw_is_war",
+      floor: "assets/environments/arenas/shared/models/floor/arena_floor.glb",
+    }).map((p) => p.glb);
+    expect(parts[0]).toBe("assets/environments/arenas/shared/models/floor/arena_floor.glb");
+  });
+
+  it("loads the floor a barricade is built on when the arena names no floor", () => {
+    const parts = arenaParts({
+      id: "x",
+      displayName: "X",
+      stage: "raw_is_war",
+      barricade: "assets/environments/arenas/shared/models/barricade/metal_barricade.glb",
+    }).map((p) => p.glb);
+    expect(parts[0]).toBe("assets/environments/arenas/shared/models/floor/concrete_floor.glb");
+    expect(parts[1]).toBe("assets/environments/arenas/shared/models/barricade/metal_barricade.glb");
+  });
+
+  it("places a stage GLB that carries its own placement, and only the stage", () => {
+    const parts = arenaParts({ id: "x", displayName: "X", stage: "monday_nitro" });
+    const stage = stageById("monday_nitro")!;
+    const placed = parts.find((p) => p.glb === stage.glb)!;
+    expect(placed.position).toEqual(stage.position);
+    expect(placed.rotation).toEqual(stage.rotation);
+    expect(placed.scale).toBe(0.5);
+    for (const piece of parts.filter((p) => p.glb !== stage.glb)) {
+      expect(piece.position).toEqual([0, 0, 0]);
+      expect(piece.rotation).toEqual([0, 0, 0]);
+      expect(piece.scale).toBeUndefined();
+    }
+  });
+
+  it("builds Monday Nitro from concrete, metal barricades and its own stage", () => {
+    const nitro = arenaById("mondaynitro")!;
+    expect(nitro.ring).toBe("assets/environments/arenas/shared/ring/models/ring-standard-2.glb");
+    expect(arenaParts(nitro).map((p) => p.glb)).toEqual([
+      "assets/environments/arenas/shared/models/floor/concrete_floor.glb",
+      "assets/environments/arenas/shared/models/barricade/metal_barricade.glb",
+      "assets/environments/arenas/shared/models/outer/arena_outer.glb",
+      "assets/environments/arenas/shared/models/stage/monday_nitro.glb",
+    ]);
+  });
+
+  it("prefers the stage fields over a legacy part list on the same file", () => {
+    const parts = arenaParts({
+      id: "x",
+      displayName: "X",
+      stage: "royal_rumble",
+      arenaParts: ["assets/environments/arenas/shared/models/ceiling_trusses.glb"],
+    }).map((p) => p.glb);
+    expect(parts).not.toContain("assets/environments/arenas/shared/models/ceiling_trusses.glb");
+  });
+
+  it("yields nothing for a stage the manifest does not know", () => {
+    expect(
+      arenaParts({ id: "x", displayName: "X", stage: "no_such_stage" })
+    ).toEqual([]);
+  });
+});
+
+describe("the stage manifest", () => {
+  it("bundles every GLB it offers", () => {
+    const unresolved: string[] = [];
+    for (const stage of availableStages()) {
+      for (const glb of [
+        stage.glb,
+        ...stage.floors,
+        ...stage.barricades,
+        ...stage.outers,
+      ]) {
+        if (!resolveAsset(glb)) unresolved.push(`${stage.id}: ${glb}`);
+      }
+    }
+    expect(unresolved).toEqual([]);
+  });
+
+  it("gives every arena a stage the manifest knows", () => {
+    const unknown = availableArenas()
+      .map((s) => arenaById(s.id)!)
+      .filter((arena) => arena.stage && !stageById(arena.stage))
+      .map((arena) => `${arena.id}: ${arena.stage}`);
+    expect(unknown).toEqual([]);
+  });
+
+  it("pairs every arena with pieces its stage actually lists", () => {
+    const mismatched: string[] = [];
+    for (const summary of availableArenas()) {
+      const arena = arenaById(summary.id)!;
+      if (!arena.stage) continue;
+      for (const kind of ["floor", "barricade", "outer"] as const) {
+        const glb = arena[kind];
+        if (glb && !pieceFitsStage(arena.stage, kind, glb)) {
+          mismatched.push(`${summary.id}.${kind}: ${glb}`);
+        }
+      }
+    }
+    expect(mismatched).toEqual([]);
+  });
+});
+
+describe("every arena's referenced assets resolve", () => {
+  it("resolves each part GLB and configured texture", () => {
+    const unresolved: string[] = [];
+
+    for (const summary of availableArenas()) {
+      const arena = arenaById(summary.id)!;
+
+      for (const part of arenaParts(arena)) {
+        if (!resolveAsset(part.glb)) unresolved.push(`${summary.id}: ${part.glb}`);
+      }
+
+      for (const textures of [arena.ringTextures, arena.arenaTextures]) {
+        for (const [key, value] of Object.entries(textures ?? {})) {
+          // `*Color` keys hold CSS colours, not asset paths.
+          if (key.endsWith("Color")) continue;
+          if (!resolveAsset(value)) unresolved.push(`${summary.id}.${key}: ${value}`);
+        }
+      }
+    }
+
+    expect(unresolved).toEqual([]);
+  });
+
+  it("parses every colour setting the arenas use", () => {
+    const unparseable: string[] = [];
+
+    for (const summary of availableArenas()) {
+      const arena = arenaById(summary.id)!;
+      for (const textures of [arena.ringTextures, arena.arenaTextures]) {
+        for (const [key, value] of Object.entries(textures ?? {})) {
+          if (!key.endsWith("Color")) continue;
+          if (!cssColorToRgb(value)) unparseable.push(`${summary.id}.${key}: ${value}`);
+        }
+      }
+    }
+
+    expect(unparseable).toEqual([]);
+  });
+
+  it("targets materials that exist in each arena's GLB parts", () => {
+    const unknown: string[] = [];
+    const materialCache = new Map<string, string[]>();
+
+    // The ceiling trusses are added by ArenaScene rather than listed in the
+    // arena files, so their materials are in scope for every arena's
+    // `arenaTextures` - that is how an arena dresses its own banners.
+    const rendererAdded = materialNamesInGlb(
+      "assets/environments/arenas/shared/models/ceiling_trusses_lit.glb"
+    );
+
+    for (const summary of availableArenas()) {
+      const arena = arenaById(summary.id)!;
+      const materialNames = new Set<string>(rendererAdded);
+
+      for (const part of arenaParts(arena)) {
+        const cached =
+          materialCache.get(part.glb) ??
+          materialNamesInGlb(part.glb);
+        materialCache.set(part.glb, cached);
+        for (const name of cached) materialNames.add(name);
+      }
+
+      for (const key of Object.keys(arena.arenaTextures ?? {})) {
+        if (key.endsWith("Color")) continue;
+        if (!materialNames.has(key)) unknown.push(`${summary.id}: ${key}`);
+      }
+    }
+
+    expect(unknown).toEqual([]);
+  });
+});
+
+describe("ceiling trusses", () => {
+  // Kept in step with CEILING_TRUSSES_PATH in src/renderer/ArenaLoader.ts.
+  const CEILING_GLB = "assets/environments/arenas/shared/models/ceiling_trusses_lit.glb";
+
+  it("is bundled, since every arena gets one", () => {
+    expect(resolveAsset(CEILING_GLB)).not.toBeNull();
+  });
+
+  it("names the materials an arena file can dress", () => {
+    expect(materialNamesInGlb(CEILING_GLB)).toEqual(
+      expect.arrayContaining([
+        "mat_ceiling_banners",
+        "mat_ceiling_lights",
+        "mat_ceiling_truss",
+      ])
+    );
+  });
+});
+
+describe("css colours", () => {
+  it("parses six-digit hex", () => {
+    expect(cssColorToRgb("#FF0000")).toEqual({ r: 1, g: 0, b: 0 });
+    expect(cssColorToRgb("#000000")).toEqual({ r: 0, g: 0, b: 0 });
+  });
+
+  it("expands shorthand hex", () => {
+    expect(cssColorToRgb("#f00")).toEqual(cssColorToRgb("#ff0000"));
+  });
+
+  it("parses rgb and rgba, discarding alpha", () => {
+    expect(cssColorToRgb("rgb(255, 0, 0)")).toEqual({ r: 1, g: 0, b: 0 });
+    expect(cssColorToRgb("rgba(0, 0, 255, 0.4)")).toEqual({ r: 0, g: 0, b: 1 });
+  });
+
+  it("tolerates surrounding whitespace", () => {
+    expect(cssColorToRgb("  #ff0000  ")).toEqual({ r: 1, g: 0, b: 0 });
+  });
+
+  it("refuses out-of-range channels rather than clamping a typo", () => {
+    expect(cssColorToRgb("rgb(300, 0, 0)")).toBeNull();
+  });
+
+  it("returns null for anything it cannot read", () => {
+    expect(cssColorToRgb("red")).toBeNull();
+    expect(cssColorToRgb("#12345")).toBeNull();
+    expect(cssColorToRgb("")).toBeNull();
+  });
+});

@@ -31,7 +31,16 @@ export interface ColorControl {
   label?: string;
   /** Materials this colour paints. */
   materials: string[];
+  /**
+   * How the colour meets the texture. `multiply` (the default) tints it, which
+   * keeps art such as a canvas logo readable but cannot lift a dark texture.
+   * `overlay` blends toward the colour by its alpha - the editor's Strength -
+   * so a solid part can be made any colour whatever is baked into it.
+   */
+  blend?: ColorBlend;
 }
+
+export type ColorBlend = "multiply" | "overlay";
 
 export interface TextureSlot {
   id: string;
@@ -67,7 +76,7 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_canvas"],
-    folders: ["assets/textures/ring/canvas"],
+    folders: ["assets/environments/arenas/shared/ring/textures/canvas"],
     colors: [{ key: "canvasColor", materials: ["mat_canvas"] }],
   },
   {
@@ -76,7 +85,7 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_apron"],
-    folders: ["assets/textures/ring/apron"],
+    folders: ["assets/environments/arenas/shared/ring/textures/apron"],
     colors: [{ key: "apronColor", materials: ["mat_apron"] }],
   },
   {
@@ -85,7 +94,7 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_post"],
-    folders: ["assets/textures/ring/post"],
+    folders: ["assets/environments/arenas/shared/ring/textures/post"],
     colors: [{ key: "postColor", materials: ["mat_post"] }],
   },
   {
@@ -97,7 +106,7 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_rope_top", "mat_rope_middle", "mat_rope_bottom"],
-    folders: ["assets/textures/ring/rope"],
+    folders: ["assets/environments/arenas/shared/ring/textures/rope"],
     colors: [
       { key: "ropeTopColor", label: "Top", materials: ["mat_rope_top"] },
       { key: "ropeMiddleColor", label: "Middle", materials: ["mat_rope_middle"] },
@@ -110,13 +119,24 @@ const RING_SLOTS: TextureSlot[] = [
     map: "ringTextures",
     section: "Ring",
     materials: ["mat_turnbuckle"],
-    folders: ["assets/textures/ring/turnbuckle"],
-    colors: [{ key: "turnbucklePadColor", materials: ["mat_turnbuckle"] }],
+    folders: ["assets/environments/arenas/shared/ring/textures/turnbuckle"],
+    // ring-standard-2 names its pads `mat_pad`. The colour reaches both, so a
+    // pad tint carries across rings; the texture picker stays on the original
+    // ring, whose UV layout the art in this folder was drawn for. An overlay
+    // rather than a multiply, because ring-standard-2 bakes its pads near-black
+    // and a multiplied red barely showed on them.
+    colors: [
+      {
+        key: "turnbucklePadColor",
+        materials: ["mat_turnbuckle", "mat_pad"],
+        blend: "overlay",
+      },
+    ],
   },
   {
-    // Colour only. The bolts and their covers keep the art pinned by
-    // DEFAULT_RING_TEXTURES in ArenaScene - it is hardware, the same on every
-    // ring - and only the cover's tint is worth varying.
+    // Colour only. The bolts and their covers keep the art pinned by the
+    // ring's `defaultTextures` in data/environments/rings.json - it is
+    // hardware - and only the cover's tint is worth varying.
     id: "turnbuckle_bolt_cover",
     label: "Turnbuckle bolt cover",
     map: "ringTextures",
@@ -150,24 +170,32 @@ const ARENA_SLOTS: TextureSlot[] = [
     map: "arenaTextures",
     section: "Ringside",
     materials: ["mat_floor_ringside"],
-    folders: ["assets/textures/arena/floor_ringside"],
+    folders: ["assets/environments/arenas/shared/textures/floor_ringside"],
     colors: [
       { key: "floorRingsideColor", materials: ["mat_floor_ringside"] },
     ],
   },
   {
-    // Offers the mat art as well as its own: the barricade skirt is dressed
-    // with the same floor matting in every arena currently shipped.
+    // One row for both barricades. The texture lands on the padded wall's
+    // skirt, which is dressed with the same floor matting in every arena
+    // shipped, so the picker offers the mat art as well as its own. The metal
+    // barricade has no skirt: it keeps the galvanised texture baked into its
+    // GLB unless a colour is set, and the colour tints that texture.
     id: "barricade",
     label: "Barricade",
     map: "arenaTextures",
     section: "Ringside",
     materials: ["mat_ringside_barricade"],
     folders: [
-      "assets/textures/arena/barricade",
-      "assets/textures/arena/floor_ringside",
+      "assets/environments/arenas/shared/textures/barricade",
+      "assets/environments/arenas/shared/textures/floor_ringside",
     ],
-    colors: [{ key: "barricadeColor", materials: ["mat_ringside_barricade"] }],
+    colors: [
+      {
+        key: "barricadeColor",
+        materials: ["mat_ringside_barricade", "mat_metal_barricade"],
+      },
+    ],
   },
   {
     // No colour overlay: a banner is artwork, and tinting it would only muddy
@@ -177,7 +205,7 @@ const ARENA_SLOTS: TextureSlot[] = [
     map: "arenaTextures",
     section: "Ceiling",
     materials: ["mat_ceiling_banners"],
-    folders: ["assets/textures/arena/ceiling_banners"],
+    folders: ["assets/environments/arenas/shared/textures/ceiling_banners"],
     colors: [],
   },
 ];
@@ -232,6 +260,16 @@ export function colorTargets(key: string): string[] {
     }
   }
   return LEGACY_COLOR_TARGETS[key] ?? [];
+}
+
+/** How a `*Color` key meets its materials' textures. Unknown keys multiply. */
+export function colorBlend(key: string): ColorBlend {
+  for (const slot of TEXTURE_SLOTS) {
+    for (const color of slot.colors) {
+      if (color.key === key) return color.blend ?? "multiply";
+    }
+  }
+  return "multiply";
 }
 
 /** Every `*Color` key the editor or renderer recognises. */

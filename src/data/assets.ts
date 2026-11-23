@@ -1,32 +1,34 @@
 /**
- * Resolves the `assets/...` paths written in the JSON content files to real
- * URLs the browser can fetch.
+ * Resolves the `assets/...` paths written in the JSON content files and in
+ * config to real URLs the browser can fetch.
  *
- * The content files (arenas, main menu) name their images by repository path,
- * which is what `assetPath` in the schemas requires and what makes the data
- * readable on its own. Those paths are not URLs: Vite serves `assets/runtime`
- * at the site root and nothing else, so `assets/textures/ui/button_a.png`
- * would 404 if handed straight to an `<img>`.
+ * The content files (arenas, main menu) name their images and models by
+ * repository path, which is what `assetPath` in the schemas requires and what
+ * makes the data readable on its own. Those paths are not URLs, and Vite has
+ * no public directory, so `assets/ui/textures/menu_bg.png` would 404 if handed
+ * straight to an `<img>`.
  *
- * Rather than duplicate ~21MB of art into the public directory and rewrite
- * every path, the referenced trees are globbed at build time and the authored
- * path is used as the lookup key. `assets/source` is deliberately not globbed:
- * it holds the ~235MB of Blender and Mixamo originals that feed the asset
- * pipeline and must never reach the bundle.
+ * Instead the runtime domains are globbed at build time and the authored path
+ * is used as the lookup key; Vite emits each matched file with a hashed URL.
+ * Anything outside the glob does not ship: `assets/source` (the Blender and
+ * Mixamo originals), any domain-level `source/` folder, and the animation
+ * clips in `assets/animations`, which reach the game baked into the character
+ * GLBs by `npm run assets:promote`.
  */
 
 const modules = import.meta.glob(
   [
-    "../../assets/artwork/**/*.{png,jpg,jpeg,webp,gif}",
-    "../../assets/textures/**/*.{png,jpg,jpeg,webp,gif}",
-    "../../assets/textures/**/*.{ttf,woff,woff2}",
-    "../../assets/glb/**/*.glb",
+    "../../assets/{characters,environments,ui}/**/*.{png,jpg,jpeg,webp,gif}",
+    "../../assets/{characters,environments,ui}/**/*.{ttf,woff,woff2}",
+    "../../assets/{characters,environments}/**/*.glb",
     // Unprocessed rips are kept for reference alongside the art they feed,
     // named as they came out of the extractor. Those names contain a `#`,
     // which is a fragment delimiter in a module specifier and so cannot be
     // resolved at all. Excluded by that name, rather than by directory, so
     // that finished textures sitting next to them still bundle.
-    "!../../assets/textures/**/*#*",
+    "!../../assets/**/*#*",
+    // Raw authoring files kept beside the assets they produce.
+    "!../../assets/**/source/**",
   ],
   { eager: true, query: "?url", import: "default" }
 ) as Record<string, string>;
@@ -42,18 +44,7 @@ for (const [key, url] of Object.entries(modules)) {
   byRepoPath.set(key.replace(/^(\.\.\/)+/, ""), url);
 }
 
-/**
- * Vite's publicDir. Everything under it is served at the site root instead of
- * being bundled, so `assets/runtime/models/x.glb` is fetched as `/models/x.glb`.
- *
- * These files are invisible to the bundler by design, so they cannot be looked
- * up in the glob above - the URL is derived from the path instead. Their
- * existence is checked at build time by tools/validate-data.mjs and
- * tools/promote-assets.mjs rather than here.
- */
-const PUBLIC_DIR_PREFIX = "assets/runtime/";
-
-/** Every bundled asset path. Excludes publicDir, which is not enumerable. */
+/** Every bundled asset path. */
 export function knownAssetPaths(): string[] {
   return [...byRepoPath.keys()].sort();
 }
@@ -62,14 +53,9 @@ export function knownAssetPaths(): string[] {
  * The URL for an authored repository path, or null when there is none.
  *
  * This is the single entry point for turning a path as written in the JSON
- * content files - or in config - into something the browser can fetch,
- * whichever tree the file actually lives in. Callers do not need to know
- * whether an asset is bundled or served from publicDir.
+ * content files - or in config - into something the browser can fetch.
  */
 export function resolveAsset(repoPath: string): string | null {
-  if (repoPath.startsWith(PUBLIC_DIR_PREFIX)) {
-    return `/${repoPath.slice(PUBLIC_DIR_PREFIX.length)}`;
-  }
   return byRepoPath.get(repoPath) ?? null;
 }
 
@@ -90,12 +76,7 @@ export function requireAsset(repoPath: string): string {
   return url;
 }
 
-/**
- * Which of the given paths resolve to nothing.
- *
- * publicDir paths always resolve, since their URL is derived rather than
- * looked up - use the build-time validator to check those actually exist.
- */
+/** Which of the given paths resolve to nothing. */
 export function missingAssets(repoPaths: Iterable<string>): string[] {
   const missing: string[] = [];
   for (const path of repoPaths) {

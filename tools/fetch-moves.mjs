@@ -1,6 +1,6 @@
 /**
  * Pulls the move catalog from the NocoDB table and writes it back as
- * data/moves/moves.json.
+ * data/combat/moves.json.
  *
  * NocoDB is a convenient place to edit 878 rows by hand, but its JSON is not
  * the shape the engine reads, so this does three jobs:
@@ -27,7 +27,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const MOVES = path.join(root, "data/moves/moves.json");
+const MOVES = path.join(root, "data/combat/moves.json");
 
 const BASE =
   "https://app.nocodb.com/api/v3/data/pihi9wkwaldv7ml/melqkgd0q7i9uqr/records";

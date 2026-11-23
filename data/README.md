@@ -10,22 +10,34 @@ No design rationale lives here — for how the systems work, see `docs/`.
 ```text
 data/
 ├── README.md
-├── moves/
-│   ├── moves.json              master move list (919 moves)
+├── AGENT.md                    rules for editing data
+├── animations/                 animation metadata; empty, not started
+├── characters/
+│   └── steve_austin_data.md    research notes for Austin
+├── combat/
+│   ├── moves.json              master move list
 │   └── move-slots.json         slot definitions (138 slots)
-├── arenas/
-│   └── <arena>.json            one file per arena, 10 so far
-├── ui/
-│   └── main-menu.json          menu pages, items, and instruction copy
+├── environments/
+│   ├── stages.json             stages and the arena pieces that fit each
+│   ├── arenas/
+│   │   └── <arena>.json        one file per arena
+│   └── ring/
+│       ├── ring-standard.json  measured geometry of the ring model
+│       └── ring-steps.json     measured geometry of the ring steps
 ├── settings/
 │   └── control-mappings.json   default N64 pad -> keyboard bindings
-├── characters/                 empty; per-character data not started
+├── ui/
+│   └── main-menu.json          menu pages, items, and instruction copy
 └── schemas/
     ├── moves.schema.json
     ├── move-slots.schema.json
     ├── arenas.schema.json
+    ├── stages.schema.json
     └── main-menu.schema.json
 ```
+
+The folders match the domains in `assets/` and `docs/`; see
+[`docs/resource-layout.md`](../docs/resource-layout.md).
 
 ## Validation
 
@@ -46,13 +58,13 @@ Checks three things, and also runs as part of `npm test`:
 
 - Filenames are kebab-case: `move-slots.json`, `main-menu.schema.json`.
 - **Property naming is split, by file.** `moves.json` and `move-slots.json`
-  use `snake_case` (`move_id`, `slot_display_name`); `arenas/*.json` and
+  use `snake_case` (`move_id`, `slot_display_name`); `environments/arenas/*.json` and
   `ui/main-menu.json` use `camelCase` (`displayName`, `ringTextures`). This
   is a real inconsistency, not a rule — follow whichever file you are editing,
   and do not "fix" one in isolation, since the loaders and schemas are written
   against the existing shapes.
-- Asset paths are repository paths from the root (`assets/textures/...`), not
-  URLs. `src/data/assets.ts` maps them to real URLs at build time.
+- Asset paths are repository paths from the root
+  (`assets/environments/arenas/shared/textures/...`), not URLs. `src/data/assets.ts` maps them to real URLs at build time.
 - Schemas in `schemas/` describe data; they are not data themselves.
 
 ## Core concepts
@@ -63,9 +75,9 @@ Arena JSON files can override the turnbuckle bolt textures in `ringTextures`:
 
 ```json
 "ringTextures": {
-  "mat_turnbuckle_bolt_1": "assets/textures/ring/shared/turnbuckle-bolt-1.png",
-  "mat_turnbuckle_bolt_2": "assets/textures/ring/shared/turnbuckle-bolt-2.png",
-  "mat_turnbuckle_bolt_cover": "assets/textures/ring/shared/turnbuckle-bolt-cover.png"
+  "mat_turnbuckle_bolt_1": "assets/environments/arenas/shared/ring/textures/shared/turnbuckle-bolt-1.png",
+  "mat_turnbuckle_bolt_2": "assets/environments/arenas/shared/ring/textures/shared/turnbuckle-bolt-2.png",
+  "mat_turnbuckle_bolt_cover": "assets/environments/arenas/shared/ring/textures/shared/turnbuckle-bolt-cover.png"
 }
 ```
 
@@ -80,7 +92,7 @@ the texture's RGB color and ignores alpha, so `rgba(0, 0, 0, 0)` renders black.
 ### Arena ceiling
 
 The Arena Viewer adds trusses, lights and hanging banners over every ring from
-`assets/glb/arena/ceiling_trusses.glb`, the same way it adds the ring steps —
+`assets/environments/arenas/shared/models/ceiling_trusses.glb`, the same way it adds the ring steps —
 no arena file lists it, and there is nothing to place, since the GLB is
 authored centred above the ring.
 
@@ -90,7 +102,7 @@ configuration. To give one arena its own banners, name the material in
 
 ```json
 "arenaTextures": {
-  "mat_ceiling_banners": "assets/textures/arena/royal_rumble/ceiling_banner.png"
+  "mat_ceiling_banners": "assets/environments/arenas/shared/textures/royal_rumble/ceiling_banner.png"
 }
 ```
 
@@ -101,7 +113,7 @@ A **slot** is a named input/state combination available to every wrestler.
 Every wrestler has the same slots; what differs is the move assigned to each.
 
 ### Moves
-A **move** is an entry in `moves/moves.json`. A move's `groups` reference group
+A **move** is an entry in `combat/moves.json`. A move's `groups` reference group
 identifiers from `move-slots.json` — the move becomes eligible for every slot
 in any group it belongs to.
 
@@ -126,16 +138,16 @@ moves that do no damage.
 ## Known data issues
 
 - 58 moves reference a `running_strike` group that no slot defines, so they
-  cannot currently be selected. Pinned by a test in `tests/unit/data.test.ts`.
+  cannot currently be selected. Pinned by a test in `tests/data.test.ts`.
 - **8 of the 10 arenas share `apron_raw.png`**, the RAW is WAR apron, as
   placeholder art. Only King of the Ring has its own, and WrestleMania has
   none. The renderer is applying these correctly — the art is the gap.
 - WrestleMania has no `mat_canvas`, `mat_apron` or `mat_turnbuckle` texture;
   it falls back to the ring's own materials until bespoke art exists.
-- `characters/` is empty. Per-character move assignments are not started; the
-  four playable profiles are currently hardcoded in `src/combat/profiles.ts`.
+- `characters/` holds only research notes. Per-character move assignments are not started; the
+  four playable profiles are currently hardcoded in `src/game/combat/profiles.ts`.
 
 ## Related
 
-- `docs/mechanics/` — how the combat systems work
+- `docs/combat/` — how the combat systems work
 - `src/data/` — the loaders that read these files

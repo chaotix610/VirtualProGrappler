@@ -43,11 +43,11 @@ const PENDING_ASSETS = new Map([]);
  */
 const REQUIRED_ASSETS = new Map([
   [
-    "assets/runtime/models/ring-standard.glb",
-    "the ring, loaded by GameScene and the arena viewer",
+    "assets/environments/arenas/shared/ring/models/ring-standard.glb",
+    "the default ring, loaded for any arena that names none",
   ],
   [
-    "assets/glb/arena/ring-steps.glb",
+    "assets/environments/arenas/shared/ring/models/ring-steps.glb",
     "placed twice by the arena renderer",
   ],
 ]);
@@ -55,17 +55,19 @@ const REQUIRED_ASSETS = new Map([
 /** Which schema governs which data files. */
 function schemaTargets() {
   const arenas = fs
-    .readdirSync(at("data/arenas"))
+    .readdirSync(at("data/environments/arenas"))
     .filter((f) => f.endsWith(".json"))
     .sort()
-    .map((f) => `data/arenas/${f}`);
+    .map((f) => `data/environments/arenas/${f}`);
 
   return [
     ["data/schemas/main-menu.schema.json", ["data/ui/main-menu.json"]],
     ["data/schemas/arenas.schema.json", arenas],
-    ["data/schemas/stages.schema.json", ["data/stages.json"]],
-    ["data/schemas/moves.schema.json", ["data/moves/moves.json"]],
-    ["data/schemas/move-slots.schema.json", ["data/moves/move-slots.json"]],
+    ["data/schemas/stages.schema.json", ["data/environments/stages.json"]],
+    ["data/schemas/rings.schema.json", ["data/environments/rings.json"]],
+    ["data/schemas/control-mappings.schema.json", ["data/settings/control-mappings.json"]],
+    ["data/schemas/moves.schema.json", ["data/combat/moves.json"]],
+    ["data/schemas/move-slots.schema.json", ["data/combat/move-slots.json"]],
   ];
 }
 
@@ -124,7 +126,7 @@ function assetReferences() {
   const arenaFiles =
     schemaTargets().find(([schema]) => schema.endsWith("arenas.schema.json"))?.[1] ??
     [];
-  const files = ["data/ui/main-menu.json", "data/stages.json", ...arenaFiles];
+  const files = ["data/ui/main-menu.json", "data/environments/stages.json", ...arenaFiles];
   for (const file of files) visit(load(file), file);
   return refs;
 }

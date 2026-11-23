@@ -3,14 +3,23 @@
     <h1 class="mapper__title">Controls</h1>
     <p class="mapper__hint">
       <template v-if="listeningFor">
-        Press a key for <strong>{{ label(listeningFor) }}</strong
-        >&hellip; <kbd>Esc</kbd> cancels.
+        Press or click an input for <strong>{{ label(listeningFor) }}</strong>.
+        Keyboard, mouse, gamepad buttons, and stick directions are supported.
       </template>
       <template v-else>
-        Click a controller button, then press a key. <kbd>&uarr;</kbd><kbd>&darr;</kbd> select &middot; <kbd>Enter</kbd> rebind
-        &middot; <kbd>Esc</kbd> back
+        Select a controller button, then press or click an input.
+        <kbd>&uarr;</kbd><kbd>&darr;</kbd> select &middot; <kbd>Enter</kbd> rebind
+        &middot; <kbd>{{ keyLabel("b") }}</kbd> back
       </template>
     </p>
+    <button
+      v-if="listeningFor && !conflict"
+      class="mapper__cancel"
+      type="button"
+      @click="cancelListening"
+    >
+      Cancel rebinding
+    </button>
 
     <div class="mapper__layout">
       <section class="controller-panel" aria-label="Interactive Nintendo 64 controller">
@@ -43,7 +52,7 @@
           <img :src="icon(selectedControl)" alt="" />
           <div>
             <strong>{{ label(selectedControl) }}</strong>
-            <p>{{ listeningFor ? 'Press a key… Esc to cancel' : keyLabel(selectedControl) }}</p>
+            <p>{{ listeningFor ? 'Waiting for input…' : keyLabel(selectedControl) }}</p>
           </div>
         </div>
         <p class="controller-panel__save">Bindings save automatically.</p>
@@ -83,7 +92,7 @@
       <div class="modal__box" role="dialog" aria-modal="true" aria-label="Replace existing binding?">
         <p class="modal__text">Replace existing binding?</p>
         <p class="modal__detail">
-          <strong>{{ friendlyKey(conflict.code) }}</strong> is bound to
+          <strong>{{ friendlyKey(conflict.binding) }}</strong> is bound to
           <strong>{{ label(conflict.owner) }}</strong
           >. Assigning it to <strong>{{ label(conflict.control) }}</strong> will
           leave {{ label(conflict.owner) }} unbound.
@@ -107,19 +116,28 @@ import {
   PAD_CONTROLS,
   PAD_CONTROL_LABELS,
   PadControl,
-  bindKey,
-  conflictFor,
+  bindInput,
+  conflictForBinding,
+  describeBinding,
   exportMapping,
   keysForControl,
   resetBindings,
 } from "@/data/controls";
-import { eventCode, isMenuDown, isMenuUp, virtualInputFor } from "@/game/VirtualController";
+import {
+  bindingForPointer,
+  eventCode,
+  isMenuDown,
+  isMenuUp,
+  pollGamepadBindings,
+  virtualInputFor,
+  virtualInputForBinding,
+} from "@/game/VirtualController";
 import { playMenuCue } from "@/audio/menuAudio";
 
-import controllerImage from "../../assets/textures/ui/controller/n64-controller.svg";
+import controllerImage from "../../assets/ui/textures/controller/n64-controller.svg";
 
 const controllerIcons = import.meta.glob<string>(
-  "../../assets/textures/ui/controller/ButtonIcon-N64-*.svg",
+  "../../assets/ui/textures/controller/ButtonIcon-N64-*.svg",
   { eager: true, query: "?url", import: "default" }
 );
 
@@ -159,7 +177,7 @@ type Row =
 
 interface Conflict {
   control: PadControl;
-  code: string;
+  binding: string;
   owner: PadControl;
 }
 
@@ -178,6 +196,7 @@ export default defineComponent({
       status: "",
       /** Bumped to force the key column to re-read the mapping after a bind. */
       revision: 0,
+      stopGamepadPolling: null as (() => void) | null,
     };
   },
 
@@ -214,10 +233,14 @@ export default defineComponent({
 
   mounted() {
     window.addEventListener("keydown", this.onKeyDown);
+    window.addEventListener("pointerdown", this.onPointerDown, true);
+    this.stopGamepadPolling = pollGamepadBindings(this.onGamepadBinding);
   },
 
   beforeUnmount() {
     window.removeEventListener("keydown", this.onKeyDown);
+    window.removeEventListener("pointerdown", this.onPointerDown, true);
+    this.stopGamepadPolling?.();
   },
 
   methods: {
@@ -226,7 +249,7 @@ export default defineComponent({
         : control.startsWith("controlStick") ? "Control_Stick"
         : control.startsWith("c") ? "C"
         : control === "start" ? "Start" : control.toUpperCase();
-      return controllerIcons[`../../assets/textures/ui/controller/ButtonIcon-N64-${name}.svg`];
+      return controllerIcons[`../../assets/ui/textures/controller/ButtonIcon-N64-${name}.svg`];
     },
 
     direction(control: PadControl): string {
@@ -249,15 +272,12 @@ export default defineComponent({
       // bindings live outside the reactive graph on purpose.
       void this.revision;
       const keys = keysForControl(control);
-      return keys.length ? keys.map(this.friendlyKey).join(", ") : "unbound";
+      return keys.length ? keys.map(describeBinding).join(", ") : "unbound";
     },
 
     /** Turns a KeyboardEvent.code into something readable on screen. */
     friendlyKey(code: string): string {
-      if (code.startsWith("Key")) return code.slice(3);
-      if (code.startsWith("Digit")) return code.slice(5);
-      if (code.startsWith("Arrow")) return `${code.slice(5)} Arrow`;
-      return code;
+      return describeBinding(code);
     },
 
     onKeyDown(event: KeyboardEvent) {
@@ -272,30 +292,44 @@ export default defineComponent({
       this.onNavigationKey(event);
     },
 
+    onPointerDown(event: PointerEvent) {
+      if (!this.listeningFor || this.conflict) return;
+      // The cancel button has to stay clickable, or a mouse user who started
+      // a rebind by mistake could only escape it by binding Left Mouse.
+      if (event.target instanceof Element && event.target.closest(".mapper__cancel")) return;
+      const binding = bindingForPointer(event);
+      if (!binding) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      this.onListeningBinding(binding);
+    },
+
+    onGamepadBinding(binding: string) {
+      if (this.conflict) return;
+      if (this.listeningFor) return this.onListeningBinding(binding);
+      const input = virtualInputForBinding(binding);
+      if (input) this.onNavigationInput(input);
+    },
+
     /**
-     * While listening, the raw key is what matters, not what it is bound to -
-     * otherwise a key could never be moved off the control it already serves.
-     * Escape is reserved as the cancel, so it cannot be assigned here.
+     * The raw key is what matters, not what it is bound to, so it can be moved
+     * off the control it already serves.
      */
     onListeningKey(event: KeyboardEvent) {
-      const code = eventCode(event);
-      if (code === "Escape") {
-        this.listeningFor = null;
-        this.status = "Rebinding cancelled.";
-        playMenuCue("back");
-        return;
-      }
+      this.onListeningBinding(eventCode(event));
+    },
 
+    onListeningBinding(binding: string) {
       const control = this.listeningFor!;
-      const owner = conflictFor(control, code);
+      const owner = conflictForBinding(control, binding);
       if (owner) {
-        this.conflict = { control, code, owner };
+        this.conflict = { control, binding, owner };
         this.listeningFor = null;
         playMenuCue("deny");
         return;
       }
 
-      this.apply(control, code);
+      this.apply(control, binding);
     },
 
     onConflictKey(event: KeyboardEvent) {
@@ -304,10 +338,21 @@ export default defineComponent({
       if (code === "Enter" || code === "NumpadEnter") return this.confirmConflict();
     },
 
+    cancelListening() {
+      this.listeningFor = null;
+      this.status = "Rebinding cancelled.";
+      playMenuCue("back");
+    },
+
     onNavigationKey(event: KeyboardEvent) {
       const input = virtualInputFor(event);
       if (!input) return;
 
+      this.onNavigationInput(input);
+    },
+
+    onNavigationInput(input: ReturnType<typeof virtualInputFor>) {
+      if (!input) return;
       if (isMenuUp(input)) return this.move(-1);
       if (isMenuDown(input)) return this.move(1);
       if (input === "a") return this.activate(this.cursor);
@@ -347,13 +392,13 @@ export default defineComponent({
       if (row.action === "export") return this.exportJson();
     },
 
-    apply(control: PadControl, code: string) {
-      const { displaced } = bindKey(control, code);
+    apply(control: PadControl, binding: string) {
+      const { displaced } = bindInput(control, binding);
       this.listeningFor = null;
       this.revision += 1;
       this.status = displaced
-        ? `${this.friendlyKey(code)} bound to ${this.label(control)}, taken from ${this.label(displaced)}.`
-        : `${this.friendlyKey(code)} bound to ${this.label(control)}.`;
+        ? `${this.friendlyKey(binding)} bound to ${this.label(control)}, taken from ${this.label(displaced)}.`
+        : `${this.friendlyKey(binding)} bound to ${this.label(control)}.`;
       playMenuCue("confirm");
     },
 
@@ -361,7 +406,7 @@ export default defineComponent({
       const pending = this.conflict;
       if (!pending) return;
       this.conflict = null;
-      this.apply(pending.control, pending.code);
+      this.apply(pending.control, pending.binding);
     },
 
     cancelConflict() {
@@ -406,7 +451,7 @@ export default defineComponent({
   overflow-y: auto;
   background-color: #0b0e14;
   background-image: linear-gradient(rgba(11, 14, 20, 0.65), rgba(11, 14, 20, 0.8)),
-    url("../../assets/artwork/crowd-1.png");
+    url("../../assets/ui/textures/artwork/crowd-1.png");
   background-size: cover;
   background-position: center;
   color: #f2f5f8;
@@ -541,6 +586,22 @@ export default defineComponent({
 }
 
 .modal__button:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Escape can be bound now, so cancelling a rebind is a button instead. */
+.mapper__cancel {
+  margin: 0 auto 1rem;
+  padding: 0.4rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mapper__cancel:hover {
   background: rgba(255, 255, 255, 0.18);
 }
 

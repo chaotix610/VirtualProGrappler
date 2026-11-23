@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vpg-engine.local/schemas/arenas.schema.json",
   "title": "VPG Engine — Arena",
-  "description": "Schema for one arena definition file in data/arenas/*.json.",
+  "description": "Schema for one arena definition file in data/environments/arenas/*.json.",
   "type": "object",
   "required": ["id", "displayName"],
   "additionalProperties": false,
@@ -41,7 +41,7 @@
       }
     },
     "stage": {
-      "description": "Stage id from data/stages.json. Chooses the entrance set, and constrains which floor, barricade and outer fit.",
+      "description": "Stage id from data/environments/stages.json. Chooses the entrance set, and constrains which floor, barricade and outer fit.",
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$"
     },
@@ -55,6 +55,10 @@
     },
     "outer": {
       "description": "Outer bowl GLB, including its crowd. Must be one the chosen stage lists.",
+      "$ref": "#/$defs/asset_path"
+    },
+    "ring": {
+      "description": "Ring GLB, one of those listed in data/environments/rings.json. Independent of the stage. Absent means the first ring listed there.",
       "$ref": "#/$defs/asset_path"
     },
     "arenaTextures": {

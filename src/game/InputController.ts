@@ -1,7 +1,7 @@
 import { Scene } from "@babylonjs/core";
 
 /** One-shot actions the player can trigger. */
-export type ActionKey = "punch" | "kick" | "jump" | "guard" | "evade";
+export type ActionKey = "punch" | "kick" | "guard" | "evade";
 
 /**
  * How a run was started, which decides how it steers and how it ends.
@@ -68,7 +68,6 @@ export class InputController implements CharacterInput {
   private static readonly ACTIONS: Record<string, ActionKey> = {
     KeyJ: "punch",
     KeyK: "kick",
-    KeyL: "jump",
     // P is dual-purpose: the press decides between a roll and a block, while
     // `guarding` tracks the hold that sustains the block.
     KeyP: "guard",

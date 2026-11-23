@@ -1,0 +1,56 @@
+{
+  "$schema": "./schemas/stages.schema.json",
+  "schema_version": 1,
+  "stages": [
+    {
+      "id": "raw_is_war",
+      "displayName": "RAW is WAR",
+      "glb": "assets/environments/arenas/shared/models/stage/raw_stage.glb",
+      "floors": [
+        "assets/environments/arenas/shared/models/floor/arena_floor.glb",
+        "assets/environments/arenas/shared/models/floor/concrete_floor.glb"
+      ],
+      "barricades": [
+        "assets/environments/arenas/shared/models/barricade/padded_barricade.glb",
+        "assets/environments/arenas/shared/models/barricade/metal_barricade.glb"
+      ],
+      "outers": ["assets/environments/arenas/shared/models/outer/arena_outer.glb"],
+      "barricadeFloors": {
+        "assets/environments/arenas/shared/models/barricade/padded_barricade.glb": "assets/environments/arenas/shared/models/floor/arena_floor.glb",
+        "assets/environments/arenas/shared/models/barricade/metal_barricade.glb": "assets/environments/arenas/shared/models/floor/concrete_floor.glb"
+      }
+    },
+    {
+      "id": "monday_nitro",
+      "displayName": "Monday Nitro",
+      "glb": "assets/environments/arenas/shared/models/stage/monday_nitro.glb",
+      "position": [0, 0, 34.5],
+      "rotation": [0, 3.141592653589793, 0],
+      "scale": 0.5,
+      "floors": [
+        "assets/environments/arenas/shared/models/floor/concrete_floor.glb",
+        "assets/environments/arenas/shared/models/floor/arena_floor.glb"
+      ],
+      "barricades": [
+        "assets/environments/arenas/shared/models/barricade/metal_barricade.glb",
+        "assets/environments/arenas/shared/models/barricade/padded_barricade.glb"
+      ],
+      "outers": [
+        "assets/environments/arenas/shared/models/outer/arena_outer.glb",
+        "assets/environments/arenas/shared/models/outer/nitro_outer.glb"
+      ],
+      "barricadeFloors": {
+        "assets/environments/arenas/shared/models/barricade/metal_barricade.glb": "assets/environments/arenas/shared/models/floor/concrete_floor.glb",
+        "assets/environments/arenas/shared/models/barricade/padded_barricade.glb": "assets/environments/arenas/shared/models/floor/arena_floor.glb"
+      }
+    },
+    {
+      "id": "royal_rumble",
+      "displayName": "Royal Rumble",
+      "glb": "assets/environments/arenas/shared/models/stage/royal_rumble_stage.glb",
+      "floors": ["assets/environments/arenas/shared/models/floor/royal_rumble_floor.glb"],
+      "barricades": ["assets/environments/arenas/shared/models/barricade/royal_rumble_barricade.glb"],
+      "outers": ["assets/environments/arenas/shared/models/outer/royal_rumble_outer.glb"]
+    }
+  ]
+}

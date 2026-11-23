@@ -7,7 +7,6 @@ import { Anim, RingBounds, Tuning } from "./config";
 type State =
   | "locomotion"
   | "attack"
-  | "jump"
   | "block"
   | "roll"
   /** Pressed against the ropes, back turned, before they throw him off. */
@@ -19,16 +18,16 @@ type State =
   | "perched"
   /** In the air after launching off the top rope. */
   | "diving";
-type JumpPhase = "start" | "air" | "land";
 
 /**
  * Drives one character: compass-fixed movement (up is always north, +z), a Shift run modifier,
- * and the punch / kick / jump one-shots. Movement is code-driven, so the
- * in-place (non root-motion) clips are the correct ones to pair with it.
+ * and the punch / kick one-shots. Locomotion is code-driven. The asset
+ * pipeline takes each clip's travel out onto a separate root-motion track, so
+ * clips play in place over the root; during a strike that track moves him, so
+ * he ends where the move ends.
  */
 export class CharacterController {
   private state: State = "locomotion";
-  private jumpPhase: JumpPhase = "start";
   /** Current horizontal speed, eased toward the target for smooth starts. */
   private speed = 0;
   private verticalVelocity = 0;
@@ -64,21 +63,26 @@ export class CharacterController {
 
   /** Seconds spent so far scaling the corner. */
   private climbElapsed = 0;
+  /** Length of the climb, taken from its clip when it starts. */
+  private climbDuration: number = Tuning.climbDuration;
   private readonly climbFrom = new Vector3();
-  /** Perch position on the top rope. */
+  /**
+   * Where his root sits while perched: under the turnbuckle, on the mat. The
+   * climb clip lifts his body onto the top rope above it.
+   */
   private readonly climbTo = new Vector3();
-  /** Facing while perched: into the ring. */
-  private perchYaw = 0;
   /** Seconds spent so far in the air off the top rope. */
   private diveElapsed = 0;
-  /** Airborne, or on the mat playing out the landing. */
-  private divePhase: "air" | "landing" = "air";
+  /** Length of the dive, taken from its clip when it starts. */
+  private diveDuration: number = Tuning.diveDuration;
   private readonly diveFrom = new Vector3();
   private readonly diveTo = new Vector3();
 
   private readonly moveDirection = new Vector3();
   /** Scratch vector for facing maths, to avoid per-frame allocation. */
   private readonly facingScratch = new Vector3();
+  /** Scratch vector for the clip's root motion. */
+  private readonly motionScratch = new Vector3();
   /** Notified when a strike is thrown; wired to the combat simulation. */
   private strikeHandler: ((moveId: string) => void) | null = null;
 
@@ -161,7 +165,7 @@ export class CharacterController {
     const action = this.input.consumeAction();
     if (!action) return;
 
-    // Attacks, jumps and rolls do not interrupt each other. Blocking is
+    // Attacks and rolls do not interrupt each other. Blocking is
     // interruptible, and so is a rope run: throwing a move off the ropes is
     // how the chain of bounces is meant to be broken.
     if (
@@ -192,23 +196,6 @@ export class CharacterController {
       return;
     }
 
-    if (action === "jump") {
-      this.state = "jump";
-      this.jumpPhase = "start";
-      this.verticalVelocity = Tuning.jumpVelocity;
-      this.animations.play(Anim.JUMP_START, {
-        loop: false,
-        restart: true,
-        onEnd: () => {
-          if (this.state === "jump" && this.jumpPhase === "start") {
-            this.jumpPhase = "air";
-            this.animations.play(Anim.JUMP_LOOP, { loop: true });
-          }
-        },
-      });
-      return;
-    }
-
     const clip = action === "punch" ? Anim.PUNCH : Anim.KICK;
     // Tell the combat simulation a strike was thrown. It schedules the hit on
     // the move's own frame rather than resolving it here.
@@ -223,6 +210,22 @@ export class CharacterController {
         if (this.state === "attack") this.state = "locomotion";
       },
     });
+  }
+
+  /**
+   * Moves the wrestler by however far his move's clip travelled this frame.
+   * A punch steps forward, a clothesline runs; the clips play in place and
+   * this carries the body with them, so he ends where the move ends.
+   */
+  private applyRootMotion(): void {
+    const local = this.motionScratch;
+    if (!this.animations.rootMotionDelta(local)) return;
+
+    // From his own space, where +Z is forward, to the ring's.
+    const sin = Math.sin(this.yaw);
+    const cos = Math.cos(this.yaw);
+    this.root.position.x += local.x * cos + local.z * sin;
+    this.root.position.z += -local.x * sin + local.z * cos;
   }
 
   /**
@@ -451,6 +454,9 @@ export class CharacterController {
     if (this.state === "roll") {
       this.advanceRoll(dt);
     }
+    if (this.state === "attack") {
+      this.applyRootMotion();
+    }
 
     this.applyGravity(dt);
     this.clampToGround();
@@ -483,7 +489,7 @@ export class CharacterController {
   }
 
   private applyGravity(dt: number): void {
-    if (this.state === "jump" || this.root.position.y > 0) {
+    if (this.root.position.y > 0) {
       this.verticalVelocity += Tuning.gravity * dt;
       this.root.position.y += this.verticalVelocity * dt;
     }
@@ -492,17 +498,6 @@ export class CharacterController {
     if (this.root.position.y <= 0) {
       this.root.position.y = 0;
       this.verticalVelocity = 0;
-
-      if (this.state === "jump" && this.jumpPhase !== "land") {
-        this.jumpPhase = "land";
-        this.animations.play(Anim.JUMP_LAND, {
-          loop: false,
-          restart: true,
-          onEnd: () => {
-            if (this.state === "jump") this.state = "locomotion";
-          },
-        });
-      }
     }
   }
 
@@ -574,42 +569,42 @@ export class CharacterController {
     this.state = "climbing";
     this.climbElapsed = 0;
     this.speed = 0;
+    this.climbDuration = this.animations.durationOf(Anim.CLIMB) ?? Tuning.climbDuration;
 
+    // The clip ends with his feet straight under his pelvis, so his root has
+    // to finish under the turnbuckle itself. `corner` is the corner of the
+    // play area, a body radius inside the ropes on each axis; step back out
+    // to where the ropes meet, then in by the perch inset.
+    const inward = this.ringCentreDirection(corner);
     this.climbFrom.copyFrom(this.root.position);
     this.climbTo.set(
-      corner.x,
-      (this.bounds?.topRopeY ?? 1.4) + Tuning.perchFootOffset,
-      corner.z
+      corner.x - Math.sign(inward.x) * Tuning.bodyRadius + inward.x * Tuning.perchInset,
+      0,
+      corner.z - Math.sign(inward.z) * Tuning.bodyRadius + inward.z * Tuning.perchInset
     );
 
-    // Perched wrestlers face the ring, not the crowd.
-    const inward = this.ringCentreDirection(corner);
-    this.perchYaw = Math.atan2(inward.x, inward.z);
+    // Perched wrestlers face the ring, not the crowd. The clip turns him
+    // round as he climbs, so he starts squared to the post - facing away from
+    // the ring - and the clip brings him round to face it.
+    this.setFacing(Math.atan2(inward.x, inward.z) + Math.PI);
 
     this.animations.play(Anim.CLIMB, { loop: false, restart: true });
   }
 
-  /** Carries him up the post, handing over to the perch at the top. */
+  /**
+   * Carries him to the corner while the clip climbs him up it. The height and
+   * the turn are the clip's; only the root's place on the mat is moved here.
+   */
   private advanceClimb(dt: number): void {
     this.climbElapsed += dt;
-    const t = Math.min(this.climbElapsed / Tuning.climbDuration, 1);
+    const t = Math.min(this.climbElapsed / this.climbDuration, 1);
 
-    // Ease out so he settles onto the rope rather than snapping to it.
+    // Ease out so he settles into the corner rather than snapping to it.
     const eased = 1 - (1 - t) * (1 - t);
     Vector3.LerpToRef(this.climbFrom, this.climbTo, eased, this.root.position);
 
-    this.yaw = this.approachAngle(
-      this.yaw,
-      this.perchYaw,
-      Tuning.ropeTurnSpeed * dt
-    );
-    this.root.rotation.y = this.yaw;
-
-    if (t >= 1) {
-      this.state = "perched";
-      this.setFacing(this.perchYaw);
-      this.animations.play(Anim.PERCH, { loop: true });
-    }
+    // The clip ends crouched on the top rope and holds there as the perch.
+    if (t >= 1) this.state = "perched";
   }
 
   /**
@@ -625,12 +620,16 @@ export class CharacterController {
     this.startDive();
   }
 
-  /** Leaves the top rope on a fixed arc into the middle of the ring. */
+  /** Leaves the top rope on a fixed line into the middle of the ring. */
   private startDive(): void {
     this.state = "diving";
-    this.divePhase = "air";
     this.diveElapsed = 0;
+    this.diveDuration = this.animations.durationOf(Anim.DIVE) ?? Tuning.diveDuration;
+    // The perch and the dive are both authored from a root on the mat - the
+    // climb's last frame and the dive's first stand him on the top rope - so
+    // the root stays there and the clip does the flying.
     this.diveFrom.copyFrom(this.root.position);
+    this.diveFrom.y = 0;
 
     // Land inside the ring, clamped so a dive never ends outside the ropes.
     const inward = this.ringCentreDirection(this.diveFrom);
@@ -642,44 +641,25 @@ export class CharacterController {
     this.diveTo.set(target.x, 0, target.z);
 
     this.setFacing(Math.atan2(inward.x, inward.z));
-    this.animations.play(Anim.DIVE_START, {
-      loop: false,
-      restart: true,
-      onEnd: () => {
-        if (this.state === "diving") {
-          this.animations.play(Anim.DIVE_AIR, { loop: true });
-        }
-      },
-    });
+    // Cut, not faded: the root has just dropped to the mat under him.
+    this.animations.play(Anim.DIVE, { loop: false, restart: true, snap: true });
   }
 
-  /** Flies the arc, then lands him on his feet back in the ring. */
+  /**
+   * Carries him across the ring for as long as the clip lasts. The arc and
+   * the fall are the clip's own; this only moves the root under them.
+   */
   private advanceDive(dt: number): void {
-    // Stay in the dive state through the landing. Handing back to locomotion
-    // any earlier would let updateAnimation cut straight to idle.
-    if (this.divePhase === "landing") return;
-
     this.diveElapsed += dt;
-    const t = Math.min(this.diveElapsed / Tuning.diveDuration, 1);
+    const t = Math.min(this.diveElapsed / this.diveDuration, 1);
 
-    this.root.position.x = Scalar.Lerp(this.diveFrom.x, this.diveTo.x, t);
-    this.root.position.z = Scalar.Lerp(this.diveFrom.z, this.diveTo.z, t);
-    // Parabola: rises off the rope, then falls to the mat.
-    const base = Scalar.Lerp(this.diveFrom.y, this.diveTo.y, t);
-    this.root.position.y = base + Math.sin(Math.PI * t) * Tuning.diveArcHeight;
+    Vector3.LerpToRef(this.diveFrom, this.diveTo, t, this.root.position);
 
     if (t >= 1) {
       this.root.position.y = 0;
       this.speed = 0;
       this.verticalVelocity = 0;
-      this.divePhase = "landing";
-      this.animations.play(Anim.DIVE_LAND, {
-        loop: false,
-        restart: true,
-        onEnd: () => {
-          if (this.state === "diving") this.state = "locomotion";
-        },
-      });
+      this.state = "locomotion";
     }
   }
 
@@ -805,7 +785,7 @@ export class CharacterController {
     this.reboundDirection.normalize();
   }
 
-  /** Selects the locomotion clip; attacks and jumps drive their own. */
+  /** Selects the locomotion clip; attacks and other moves drive their own. */
   private updateAnimation(): void {
     if (this.state !== "locomotion") return;
 
@@ -814,8 +794,27 @@ export class CharacterController {
     } else if (this.speed > (Tuning.walkSpeed + Tuning.runSpeed) / 2) {
       this.animations.play(Anim.RUN, { loop: true });
     } else {
-      this.animations.play(Anim.WALK, { loop: true });
+      this.animations.play(this.walkClip(), { loop: true });
     }
+  }
+
+  /**
+   * The walk for the way he is moving relative to the way he faces. He keeps
+   * squared up to his opponent while walking, so moving away from them is a
+   * backward walk and circling them is a sidestep.
+   */
+  private walkClip(): string {
+    const sin = Math.sin(this.yaw);
+    const cos = Math.cos(this.yaw);
+    const { x, z } = this.moveDirection;
+    // Forward is (sin, cos); his right is (cos, -sin).
+    const forward = x * sin + z * cos;
+    const right = x * cos - z * sin;
+
+    if (Math.abs(forward) >= Math.abs(right)) {
+      return forward >= 0 ? Anim.WALK : Anim.WALK_BACKWARD;
+    }
+    return right > 0 ? Anim.WALK_RIGHT : Anim.WALK_LEFT;
   }
 
   /** Moves `from` toward `to` by at most `maxDelta`, wrapping at +/-PI. */

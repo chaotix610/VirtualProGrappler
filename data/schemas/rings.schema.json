@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vpg-engine.local/schemas/rings.schema.json",
+  "title": "VPG Engine — Rings",
+  "description": "The rings an arena can use. An arena names a ring by its GLB path; one that names none gets the first ring listed here.",
+  "type": "object",
+  "required": ["rings"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": {
+      "description": "Optional rings schema version. Current version is 1.",
+      "type": "integer",
+      "const": 1
+    },
+    "rings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/ring" }
+    }
+  },
+  "$defs": {
+    "ring": {
+      "type": "object",
+      "required": ["id", "displayName", "glb", "steps"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Ring identifier.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "displayName": { "type": "string", "minLength": 1 },
+        "glb": {
+          "description": "Project-relative path to the ring GLB. Gameplay finds the mat and ropes by mesh name, so it needs a mesh containing `canvas` and meshes starting with `rope`.",
+          "type": "string",
+          "minLength": 1
+        },
+        "defaultTextures": {
+          "description": "Renderer-owned art for materials the GLB ships without, keyed by material name. Applied before the arena's own ringTextures, so an arena still wins. Leave it out for a ring whose GLB embeds every texture it needs: its parts then keep their baked textures unless the arena names one.",
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "steps": {
+          "description": "Where the two sets of ring steps sit, measured from this ring's corners. Positions and [x, y, z, w] quaternions are in the steps GLB's own (glTF) frame.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/steps_placement" }
+        }
+      }
+    },
+    "steps_placement": {
+      "type": "object",
+      "required": ["corner", "position", "quaternion"],
+      "additionalProperties": false,
+      "properties": {
+        "corner": { "type": "string", "minLength": 1 },
+        "position": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "quaternion": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      }
+    }
+  }
+}

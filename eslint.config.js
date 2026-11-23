@@ -43,7 +43,7 @@ export default defineConfigWithVueTs(
     // Playwright drivers: Node at the top level, browser globals inside the
     // page.evaluate() callbacks that get serialised into the page.
     name: "vpg/browser-tests",
-    files: ["tests/browser/**/*.mjs"],
+    files: ["tests/browser/**/*.mjs", "tests/browser-combat/**/*.mjs"],
     languageOptions: {
       globals: { ...globals.node, ...globals.browser },
     },
@@ -51,7 +51,7 @@ export default defineConfigWithVueTs(
 
   {
     name: "vpg/unit-tests",
-    files: ["tests/unit/**/*.ts"],
+    files: ["tests/**/*.ts"],
     languageOptions: { globals: globals.node },
   },
 

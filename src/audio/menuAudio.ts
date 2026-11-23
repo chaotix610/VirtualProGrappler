@@ -115,8 +115,12 @@ export function setMenuAudioMuted(muted: boolean): void {
   save();
 }
 
-/** Sets the master level. Values outside 0..1 are clamped rather than refused. */
+/**
+ * Sets the master level. Values outside 0..1 are clamped rather than refused,
+ * but NaN is ignored: clamping it would still store NaN and silence the menu.
+ */
 export function setMenuAudioVolume(volume: number): void {
+  if (!Number.isFinite(volume)) return;
   settings.volume = Math.min(1, Math.max(0, volume));
   applyVolume();
   save();
@@ -266,9 +270,9 @@ function save(): void {
 
 /** All stems run together; navigation changes gains, never playback position. */
 const MUSIC_URLS = [
-  new URL("../../assets/sound/music/menu/menu-music-basetrack.mp3", import.meta.url).href,
-  new URL("../../assets/sound/music/menu/menu-music-overlay-1.mp3", import.meta.url).href,
-  new URL("../../assets/sound/music/menu/menu-music-overlay-2.mp3", import.meta.url).href,
+  new URL("../../assets/ui/audio/music/menu-music-basetrack.mp3", import.meta.url).href,
+  new URL("../../assets/ui/audio/music/menu-music-overlay-1.mp3", import.meta.url).href,
+  new URL("../../assets/ui/audio/music/menu-music-overlay-2.mp3", import.meta.url).href,
 ];
 
 let musicDepth = 0;

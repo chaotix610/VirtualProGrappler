@@ -1,6 +1,5 @@
 import { fileURLToPath, URL } from "node:url";
-// vitest/config re-exports Vite's defineConfig widened with the `test` key.
-import { defineConfig } from "vitest/config";
+import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 // Dev-only: the Arena Editor's save endpoint. Not part of a production build.
 import { arenaEditorPlugin } from "./tools/vite-arena-editor.mjs";
@@ -8,11 +7,13 @@ import { arenaEditorPlugin } from "./tools/vite-arena-editor.mjs";
 export default defineConfig({
   plugins: [vue(), arenaEditorPlugin()],
   /**
-   * Only assets/runtime is served and shipped. The Blender originals and raw
-   * animation libraries in assets/source stay out of the bundle - they are
-   * inputs to the asset pipeline, not to the game.
+   * No public directory. Every shipped file is bundled - models, textures,
+   * fonts and audio through the glob in src/data/assets.ts, the rest through
+   * direct imports - so a file ships only if the game can name it. The
+   * Blender originals in assets/source are inputs to the asset pipeline and
+   * never reach the bundle.
    */
-  publicDir: "assets/runtime",
+  publicDir: false,
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -29,8 +30,5 @@ export default defineConfig({
     // largest of those is still a few MB, which is inherent to the engine
     // rather than something this app can trim, so the limit stays raised.
     chunkSizeWarningLimit: 4000,
-  },
-  test: {
-    include: ["tests/unit/**/*.test.ts"],
   },
 });
