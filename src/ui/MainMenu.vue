@@ -3,6 +3,7 @@
     <ControlMapper v-if="mapperOpen" @back="closeMapper" />
     <ArenaViewer v-else-if="arenaViewerOpen" @back="closeArenaViewer" />
     <ArenaEditor v-else-if="arenaEditorOpen" @back="closeArenaEditor" />
+    <SaveData v-else-if="saveDataOpen" @back="closeSaveData" />
 
     <template v-else>
       <img
@@ -123,13 +124,22 @@ const ROUTE_CONTROLS = "commissioner.controls";
 const ROUTE_ARENA_VIEWER = "commissioner.arena_viewer";
 const ROUTE_ARENA_EDITOR = "commissioner.arena_editor";
 const ROUTE_COMBAT_TEST = "test.combat_system";
+const ROUTE_SAVE_DATA = "commissioner.save_data";
+/** Handled by the app shell, which owns the Exit and Session ended screens. */
+const ROUTE_EXIT = "session.exit";
+
+/**
+ * Lazy like the other subscreens, and because it pulls in the backup code -
+ * ZIP handling included - that the menu itself never needs.
+ */
+const SaveData = defineAsyncComponent(() => import("./SaveData.vue"));
 
 export default defineComponent({
   name: "MainMenu",
 
-  components: { ControlMapper, ArenaViewer, ArenaEditor },
+  components: { ControlMapper, ArenaViewer, ArenaEditor, SaveData },
 
-  emits: ["launch"],
+  emits: ["launch", "exit"],
 
   data() {
     return {
@@ -140,6 +150,7 @@ export default defineComponent({
       mapperOpen: false,
       arenaViewerOpen: false,
       arenaEditorOpen: false,
+      saveDataOpen: false,
       status: "",
       stopGamepadPolling: null as (() => void) | null,
       menuIcons: { dPad: dPadIcon, a: aIcon, b: bIcon, z: zIcon },
@@ -148,7 +159,7 @@ export default defineComponent({
 
   computed: {
     musicDepth(): number {
-      return this.stack.length + Number(this.mapperOpen || this.arenaViewerOpen || this.arenaEditorOpen);
+      return this.stack.length + Number(this.subscreenOpen());
     },
 
     page(): MenuPage {
@@ -226,9 +237,9 @@ export default defineComponent({
       if (input) this.onMappedInput(input);
     },
 
-    /** The mapper, viewer and editor run their own input while open. */
+    /** The mapper, viewer, editor and Save Data run their own input while open. */
     subscreenOpen(): boolean {
-      return this.mapperOpen || this.arenaViewerOpen || this.arenaEditorOpen;
+      return this.mapperOpen || this.arenaViewerOpen || this.arenaEditorOpen || this.saveDataOpen;
     },
 
     /** What a pad input does on the menu, whatever device it came from. */
@@ -302,6 +313,18 @@ export default defineComponent({
         return;
       }
 
+      if (target.id === ROUTE_SAVE_DATA) {
+        this.saveDataOpen = true;
+        playMenuCue("select");
+        return;
+      }
+
+      if (target.id === ROUTE_EXIT) {
+        this.$emit("exit");
+        playMenuCue("select");
+        return;
+      }
+
       this.status = `${item.displayName} is not implemented yet.`;
       playMenuCue("deny");
     },
@@ -327,6 +350,11 @@ export default defineComponent({
 
     closeArenaEditor() {
       this.arenaEditorOpen = false;
+      this.status = "";
+    },
+
+    closeSaveData() {
+      this.saveDataOpen = false;
       this.status = "";
     },
   },

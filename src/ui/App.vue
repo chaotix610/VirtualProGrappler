@@ -4,8 +4,10 @@
   <div v-if="!saves.status.ready" class="session-screen" role="status">
     Loading local save…
   </div>
+  <ExitSession v-else-if="exitOpen" @cancel="exitOpen = false" @exit="endSession" />
+  <SessionEnded v-else-if="ended" @resume="ended = false" />
   <template v-else>
-    <MainMenu v-if="screen === 'menu'" @launch="launch" />
+    <MainMenu v-if="screen === 'menu'" @launch="launch" @exit="exitOpen = true" />
     <CombatTest v-else @exit="exit" />
   </template>
   <div v-if="storageNotice" class="storage-status" role="status">
@@ -17,6 +19,8 @@
 import { defineAsyncComponent, defineComponent, h, markRaw } from 'vue';
 import MainMenu from './MainMenu.vue';
 import SceneLoading from './SceneLoading.vue';
+import ExitSession from './ExitSession.vue';
+import SessionEnded from './SessionEnded.vue';
 import { saves, startSaves } from '@/data/save/runtime';
 
 /**
@@ -67,7 +71,7 @@ function screenFromLocation(): Screen {
 export default defineComponent({
   name: 'App',
 
-  components: { CombatTest, MainMenu },
+  components: { CombatTest, MainMenu, ExitSession, SessionEnded },
 
   data() {
     return {
@@ -75,6 +79,10 @@ export default defineComponent({
       // markRaw: the coordinator keeps its own reactive status, and wrapping
       // the whole object in another proxy would only slow every read.
       saves: markRaw(saves),
+      /** Exit is open: flushing, then offering a backup if one is due. */
+      exitOpen: false,
+      /** Exit finished; the Session ended screen is showing. */
+      ended: false,
     };
   },
 
@@ -86,10 +94,12 @@ export default defineComponent({
     storageNotice(): string {
       const status = this.saves.status;
       if (!status.ready) return '';
-      if (status.error) return `Local save needs attention: ${status.error}`;
+      if (status.error) {
+        return `Local save needs attention: ${status.error} Open Commissioner -> Options -> Save Data to retry or download a backup.`;
+      }
       if (status.mode === 'temporary') {
         const why = status.reason ? ` ${status.reason}` : '';
-        return `Temporary session - settings changed here will not be kept after this tab closes.${why}`;
+        return `Temporary session - download a backup from Commissioner -> Options -> Save Data before leaving.${why}`;
       }
       return '';
     },
@@ -112,6 +122,11 @@ export default defineComponent({
     exit() {
       this.screen = 'menu';
       this.syncHash();
+    },
+
+    endSession() {
+      this.exitOpen = false;
+      this.ended = true;
     },
 
     syncHash() {

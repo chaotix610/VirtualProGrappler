@@ -27,23 +27,38 @@ describe("main menu data", () => {
     expect(pageByKey(ROOT_PAGE)).not.toBeNull();
   });
 
-  it("offers exactly the three root options", () => {
+  it("offers exactly the three root options, then Exit", () => {
     const root = pageByKey(ROOT_PAGE)!;
     expect(root.menuItems.map((i) => i.displayName)).toEqual([
       "Multi Play",
       "Single Play",
       "Commissioner",
+      "Exit",
     ]);
   });
 
   it("routes the three root options to real pages", () => {
     const root = pageByKey(ROOT_PAGE)!;
-    for (const item of root.menuItems) {
+    for (const item of root.menuItems.filter((i) => i.id !== "exit")) {
       expect(resolveTarget(item.target), item.id).toEqual({
         kind: "page",
         key: item.target,
       });
     }
+  });
+
+  it("ends the root menu with Exit, on the route the app shell handles", () => {
+    const root = pageByKey(ROOT_PAGE)!;
+    const last = root.menuItems[root.menuItems.length - 1];
+    expect(last.id).toBe("exit");
+    expect(resolveTarget(last.target)).toEqual({ kind: "route", id: "session.exit" });
+  });
+
+  it("opens Save Data from Commissioner -> Options", () => {
+    const options = pageByKey("commissioner")!.menuItems.find((i) => i.id === "options")!;
+    expect(resolveTarget(options.target)).toEqual({ kind: "page", key: "options" });
+    const saveData = pageByKey("options")!.menuItems.find((i) => i.id === "save_data")!;
+    expect(resolveTarget(saveData.target)).toEqual({ kind: "route", id: "commissioner.save_data" });
   });
 
   it("reaches Combat System Test through Commissioner and Smackdown Mall", () => {

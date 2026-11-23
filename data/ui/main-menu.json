@@ -48,6 +48,20 @@
               }
             ]
           }
+        },
+        {
+          "id": "exit",
+          "displayName": "Exit",
+          "target": "session.exit",
+          "instructions": {
+            "title": "<< Exit >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Save your changes and finish this session, with an optional portable backup."
+              }
+            ]
+          }
         }
       ]
     },
@@ -266,13 +280,13 @@
         {
           "id": "options",
           "displayName": "Options",
-          "target": "commissioner.options",
+          "target": "options",
           "instructions": {
             "title": "<< Options Mode >>",
             "blocks": [
               {
                 "type": "paragraph",
-                "text": "Adjust the in-game presentation."
+                "text": "Manage local saves and portable backups."
               }
             ]
           }
@@ -315,6 +329,27 @@
               {
                 "type": "paragraph",
                 "text": "Set the inputs and controls for Virtual Pro Grappler."
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "options": {
+      "id": "options",
+      "displayName": "Options",
+      "headingImage": "assets/ui/textures/heading_commissioner.png",
+      "menuItems": [
+        {
+          "id": "save_data",
+          "displayName": "Save Data",
+          "target": "commissioner.save_data",
+          "instructions": {
+            "title": "<< Save Data >>",
+            "blocks": [
+              {
+                "type": "paragraph",
+                "text": "Select local saves, download or restore a .vpg backup, and configure backup reminders."
               }
             ]
           }

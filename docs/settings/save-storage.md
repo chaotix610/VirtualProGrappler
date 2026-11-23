@@ -2,11 +2,13 @@
 
 > **In this project:** ported from VirtualProGrappler-V2 on 2026-11-23. The
 > storage layer below is in place in full (`src/data/save/`, its schemas and
-> `tests/save/`), but the app uses only stage S1 so far: the local save opens at
-> startup and holds controls and audio, with temporary mode for a second tab
-> or blocked storage. Save Data, Exit and `.vpg` backups, custom arenas in the
-> save with recovery drafts, and imported textures are wired in the stages
-> that follow. Differences from V2: the database is `vpg-saves` rather than
+> `tests/save/`). Wired so far: the local save opens at startup and holds
+> controls and audio, with temporary mode for a second tab or blocked storage;
+> Commissioner -> Options -> Save Data selects, creates, renames and deletes
+> saves and downloads and restores `.vpg` backups; and Exit on the main menu
+> flushes and offers a backup. Custom arenas in the save with recovery drafts,
+> and imported textures, are wired in the stages that follow - their sections
+> are left off Save Data until then. Differences from V2: the database is `vpg-saves` rather than
 > `vpg-player-data` (both projects were served from the same localhost
 > origin), arena drafts carry this project's `ring` field, and saved arenas
 > must name a ring from `data/environments/rings.json`.
