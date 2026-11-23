@@ -83,7 +83,7 @@ const TYPE_COMPONENTS = {
 
 // --- GLB container ---------------------------------------------------------
 
-function readGlb(file) {
+export function readGlb(file) {
   const data = fs.readFileSync(file);
   if (data.readUInt32LE(0) !== 0x46546c67) throw new Error(`${file} is not a GLB`);
 
@@ -110,7 +110,7 @@ function pad(buffer, fill) {
   return Buffer.concat([buffer, Buffer.alloc(4 - remainder, fill)]);
 }
 
-function writeGlb(file, json, bin) {
+export function writeGlb(file, json, bin) {
   // JSON pads with spaces, BIN with zeroes.
   const jsonChunk = pad(Buffer.from(JSON.stringify(json), "utf8"), 0x20);
   const binChunk = pad(bin, 0x00);

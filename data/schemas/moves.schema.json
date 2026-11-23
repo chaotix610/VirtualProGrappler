@@ -4,13 +4,16 @@
   "title": "VPG Engine — Moves",
   "description": "Schema for the move catalog. A move's slot_ids list the slots it is eligible for; its groups record which slot groups those came from.",
   "type": "object",
-  "required": ["schema_version", "moves"],
+  "required": [
+    "schema_version",
+    "moves"
+  ],
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "description": "Increment when the schema shape changes in a breaking way. 2 added slot_ids and animation_id.",
+      "description": "Increment when the schema shape changes in a breaking way. 3 uses string-encoded lists, booleans, and null values, separate actor/target animation filenames, and slot animation overrides.",
       "type": "integer",
-      "const": 2
+      "const": 3
     },
     "description": {
       "type": "string"
@@ -18,29 +21,24 @@
     "field_definitions": {
       "description": "Human-readable documentation of each field. Not validated structurally.",
       "type": "object",
-      "additionalProperties": { "type": "string" }
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "moves": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/move" }
+      "items": {
+        "$ref": "#/$defs/move"
+      }
     }
   },
-
   "$defs": {
-
-    "snake_case_id": {
-      "description": "snake_case identifier: lowercase letters, digits, and underscores; must start with a letter.",
-      "type": "string",
-      "pattern": "^[a-z][a-z0-9_]*$"
-    },
-
     "move_id": {
       "description": "Move identifier. Looser than other ids — allows leading digits (e.g. '450_splash', '10_punch') because real wrestling moves use them. Must be lowercase, digits, and underscores only.",
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9_]*$"
     },
-
     "position": {
       "description": "Must mirror the position enum in move-slots.schema.json.",
       "type": "string",
@@ -57,29 +55,30 @@
         "double_team"
       ]
     },
-
     "power": {
-      "description": "Power grade S (highest) through G (lowest), or null for moves that do no damage (taunts, evasion).",
-      "oneOf": [
-        { "type": "null" },
-        {
-          "type": "string",
-          "enum": ["S", "A", "B", "C", "D", "E", "F", "G"]
-        }
+      "description": "Power grade S (highest) through G (lowest), or the literal string \"null\" for moves that do no damage.",
+      "type": "string",
+      "enum": [
+        "S",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "null"
       ]
     },
-
     "feature": {
-      "description": "'pin' for moves ending in a pin attempt, 'submit' for submission attempts, null for neither.",
-      "oneOf": [
-        { "type": "null" },
-        {
-          "type": "string",
-          "enum": ["pin", "submit"]
-        }
+      "description": "\"pin\" for a pin attempt, \"submit\" for a submission attempt, or the literal string \"null\" for neither.",
+      "type": "string",
+      "enum": [
+        "pin",
+        "submit",
+        "null"
       ]
     },
-
     "move": {
       "type": "object",
       "required": [
@@ -92,42 +91,74 @@
         "ko",
         "bleed",
         "feature",
-        "animation_id"
+        "actor_animation_id",
+        "target_animation_id",
+        "slot_animation_overrides"
       ],
       "additionalProperties": false,
       "properties": {
-        "move_id": { "$ref": "#/$defs/move_id" },
+        "move_id": {
+          "$ref": "#/$defs/move_id"
+        },
         "name": {
           "type": "string",
           "minLength": 1
         },
-        "position": { "$ref": "#/$defs/position" },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
         "groups": {
-          "description": "Slot groups from move-slots.json that this move was drawn from. Descriptive only — eligibility is decided by slot_ids, which may be a strict subset of the slots these groups cover. Cross-file integrity is validated separately.",
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/snake_case_id" }
+          "description": "Comma-separated slot group ids recording where this move was drawn from. Descriptive only; slot_ids determines eligibility. Cross-file integrity requires separate validation.",
+          "$ref": "#/$defs/id_list"
         },
         "slot_ids": {
-          "description": "Authoritative list of slot ids from move-slots.json this move can fill. Cross-file integrity is validated separately.",
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/snake_case_id" }
+          "description": "Comma-separated authoritative slot ids this move can fill. Cross-file integrity requires separate validation.",
+          "$ref": "#/$defs/id_list"
         },
-        "power": { "$ref": "#/$defs/power" },
-        "ko": { "type": "boolean" },
-        "bleed": { "type": "boolean" },
-        "feature": { "$ref": "#/$defs/feature" },
-        "animation_id": {
-          "description": "Animation clip id, or null while the move is unanimated.",
-          "oneOf": [
-            { "type": "null" },
-            { "$ref": "#/$defs/snake_case_id" }
-          ]
+        "power": {
+          "$ref": "#/$defs/power"
+        },
+        "ko": {
+          "$ref": "#/$defs/boolean_string"
+        },
+        "bleed": {
+          "$ref": "#/$defs/boolean_string"
+        },
+        "feature": {
+          "$ref": "#/$defs/feature"
+        },
+        "actor_animation_id": {
+          "description": "Animation filename for the wrestler performing the move, or the string \"null\".",
+          "$ref": "#/$defs/animation_id"
+        },
+        "target_animation_id": {
+          "description": "Animation filename for the target wrestler, or the string \"null\".",
+          "$ref": "#/$defs/animation_id"
+        },
+        "slot_animation_overrides": {
+          "description": "Empty string when there are no overrides; otherwise semicolon-separated slot_id:animation_id pairs. Animation values are GLB filenames or the string \"null\".",
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9_]*:(null|[a-zA-Z0-9_][a-zA-Z0-9_.-]*\\.glb)(;[a-z][a-z0-9_]*:(null|[a-zA-Z0-9_][a-zA-Z0-9_.-]*\\.glb))*)?$"
         }
       }
+    },
+    "id_list": {
+      "description": "Nonempty comma-separated snake_case identifiers. Existence and duplicate checks require separate validation.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(,[a-z][a-z0-9_]*)*$"
+    },
+    "boolean_string": {
+      "description": "Boolean encoded as a string in the version-3 catalog.",
+      "type": "string",
+      "enum": [
+        "true",
+        "false"
+      ]
+    },
+    "animation_id": {
+      "description": "GLB animation filename, or the literal string \"null\" when no animation is assigned.",
+      "type": "string",
+      "pattern": "^(null|[a-zA-Z0-9_][a-zA-Z0-9_.-]*\\.glb)$"
     }
   }
 }

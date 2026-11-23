@@ -75,6 +75,14 @@ export const CHARACTERS: CharacterDefinition[] = [
     file: "steve_austin.glb",
     swatch: "#2b2b2e",
   },
+  {
+    // A stock model rebound to the AKI rig in Blender; she shares Austin's
+    // clips, baked into her own export.
+    id: "female-rigged",
+    label: "Female",
+    file: "female_rigged.glb",
+    swatch: "#c9a27e",
+  },
 ];
 
 /** Where the two wrestlers start, facing each other down the z axis. */

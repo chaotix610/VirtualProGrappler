@@ -59,8 +59,19 @@ const CAMERA_ORBIT = {
 /** The arena Combat System Test is staged in. */
 export const COMBAT_TEST_ARENA = "raw";
 
-/** Both wrestlers in Combat System Test. */
+/**
+ * Both wrestlers in Combat System Test, unless the URL picks one:
+ * `?player=<id>` and `?opponent=<id>` take ids from CHARACTERS.
+ */
 export const COMBAT_TEST_CHARACTER = "steve-austin";
+
+/** The roster entry the URL asks for in `param`, or the default. */
+function combatTestCharacter(param: "player" | "opponent"): CharacterDefinition {
+  const id = new URLSearchParams(window.location.search).get(param) ?? COMBAT_TEST_CHARACTER;
+  const character = CHARACTERS.find((c) => c.id === id);
+  if (!character) throw new Error(`No character definition for "${id}"`);
+  return character;
+}
 
 /** What a finished load reports back to the screen. */
 export interface CombatTestLoadReport {
@@ -165,16 +176,14 @@ export class CombatTestScene {
     const arenaData = arenaById(COMBAT_TEST_ARENA);
     if (!arenaData) throw new Error(`No arena data for "${COMBAT_TEST_ARENA}"`);
 
-    const character = CHARACTERS.find((c) => c.id === COMBAT_TEST_CHARACTER);
-    if (!character) {
-      throw new Error(`No character definition for "${COMBAT_TEST_CHARACTER}"`);
-    }
+    const character = combatTestCharacter("player");
+    const opponent = combatTestCharacter("opponent");
 
     this.arena = await loadArena(this.scene, arenaData);
     this.placeArena(this.arena);
 
     const player = await this.loadWrestler(character, "playerRoot", SPAWN.player);
-    const other = await this.loadWrestler(character, "opponentRoot", SPAWN.opponent);
+    const other = await this.loadWrestler(opponent, "opponentRoot", SPAWN.opponent);
 
     this.playerRoot = player.root;
     this.playerAnimations = player.animations;
@@ -196,7 +205,7 @@ export class CombatTestScene {
     this.controller.setFacing(Math.atan2(0, SPAWN.opponent.z - SPAWN.player.z));
     other.root.rotation.y = Math.atan2(0, SPAWN.player.z - SPAWN.opponent.z);
 
-    this.startMatch(character.id);
+    this.startMatch(character.id, opponent.id);
 
     return {
       missingClips: REQUIRED_CLIPS.filter((c) => !player.animations.has(c)),
@@ -293,10 +302,10 @@ export class CombatTestScene {
    * Opens the match: fresh health, stamina and RNG for both wrestlers, and the
    * strike inputs wired through to the damage engine.
    */
-  private startMatch(characterId: string): void {
+  private startMatch(playerId: string, opponentId: string): void {
     this.clock.reset();
     this.inputBuffer.clear();
-    this.match = new Match(profileFor(characterId), profileFor(characterId));
+    this.match = new Match(profileFor(playerId), profileFor(opponentId));
 
     // Range is a scene question, so the match asks rather than assumes.
     this.match.canConnect = (attacker: Side) => this.canConnect(attacker);
