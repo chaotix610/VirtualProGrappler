@@ -38,6 +38,7 @@ async function snapshot(): Promise<BackupSnapshot> {
   return { save, settings: workspace.settings, settingsRevision: 0, images };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- deliberately malformed data needs untyped access
 async function alter(change: (zip: JSZip, manifest: Record<string, any>) => void | Promise<void>) {
   const zip = await JSZip.loadAsync(await encodeBackup(await snapshot()));
   const manifest = JSON.parse(await zip.file("save.json")!.async("string"));
@@ -46,6 +47,7 @@ async function alter(change: (zip: JSZip, manifest: Record<string, any>) => void
   return zip.generateAsync({ type: "uint8array", compression: "DEFLATE" });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- deliberately malformed data needs untyped access
 const imageEntry = (manifest: Record<string, any>) => manifest.entries.find((entry: { path: string }) => entry.path.startsWith("assets/images/"));
 
 describe("backups with imported images", () => {

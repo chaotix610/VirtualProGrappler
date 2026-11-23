@@ -1,5 +1,16 @@
 # Implemented save storage contract
 
+> **In this project:** ported from VirtualProGrappler-V2 on 2026-11-23. The
+> storage layer below is in place in full (`src/data/save/`, its schemas and
+> `tests/save/`), but the app uses only stage S1 so far: the local save opens at
+> startup and holds controls and audio, with temporary mode for a second tab
+> or blocked storage. Save Data, Exit and `.vpg` backups, custom arenas in the
+> save with recovery drafts, and imported textures are wired in the stages
+> that follow. Differences from V2: the database is `vpg-saves` rather than
+> `vpg-player-data` (both projects were served from the same localhost
+> origin), arena drafts carry this project's `ring` field, and saved arenas
+> must name a ring from `data/environments/rings.json`.
+
 Implemented **2026-10-26** for [save-plan](save-file-plan.md) stages S1–S3:
 settings, custom arenas, recovery drafts, imported texture images and `.vpg`
 backups. Wrestlers, progress and live matches are outside this contract.

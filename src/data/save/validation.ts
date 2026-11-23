@@ -8,6 +8,7 @@ import manifestSchema from "#data/schemas/backup-v2.schema.json";
 import { bundledArenaIds, type ArenaData } from "../arenas";
 import { resolveAsset } from "../assets";
 import { stageById, pieceFitsStage } from "../stages";
+import { ringByGlb } from "../rings";
 import { TEXTURE_SLOTS, pathBelongsToSlot, LEGACY_COLOR_TARGETS } from "../textureSlots";
 import { PAD_CONTROLS, type ControlMapping } from "../controls";
 import { isUserImageRef, userImageId } from "./images";
@@ -73,6 +74,12 @@ export function validateArena(value: unknown, library: ReadonlySet<string> = new
     if (!arena.arenaGlb && !arena.arenaParts?.length) throw new Error("Arena has no model parts.");
   }
   if (arena.previewImage) asset(arena.previewImage, "image");
+  // The renderer would quietly fall back to the default ring; a save should
+  // not carry a ring it cannot show.
+  if (arena.ring) {
+    if (!ringByGlb(arena.ring)) throw new Error(`Unknown ring: ${arena.ring}`);
+    asset(arena.ring, "model");
+  }
   for (const map of ["arenaTextures", "ringTextures"] as const) {
     for (const [key, value] of Object.entries(arena[map] ?? {})) {
       const slot = TEXTURE_SLOTS.find((s) => s.map === map && (s.materials.includes(key) || s.colors.some((c) => c.key === key)));

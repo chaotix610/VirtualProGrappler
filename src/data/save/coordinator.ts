@@ -354,10 +354,12 @@ export class SaveCoordinator {
     const prepared = { save: copy(snapshot.save), settings: copy(snapshot.settings) };
     validateSave(prepared.save);
     validateSettings(prepared.settings);
-    const images: StoredImage[] = prepared.save.images.map(({ name, importedAt: _importedAt, ...info }) => {
-      const blob = snapshot.images.get(info.id);
-      if (!blob || blob.size !== info.byteLength) throw new Error(`Backup image “${name}” is missing or incomplete.`);
-      return { ...info, blob };
+    // The stored record keeps the image's content facts; the name and import
+    // time are library membership and stay on the save.
+    const images: StoredImage[] = prepared.save.images.map(({ id, mime, width, height, byteLength, name }) => {
+      const blob = snapshot.images.get(id);
+      if (!blob || blob.size !== byteLength) throw new Error(`Backup image “${name}” is missing or incomplete.`);
+      return { id, mime, width, height, byteLength, blob };
     });
     await this.ensureSpace(images.reduce((sum, image) => sum + image.byteLength, 0));
     await this.change((next) => {

@@ -335,6 +335,7 @@ describe("database upgrade from version 1", () => {
   it("adds the image store and an empty library to every existing save without losing records", async () => {
     const factory = new IDBFactory();
     const { workspace } = firstWorkspace();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- deliberately malformed data needs untyped access
     const legacy = copy(workspace) as unknown as Record<string, any>;
     legacy.schemaVersion = 1;
     for (const save of legacy.saves) delete save.images;
@@ -367,6 +368,7 @@ describe("database upgrade from version 1", () => {
   it("rejects a version 1 workspace that does not match its frozen schema", async () => {
     const { migrateWorkspace } = await import("../../src/data/save/migrations");
     const { workspace } = firstWorkspace();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- deliberately malformed data needs untyped access
     const legacy = copy(workspace) as unknown as Record<string, any>;
     legacy.schemaVersion = 1;
     // A v1 save could not have held a library.

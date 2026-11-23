@@ -90,7 +90,8 @@ describe("settings migration and save validation", () => {
     const { workspace } = firstWorkspace({ getItem: (key) => legacy.get(key) ?? null });
     expect(workspace.settings.controls.bindings.a).toEqual(["ArrowUp"]);
     expect(workspace.settings.controls.bindings.b).toEqual([]);
-    expect(workspace.settings.controls.bindings.dpadUp).toEqual([]);
+    // The save's ArrowUp moved to A; d-pad Up keeps its default gamepad button.
+    expect(workspace.settings.controls.bindings.dpadUp).toEqual(["gamepad:button:12"]);
     expect(workspace.settings.audio).toEqual({ muted: true, volume: 1 });
     expect(legacy.size).toBe(2);
     validateWorkspace(workspace);

@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
+import packageInfo from "../../package.json";
 import { encodeBackup, decodeBackup } from "../../src/data/save/archive";
 import { firstWorkspace } from "../../src/data/save/migrations";
 import { LIMITS, type BackupSnapshot } from "../../src/data/save/types";
@@ -14,6 +15,7 @@ function snapshot(): BackupSnapshot {
   return { save: workspace.saves[0], settings: workspace.settings, settingsRevision: 0, images: new Map() };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- deliberately malformed data needs untyped access
 async function alter(change: (zip: JSZip, manifest: Record<string, any>) => void | Promise<void>) {
   const zip = await JSZip.loadAsync(await encodeBackup(snapshot()));
   const manifest = JSON.parse(await zip.file("save.json")!.async("string"));
@@ -28,7 +30,7 @@ describe("portable .vpg backups", () => {
     const bytes = await encodeBackup(source);
     const restored = await decodeBackup(bytes);
     expect(restored.snapshot).toEqual(source);
-    expect(restored.manifest.gameVersion).toBe("0.1.0");
+    expect(restored.manifest.gameVersion).toBe(packageInfo.version);
     expect(restored.manifest.entries.some((entry) => entry.path.startsWith("assets/"))).toBe(false);
     expect(bytes.length).toBeLessThan(10_000);
   });
