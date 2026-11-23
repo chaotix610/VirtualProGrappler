@@ -115,12 +115,8 @@ export function setMenuAudioMuted(muted: boolean): void {
   save();
 }
 
-/**
- * Sets the master level. Values outside 0..1 are clamped rather than refused,
- * but NaN is ignored: clamping it would still store NaN and silence the menu.
- */
+/** Sets the master level. Values outside 0..1 are clamped rather than refused. */
 export function setMenuAudioVolume(volume: number): void {
-  if (!Number.isFinite(volume)) return;
   settings.volume = Math.min(1, Math.max(0, volume));
   applyVolume();
   save();

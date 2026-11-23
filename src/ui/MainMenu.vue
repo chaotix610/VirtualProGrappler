@@ -26,14 +26,10 @@
         </li>
       </ul>
 
-      <!-- Pad buttons rather than keys: any input can be mapped to them. -->
       <p class="menu__hint">
-        <img class="menu__hint-icon" :src="menuIcons.dPad" alt="D-Pad" /> move
-        &middot; <img class="menu__hint-icon" :src="menuIcons.a" alt="A button" /> select
-        &middot; <img class="menu__hint-icon" :src="menuIcons.z" alt="Z button" /> info
-        <template v-if="canGoBack">
-          &middot; <img class="menu__hint-icon" :src="menuIcons.b" alt="B button" /> back
-        </template>
+        <kbd>&uarr;</kbd><kbd>&darr;</kbd> move &middot; <kbd>Enter</kbd> select
+        &middot; <kbd>Z</kbd> info
+        <template v-if="canGoBack"> &middot; <kbd>Esc</kbd> back</template>
       </p>
 
       <p v-if="status" class="menu__status">{{ status }}</p>
@@ -53,12 +49,7 @@
               </template>
             </dl>
           </template>
-          <p class="modal__close">
-            <img class="menu__hint-icon" :src="menuIcons.z" alt="Z button" />
-            or
-            <img class="menu__hint-icon" :src="menuIcons.b" alt="B button" />
-            to close
-          </p>
+          <p class="modal__close"><kbd>Z</kbd> or <kbd>Esc</kbd> to close</p>
         </div>
       </div>
     </template>
@@ -76,22 +67,10 @@ import {
   resolveTarget,
 } from "@/data/mainMenu";
 import { resolveAsset } from "@/data/assets";
-import {
-  type VirtualInput,
-  isInteractivePointerTarget,
-  isMenuDown,
-  isMenuUp,
-  pollGamepadBindings,
-  virtualInputFor,
-  virtualInputForBinding,
-} from "@/game/VirtualController";
+import { isMenuDown, isMenuUp, virtualInputFor } from "@/game/VirtualController";
 import { playMenuCue, setMenuMusicDepth, startMenuMusic, stopMenuMusic } from "@/audio/menuAudio";
 import ControlMapper from "./ControlMapper.vue";
 import SceneLoading from "./SceneLoading.vue";
-import dPadIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-D-Pad.svg";
-import aIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-A.svg";
-import bIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-B.svg";
-import zIcon from "../../assets/ui/textures/controller/ButtonIcon-N64-D-Z.svg";
 
 /**
  * The arena viewer is the menu's other Babylon screen. Loading it on demand
@@ -141,8 +120,6 @@ export default defineComponent({
       arenaViewerOpen: false,
       arenaEditorOpen: false,
       status: "",
-      stopGamepadPolling: null as (() => void) | null,
-      menuIcons: { dPad: dPadIcon, a: aIcon, b: bIcon, z: zIcon },
     };
   },
 
@@ -185,8 +162,6 @@ export default defineComponent({
     window.addEventListener("keydown", this.unlockMusic);
     window.addEventListener("pointerdown", this.unlockMusic);
     window.addEventListener("keydown", this.onKeyDown);
-    window.addEventListener("pointerdown", this.onPointerDown);
-    this.stopGamepadPolling = pollGamepadBindings(this.onGamepadBinding);
   },
 
   beforeUnmount() {
@@ -194,8 +169,6 @@ export default defineComponent({
     window.removeEventListener("keydown", this.unlockMusic);
     window.removeEventListener("pointerdown", this.unlockMusic);
     window.removeEventListener("keydown", this.onKeyDown);
-    window.removeEventListener("pointerdown", this.onPointerDown);
-    this.stopGamepadPolling?.();
   },
 
   methods: {
@@ -204,35 +177,15 @@ export default defineComponent({
     },
 
     onKeyDown(event: KeyboardEvent) {
-      if (this.subscreenOpen()) return;
+      // The mapper and the arena viewer run their own handlers while open.
+      if (this.mapperOpen || this.arenaViewerOpen || this.arenaEditorOpen) {
+        return;
+      }
+
       const input = virtualInputFor(event);
       if (!input) return;
       event.preventDefault();
-      this.onMappedInput(input);
-    },
 
-    /** A mapped mouse button on empty space; clicks on rows act as clicks. */
-    onPointerDown(event: PointerEvent) {
-      if (this.subscreenOpen() || isInteractivePointerTarget(event)) return;
-      const input = virtualInputFor(event);
-      if (!input) return;
-      event.preventDefault();
-      this.onMappedInput(input);
-    },
-
-    onGamepadBinding(binding: string) {
-      if (this.subscreenOpen()) return;
-      const input = virtualInputForBinding(binding);
-      if (input) this.onMappedInput(input);
-    },
-
-    /** The mapper, viewer and editor run their own input while open. */
-    subscreenOpen(): boolean {
-      return this.mapperOpen || this.arenaViewerOpen || this.arenaEditorOpen;
-    },
-
-    /** What a pad input does on the menu, whatever device it came from. */
-    onMappedInput(input: VirtualInput) {
       if (this.showInstructions) {
         if (input === "z" || input === "b") {
           this.showInstructions = false;
@@ -410,15 +363,6 @@ export default defineComponent({
   font-size: 0.8rem;
   opacity: 0.6;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
-}
-
-.menu__hint-icon {
-  display: inline-block;
-  width: 1.3rem;
-  height: 1.3rem;
-  margin: 0 0.12rem;
-  object-fit: contain;
-  vertical-align: middle;
 }
 
 .menu__status {

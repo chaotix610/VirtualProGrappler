@@ -21,27 +21,6 @@ export interface StageData {
   floors: string[];
   barricades: string[];
   outers: string[];
-  /**
-   * The floor each barricade is built to stand on, keyed by barricade path.
-   *
-   * Barricades do not all hide the same edges: the padded wall covers the step
-   * at the rim of the raised ringside mats, while the open metal barricade
-   * shows straight through to whatever it stands on and needs the flat
-   * concrete floor. A barricade listed here brings its floor with it - in the
-   * editor, and when an arena names the barricade but no floor.
-   */
-  barricadeFloors?: Record<string, string>;
-  /**
-   * Where the stage GLB is placed, for a GLB not authored in arena space.
-   *
-   * Same convention as an `arenaParts` placement: a position in scene units
-   * and Euler radians [x, y, z], applied to the GLB's root after it loads.
-   * Floors, barricades and outers are modelled in place and take none.
-   */
-  position?: [number, number, number];
-  rotation?: [number, number, number];
-  /** Uniform scale for a stage GLB authored at a different size. */
-  scale?: number;
 }
 
 /** The piece categories a stage constrains. */
@@ -85,22 +64,6 @@ export function piecesFor(stageId: string, kind: PieceKind): string[] {
  */
 export function defaultPiece(stageId: string, kind: PieceKind): string {
   return piecesFor(stageId, kind)[0] ?? "";
-}
-
-/**
- * The floor a barricade is built to stand on, or null when the stage pairs it
- * with nothing.
- *
- * A pairing that names a floor the stage does not list is ignored rather than
- * obeyed, for the same reason an unknown stage yields no pieces: handing back a
- * floor known not to fit would be worse than falling back to the default.
- */
-export function floorForBarricade(
-  stageId: string,
-  barricade: string
-): string | null {
-  const floor = byId.get(stageId)?.barricadeFloors?.[barricade];
-  return floor && pieceFitsStage(stageId, "floor", floor) ? floor : null;
 }
 
 /** Whether a piece is one the stage actually lists. */

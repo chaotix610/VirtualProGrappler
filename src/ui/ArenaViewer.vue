@@ -41,7 +41,7 @@
 
       <p class="select__hint">
         <kbd>&uarr;</kbd><kbd>&darr;</kbd> move &middot; <kbd>Enter</kbd> view
-        &middot; <kbd>{{ keyLabel("b") }}</kbd> back
+        &middot; <kbd>Esc</kbd> back
       </p>
       <p v-if="status" class="select__status">{{ status }}</p>
     </div>
@@ -51,7 +51,7 @@
       <span class="hud__name">{{ selected?.displayName }}</span>
       <span class="hud__keys">
         <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> rotate &middot;
-        <kbd>I</kbd>/<kbd>K</kbd> zoom &middot; <kbd>{{ keyLabel("b") }}</kbd> close
+        <kbd>I</kbd>/<kbd>K</kbd> zoom &middot; <kbd>Esc</kbd> close
       </span>
       <span v-if="warnings.length" class="hud__warning">
         {{ warnings.join(" / ") }}
@@ -80,16 +80,7 @@ import { defineComponent, markRaw } from "vue";
 import { ArenaSummary, availableArenas } from "@/data/arenas";
 import { resolveAsset } from "@/data/assets";
 import { ArenaScene, CameraState } from "@/renderer/ArenaScene";
-import { describeBinding, keysForControl } from "@/data/controls";
-import {
-  type VirtualInput,
-  isInteractivePointerTarget,
-  isMenuDown,
-  isMenuUp,
-  pollGamepadBindings,
-  virtualInputFor,
-  virtualInputForBinding,
-} from "@/game/VirtualController";
+import { isMenuDown, isMenuUp, virtualInputFor } from "@/game/VirtualController";
 import { playMenuCue } from "@/audio/menuAudio";
 
 /** Inputs the camera responds to while a scene is open. */
@@ -123,7 +114,6 @@ export default defineComponent({
       /** The camera as of the last readout poll. */
       view: null as CameraState | null,
       viewTimer: 0,
-      stopGamepadPolling: null as (() => void) | null,
     };
   },
 
@@ -160,8 +150,6 @@ export default defineComponent({
 
   mounted() {
     window.addEventListener("keydown", this.onKeyDown);
-    window.addEventListener("pointerdown", this.onPointerDown);
-    this.stopGamepadPolling = pollGamepadBindings(this.onGamepadBinding);
     // A few updates a second is plenty to read, and keeps Vue out of the
     // render loop.
     this.viewTimer = window.setInterval(this.pollView, 100);
@@ -169,8 +157,6 @@ export default defineComponent({
 
   beforeUnmount() {
     window.removeEventListener("keydown", this.onKeyDown);
-    window.removeEventListener("pointerdown", this.onPointerDown);
-    this.stopGamepadPolling?.();
     window.clearInterval(this.viewTimer);
     this.scene?.dispose();
     this.scene = null;
@@ -181,31 +167,7 @@ export default defineComponent({
       const input = virtualInputFor(event);
       if (!input) return;
       event.preventDefault();
-      this.onMappedInput(input);
-    },
 
-    /** A mapped mouse button on empty space; clicks on rows act as clicks. */
-    onPointerDown(event: PointerEvent) {
-      if (isInteractivePointerTarget(event)) return;
-      const input = virtualInputFor(event);
-      if (!input) return;
-      event.preventDefault();
-      this.onMappedInput(input);
-    },
-
-    onGamepadBinding(binding: string) {
-      const input = virtualInputForBinding(binding);
-      if (input) this.onMappedInput(input);
-    },
-
-    /** The inputs bound to a pad control, as the hints should name them. */
-    keyLabel(control: "b"): string {
-      const keys = keysForControl(control);
-      return keys.length ? keys.map(describeBinding).join(", ") : "unbound";
-    },
-
-    /** What a pad input does here, whatever device it came from. */
-    onMappedInput(input: VirtualInput) {
       if (this.sceneOpen) {
         if (input === "b") {
           playMenuCue("back");

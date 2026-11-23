@@ -1,11 +1,9 @@
 import { ArenaData, arenaParts, availableArenas } from "./arenas";
 import { knownAssetPaths } from "./assets";
-import { resolveRing } from "./rings";
 import {
   PieceKind,
   availableStages,
   defaultPiece,
-  floorForBarricade,
   pieceFitsStage,
   piecesFor,
 } from "./stages";
@@ -37,8 +35,6 @@ export interface ArenaDraft {
   floor: string;
   barricade: string;
   outer: string;
-  /** Ring GLB from data/environments/rings.json. Any stage can use any ring. */
-  ring: string;
   arenaTextures: Record<string, string>;
   ringTextures: Record<string, string>;
 }
@@ -119,7 +115,6 @@ function expandLegacyColors(textures: Record<string, string>): Record<string, st
 /** A draft of an arena that already exists. */
 export function draftFromArena(arena: ArenaData): ArenaDraft {
   const stage = arena.stage || stageForLegacy(arena);
-  const barricade = resolvePiece(stage, "barricade", arena.barricade);
   return {
     id: arena.id,
     displayName: arena.displayName ?? arena.id,
@@ -128,11 +123,9 @@ export function draftFromArena(arena: ArenaData): ArenaDraft {
     // A piece the file does not name - or names with something that does not
     // fit the stage, which a hand-edit can do - falls back to the stage's own
     // default, so the draft always describes a loadable arena.
-    floor: resolveFloor(stage, barricade, arena.floor),
-    barricade,
+    floor: resolvePiece(stage, "floor", arena.floor),
+    barricade: resolvePiece(stage, "barricade", arena.barricade),
     outer: resolvePiece(stage, "outer", arena.outer),
-    // Same fallback the renderer uses, so the draft names the ring it shows.
-    ring: resolveRing(arena.ring).glb,
     arenaTextures: expandLegacyColors(arena.arenaTextures ?? {}),
     ringTextures: expandLegacyColors(arena.ringTextures ?? {}),
   };
@@ -148,21 +141,6 @@ function resolvePiece(
 }
 
 /**
- * The floor for a draft: the one the file names if it fits, otherwise the
- * floor the barricade is built on, otherwise the stage default.
- *
- * Mirrors arenaParts, so the editor shows the floor the renderer would load.
- */
-function resolveFloor(
-  stage: string,
-  barricade: string,
-  glb: string | undefined
-): string {
-  if (glb && pieceFitsStage(stage, "floor", glb)) return glb;
-  return floorForBarricade(stage, barricade) ?? defaultPiece(stage, "floor");
-}
-
-/**
  * Points a draft at a different stage, bringing its pieces with it.
  *
  * Pieces are per-stage, so the ones that were selected are almost never valid
@@ -172,24 +150,9 @@ function resolveFloor(
  */
 export function selectStage(draft: ArenaDraft, stage: string): void {
   draft.stage = stage;
-  // The barricade is settled first because the floor may follow it.
-  draft.barricade = resolvePiece(stage, "barricade", draft.barricade);
-  draft.floor = resolveFloor(stage, draft.barricade, draft.floor);
-  draft.outer = resolvePiece(stage, "outer", draft.outer);
-}
-
-/**
- * Picks a barricade, bringing the floor it stands on.
- *
- * The open metal barricade only looks right on the concrete floor, and the
- * padded wall on the raised mats, so choosing one re-picks the floor the stage
- * pairs it with. A barricade with no pairing leaves the floor alone, and the
- * floor can still be changed afterwards - this sets a default, not a lock.
- */
-export function selectBarricade(draft: ArenaDraft, barricade: string): void {
-  draft.barricade = barricade;
-  const floor = floorForBarricade(draft.stage, barricade);
-  if (floor) draft.floor = floor;
+  for (const kind of PIECE_KINDS) {
+    draft[kind] = resolvePiece(stage, kind, draft[kind]);
+  }
 }
 
 /** The pieces of one kind this draft may choose between. */
@@ -236,7 +199,6 @@ export function draftToJson(draft: ArenaDraft): ArenaData {
   for (const kind of PIECE_KINDS) {
     if (draft[kind]) out[kind] = draft[kind];
   }
-  if (draft.ring) out.ring = draft.ring;
 
   const arenaTextures = pruneUnknown(draft.arenaTextures);
   if (Object.keys(arenaTextures).length) out.arenaTextures = arenaTextures;

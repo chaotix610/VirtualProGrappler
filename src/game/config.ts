@@ -250,18 +250,10 @@ export const Tuning = {
   groundSize: 40,
 };
 
-/**
- * How gameplay reads whichever ring an arena loads.
- *
- * The ring itself is chosen per arena - see data/environments/rings.json - so
- * this holds only the mesh names every ring must share.
- */
+/** The wrestling ring the match takes place in. */
 export const RING = {
-<<<<<<< Updated upstream
   /** Full URL from the web root. */
   file: MODEL_ROOT + "ring-standard.glb",
-=======
->>>>>>> Stashed changes
   /** Mesh name holding the mat; used to find the standing surface. */
   canvasMesh: "canvas",
   /** Prefix of the rope meshes; used to derive the rebound boundary. */

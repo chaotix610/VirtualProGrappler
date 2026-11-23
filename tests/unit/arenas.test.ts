@@ -94,11 +94,7 @@ describe("arena parts", () => {
       id: "x",
       displayName: "X",
       arenaParts: [
-<<<<<<< Updated upstream:tests/unit/arenas.test.ts
         { glb: "assets/glb/arena/barricade/barricade.glb", position: [1, 2, 3], rotation: [0, 1, 0] },
-=======
-        { glb: "assets/environments/arenas/shared/models/barricade/padded_barricade.glb", position: [1, 2, 3], rotation: [0, 1, 0] },
->>>>>>> Stashed changes:tests/arenas.test.ts
       ],
     });
     expect(parts[0].position).toEqual([1, 2, 3]);
@@ -155,42 +151,6 @@ describe("arena parts from a stage", () => {
       floor: "assets/glb/arena/floor/arena_floor.glb",
     }).map((p) => p.glb);
     expect(parts[0]).toBe("assets/glb/arena/floor/arena_floor.glb");
-  });
-
-  it("loads the floor a barricade is built on when the arena names no floor", () => {
-    const parts = arenaParts({
-      id: "x",
-      displayName: "X",
-      stage: "raw_is_war",
-      barricade: "assets/environments/arenas/shared/models/barricade/metal_barricade.glb",
-    }).map((p) => p.glb);
-    expect(parts[0]).toBe("assets/environments/arenas/shared/models/floor/concrete_floor.glb");
-    expect(parts[1]).toBe("assets/environments/arenas/shared/models/barricade/metal_barricade.glb");
-  });
-
-  it("places a stage GLB that carries its own placement, and only the stage", () => {
-    const parts = arenaParts({ id: "x", displayName: "X", stage: "monday_nitro" });
-    const stage = stageById("monday_nitro")!;
-    const placed = parts.find((p) => p.glb === stage.glb)!;
-    expect(placed.position).toEqual(stage.position);
-    expect(placed.rotation).toEqual(stage.rotation);
-    expect(placed.scale).toBe(0.5);
-    for (const piece of parts.filter((p) => p.glb !== stage.glb)) {
-      expect(piece.position).toEqual([0, 0, 0]);
-      expect(piece.rotation).toEqual([0, 0, 0]);
-      expect(piece.scale).toBeUndefined();
-    }
-  });
-
-  it("builds Monday Nitro from concrete, metal barricades and its own stage", () => {
-    const nitro = arenaById("mondaynitro")!;
-    expect(nitro.ring).toBe("assets/environments/arenas/shared/ring/models/ring-standard-2.glb");
-    expect(arenaParts(nitro).map((p) => p.glb)).toEqual([
-      "assets/environments/arenas/shared/models/floor/concrete_floor.glb",
-      "assets/environments/arenas/shared/models/barricade/metal_barricade.glb",
-      "assets/environments/arenas/shared/models/outer/arena_outer.glb",
-      "assets/environments/arenas/shared/models/stage/monday_nitro.glb",
-    ]);
   });
 
   it("prefers the stage fields over a legacy part list on the same file", () => {
@@ -297,11 +257,7 @@ describe("every arena's referenced assets resolve", () => {
     // arena files, so their materials are in scope for every arena's
     // `arenaTextures` - that is how an arena dresses its own banners.
     const rendererAdded = materialNamesInGlb(
-<<<<<<< Updated upstream:tests/unit/arenas.test.ts
       "assets/glb/arena/ceiling_trusses.glb"
-=======
-      "assets/environments/arenas/shared/models/ceiling_trusses_lit.glb"
->>>>>>> Stashed changes:tests/arenas.test.ts
     );
 
     for (const summary of availableArenas()) {
@@ -327,13 +283,8 @@ describe("every arena's referenced assets resolve", () => {
 });
 
 describe("ceiling trusses", () => {
-<<<<<<< Updated upstream:tests/unit/arenas.test.ts
   // Kept in step with CEILING_TRUSSES_PATH in src/renderer/ArenaScene.ts.
   const CEILING_GLB = "assets/glb/arena/ceiling_trusses.glb";
-=======
-  // Kept in step with CEILING_TRUSSES_PATH in src/renderer/ArenaLoader.ts.
-  const CEILING_GLB = "assets/environments/arenas/shared/models/ceiling_trusses_lit.glb";
->>>>>>> Stashed changes:tests/arenas.test.ts
 
   it("is bundled, since every arena gets one", () => {
     expect(resolveAsset(CEILING_GLB)).not.toBeNull();
