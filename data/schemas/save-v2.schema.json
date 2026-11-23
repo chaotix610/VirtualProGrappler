@@ -138,6 +138,12 @@
           "minLength": 1,
           "maxLength": 160
         },
+        "ring": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160,
+          "description": "Ring GLB from data/environments/rings.json. Optional, so a draft parked before rings were selectable still loads; the editor fills in the default."
+        },
         "arenaTextures": {
           "type": "object",
           "maxProperties": 64,
