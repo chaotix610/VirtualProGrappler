@@ -24,7 +24,7 @@
 
     <section>
       <h2>Portable backup</h2>
-      <p>Downloads the selected save as one <code>.vpg</code> file, with a copy of your controls, audio and backup-reminder settings. Bundled game assets stay with the game.</p>
+      <p>Downloads the selected save as one <code>.vpg</code> file: its custom arenas, every imported image (unused ones too), any unfinished arena draft, and a copy of your controls, audio and backup-reminder settings. Bundled game assets stay with the game.</p>
       <p>{{ saves.needsBackup ? 'Changes since the last backup download request.' : 'No changes since the last backup download request.' }}</p>
       <p v-if="active.lastBackup">Last download requested: {{ new Date(active.lastBackup.attemptedAt).toLocaleString() }}. Check that you retained the file.</p>
       <div class="actions">
@@ -61,7 +61,27 @@
       </div>
     </section>
 
-    <!-- Imported images join this screen when texture slots accept imports. -->
+    <section>
+      <h2>Imported images</h2>
+      <p>{{ active.images.length }} of {{ LIMITS.images }} images, {{ formatBytes(libraryBytes(active.images)) }} of 64 MiB. Imports accept PNG and JPEG. Each is re-encoded: its orientation is applied, metadata such as location is removed, and anything over 2048 px per side or 4 MiB is scaled down.</p>
+      <div class="actions">
+        <button :disabled="busy" @click="imagePicker?.click()">Import Image…</button>
+        <input ref="imagePicker" type="file" accept="image/png,image/jpeg" hidden @change="importImage" />
+      </div>
+      <p v-if="!active.images.length">No imported images in this save. Import them here or from an Arena Editor texture slot.</p>
+      <ul class="images">
+        <li v-for="image in active.images" :key="image.id">
+          <img v-if="thumbs.get(image.id)" :src="thumbs.get(image.id)" alt="" />
+          <span><strong>{{ image.name }}</strong> · {{ describeImage(image) }} · {{ usageText(image.id) }}</span>
+          <button :disabled="busy" @click="requestImageDelete(image)">Delete…</button>
+        </li>
+      </ul>
+      <div v-if="deleteImage" class="confirmation" role="group" aria-label="Confirm image deletion">
+        <p>Delete imported image “{{ deleteImage.name }}” from this save? This cannot be undone without a backup.</p>
+        <button :disabled="busy" @click="confirmImageDelete">Delete Image</button>
+        <button @click="deleteImage = null">Cancel</button>
+      </div>
+    </section>
 
     <section>
       <h2>Browser storage</h2>
@@ -82,15 +102,19 @@
  * coordinator, which validates and commits it in one transaction, so this
  * screen only presents results and reports failures.
  */
-import { computed, onMounted, ref, watch } from "vue";
-import { saves, downloadBackup, stageBackup as readBackup, type StagedBackup } from "@/data/save/runtime";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { saves, downloadBackup, importImageFile, stageBackup as readBackup, type StagedBackup } from "@/data/save/runtime";
 import { LIMITS, type LibraryImage } from "@/data/save/types";
-import { formatBytes } from "@/data/save/images";
+import { describeImage, formatBytes, imageUsage, userImageRef } from "@/data/save/images";
+import { acquireImageUrls, type ImageUrls } from "@/data/userImages";
 import { useMenuForm } from "./menuForm";
 
 const emit = defineEmits<{ back: [] }>();
 const root = ref<HTMLElement | null>(null);
 const picker = ref<HTMLInputElement | null>(null);
+const imagePicker = ref<HTMLInputElement | null>(null);
+const deleteImage = ref<LibraryImage | null>(null);
+const thumbs = ref(new Map<string, string>());
 const busy = ref(false), notice = ref(""), saveName = ref("");
 const confirmDelete = ref(false), deleteArenaId = ref<string | null>(null);
 const staged = ref<StagedBackup | null>(null);
@@ -104,7 +128,30 @@ watch(() => [active.value.id, active.value.name], ([, name]) => {
   saveName.value = name;
   confirmDelete.value = false;
   deleteArenaId.value = null;
+  deleteImage.value = null;
 }, { immediate: true });
+
+// Thumbnails hold object URLs while shown; the next set is acquired before the
+// previous one is released, so an image in both keeps its URL.
+let thumbLease: ImageUrls | null = null, thumbToken = 0;
+watch(() => active.value.images.map((image) => image.id).join(","), async () => {
+  const token = ++thumbToken;
+  const refs = active.value.images.map((image) => userImageRef(image.id));
+  const lease = await acquireImageUrls(refs);
+  if (token !== thumbToken) { lease.release(); return; }
+  thumbLease?.release(); thumbLease = lease;
+  thumbs.value = new Map(active.value.images.flatMap((image) => {
+    const url = lease.resolve(userImageRef(image.id));
+    return url ? [[image.id, url] as const] : [];
+  }));
+}, { immediate: true });
+onBeforeUnmount(() => { thumbToken++; thumbLease?.release(); });
+
+/** Which arenas, or the unfinished draft, use an image. */
+function usageText(id: string) {
+  const uses = imageUsage(active.value, id);
+  return uses.length ? `Used by ${uses.join(", ")}` : "Unused";
+}
 
 const deleteArenaName = computed(() =>
   active.value.arenas.find((arena) => arena.id === deleteArenaId.value)?.displayName ?? deleteArenaId.value
@@ -156,6 +203,41 @@ async function stageBackup(event: Event) {
   });
 }
 
+async function importImage(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  await run(async () => {
+    const { image, duplicate } = await importImageFile(file);
+    notice.value = duplicate ? `“${image.name}” is already in this save.` : `Imported “${image.name}” (${describeImage(image)}).`;
+    await readUsage();
+  });
+}
+
+function requestImageDelete(image: LibraryImage) {
+  const uses = imageUsage(active.value, image.id);
+  // Refused up front: deleting never rewrites an arena behind the player's back.
+  if (uses.length) {
+    deleteImage.value = null;
+    notice.value = `“${image.name}” is used by ${uses.join(", ")}. Change those textures before deleting it.`;
+    return;
+  }
+  notice.value = "";
+  deleteImage.value = image;
+}
+
+function confirmImageDelete() {
+  const image = deleteImage.value;
+  if (!image) return;
+  void run(async () => {
+    await saves.deleteImage(image.id);
+    deleteImage.value = null;
+    notice.value = `Deleted “${image.name}”.`;
+    await readUsage();
+  });
+}
+
 async function restore() {
   if (!staged.value) return;
   await saves.restore(staged.value.snapshot, { replace: replace.value, settings: restoreSettings.value, exportedAt: staged.value.manifest.exportedAt });
@@ -185,5 +267,7 @@ input[hidden] { display: none; }
 button, input, select { font: inherit; color: inherit; background: #202938; border: 1px solid #738197; border-radius: .25rem; }
 button { padding: .5rem .8rem; cursor: pointer; } button:disabled { opacity: .5; } :focus-visible { outline: 3px solid #e4c28f; outline-offset: 3px; }
 .warning { color: #ffbb9c; } .confirmation { border: 1px solid #e4c28f; padding: 1rem; margin: 1rem 0; } .hint { color: #b9c4d2; }
+.images { list-style: none; padding: 0; } .images li { display: flex; align-items: center; gap: .75rem; margin: .5rem 0; }
+.images img { width: 3rem; height: 3rem; object-fit: contain; background: #202938; flex: none; } .images span { flex: 1; }
 .arenas { list-style: none; padding: 0; } .arenas li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin: .5rem 0; } .muted { color: #b9c4d2; }
 </style>

@@ -10,6 +10,7 @@ import {
 
 import { ArenaData, arenaById } from "../data/arenas";
 import { LoadedArena, disposeArena, isLightCard, loadArena } from "./ArenaLoader";
+import { ImageUrls, acquireImageUrls } from "../data/userImages";
 
 /**
  * Renders one arena for the Arena Viewer: the ring, two sets of steps, and
@@ -53,6 +54,8 @@ export class ArenaScene {
   private arenaMeshes: AbstractMesh[] = [];
   private ceilingMeshes: AbstractMesh[] = [];
   private loaded: LoadedArena | null = null;
+  /** Object URLs for the loaded arena's imported images, held until it is cleared. */
+  private images: ImageUrls | null = null;
 
   constructor(private readonly canvas: HTMLCanvasElement) {}
 
@@ -140,13 +143,25 @@ export class ArenaScene {
    */
   async load(arenaOrId: string | ArenaData): Promise<ArenaLoadReport> {
     this.init();
-    this.clearArena();
 
     const arena =
       typeof arenaOrId === "string" ? arenaById(arenaOrId) : arenaOrId;
-    if (!arena) throw new Error(`No arena data for "${arenaOrId}"`);
+    if (!arena) {
+      this.clearArena();
+      throw new Error(`No arena data for "${arenaOrId}"`);
+    }
 
-    const loaded = await loadArena(this.scene!, arena);
+    // Acquired before the previous arena is cleared, so an image both use
+    // keeps its object URL instead of being revoked and recreated.
+    const images = await acquireImageUrls([
+      ...Object.values(arena.arenaTextures ?? {}),
+      ...Object.values(arena.ringTextures ?? {}),
+    ]);
+    this.clearArena();
+    this.images = images;
+
+    const loaded = await loadArena(this.scene!, arena, images.resolve);
+    loaded.warnings.unshift(...images.warnings);
     this.loaded = loaded;
     this.ringMeshes = loaded.ring;
     this.stepsMeshes = loaded.steps;
@@ -167,6 +182,8 @@ export class ArenaScene {
   private clearArena(): void {
     if (this.loaded) disposeArena(this.loaded);
     this.loaded = null;
+    this.images?.release();
+    this.images = null;
 
     this.ringMeshes = [];
     this.stepsMeshes = [];

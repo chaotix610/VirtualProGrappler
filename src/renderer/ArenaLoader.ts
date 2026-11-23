@@ -98,6 +98,14 @@ export interface LoadedArena {
 }
 
 /**
+ * Turns an arena file's texture value into a URL. Bundled paths resolve
+ * through the asset map; a caller showing an arena from a local save also
+ * resolves that save's imported images (`user-image:<sha256>`), whose object
+ * URLs it holds for as long as the arena is on screen.
+ */
+export type TextureResolver = (value: string) => string | null;
+
+/**
  * Loads an arena into `scene`.
  *
  * A missing environment part warns and carries on, since an arena is still
@@ -106,7 +114,8 @@ export interface LoadedArena {
  */
 export async function loadArena(
   scene: Scene,
-  arena: ArenaData
+  arena: ArenaData,
+  resolveTexture: TextureResolver = resolveAsset
 ): Promise<LoadedArena> {
   const warnings: string[] = [];
   const loaded: LoadedArena = {
@@ -160,7 +169,7 @@ export async function loadArena(
     warnings.push(`Ceiling trusses not bundled: ${CEILING_TRUSSES_PATH}`);
   }
 
-  warnings.push(...applyTextures(scene, arena, ring, loaded));
+  warnings.push(...applyTextures(scene, arena, ring, loaded, resolveTexture));
   return loaded;
 }
 
@@ -325,16 +334,17 @@ function applyDefaultStepsTexture(scene: Scene, steps: AbstractMesh[]): void {
     }
   }
 
-  for (const material of materials) {
-    swapTexture(scene, material, DEFAULT_STEPS_TEXTURE);
-  }
+  const url = resolveAsset(DEFAULT_STEPS_TEXTURE);
+  if (!url) return;
+  for (const material of materials) swapTexture(scene, material, url);
 }
 
 function applyTextures(
   scene: Scene,
   arena: ArenaData,
   ring: RingData,
-  loaded: LoadedArena
+  loaded: LoadedArena,
+  resolveTexture: TextureResolver
 ): string[] {
   const warnings: string[] = [];
   // The ring's own defaults go under the arena's choices. A ring that embeds
@@ -349,7 +359,8 @@ function applyTextures(
       scene,
       [...loaded.ring, ...loaded.steps],
       ringTextures,
-      "ringTextures"
+      "ringTextures",
+      resolveTexture
     )
   );
   warnings.push(
@@ -357,7 +368,8 @@ function applyTextures(
       scene,
       [...loaded.arena, ...loaded.ceiling],
       arena.arenaTextures,
-      "arenaTextures"
+      "arenaTextures",
+      resolveTexture
     )
   );
   return warnings;
@@ -367,7 +379,8 @@ function applyTo(
   scene: Scene,
   meshes: AbstractMesh[],
   textures: Record<string, string> | undefined,
-  label: string
+  label: string,
+  resolveTexture: TextureResolver
 ): string[] {
   if (!textures) return [];
 
@@ -392,7 +405,11 @@ function applyTo(
       }
       continue;
     }
-    for (const material of materials) swapTexture(scene, material, value);
+    // Unresolved - an imported image that could not be read - keeps the
+    // baked texture; the caller already warned about the unreadable image.
+    const url = resolveTexture(value);
+    if (!url) continue;
+    for (const material of materials) swapTexture(scene, material, url);
   }
   return warnings;
 }
@@ -424,10 +441,8 @@ function applyColor(
   }
 }
 
-function swapTexture(scene: Scene, material: Material, texturePath: string): void {
-  const url = resolveAsset(texturePath);
-  if (!url) return;
-
+/** `url` is already resolved: a bundled asset's URL or an imported image's object URL. */
+function swapTexture(scene: Scene, material: Material, url: string): void {
   // invertY false matches the glTF UV convention; without it every swapped
   // texture appears upside down against the baked ones.
   const texture = new Texture(url, scene, undefined, false);

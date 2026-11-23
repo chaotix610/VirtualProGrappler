@@ -2,14 +2,16 @@
 
 > **In this project:** ported from VirtualProGrappler-V2 on 2026-11-23. The
 > storage layer below is in place in full (`src/data/save/`, its schemas and
-> `tests/save/`). Wired so far: the local save opens at startup and holds
-> controls and audio, with temporary mode for a second tab or blocked storage;
-> Commissioner -> Options -> Save Data selects, creates, renames and deletes
-> saves and downloads and restores `.vpg` backups; Exit on the main menu
-> flushes and offers a backup; and the Arena Editor keeps player-made arenas
-> in the selected save, with an unfinished draft as the save's recovery
-> record, and Save Data lists and deletes them. Imported textures are wired
-> next; their Save Data section is left off until then.
+> `tests/save/`), and stages S1-S3 are all wired: the local save opens at
+> startup and holds controls and audio, with temporary mode for a second tab
+> or blocked storage; Commissioner -> Options -> Save Data selects, creates,
+> renames and deletes saves, downloads and restores `.vpg` backups, and lists
+> custom arenas and imported images; Exit on the main menu flushes and offers
+> a backup; and the Arena Editor keeps player-made arenas in the selected save,
+> with an unfinished draft as the save's recovery record, and imports PNG/JPEG
+> textures into the save from any texture slot. The arena viewer and editor
+> render imported textures through `acquireImageUrls`; the Combat System Test
+> still loads arenas with bundled textures only.
 >
 > Unlike V2, the editor has a second destination: under `vite serve` a
 > bundled arena saves back to `data/environments/arenas/<id>.json`, and a new
@@ -18,7 +20,9 @@
 > project are parked in sessionStorage, not the save, because a save may hold
 > recovery only for its own arenas; for the same reason the legacy
 > `vpg.arenaEditor.draft` migration is not run. Without the dev server, as in
-> V2, choosing a bundled arena starts a copy in the save. Differences from V2: the database is `vpg-saves` rather than
+> V2, choosing a bundled arena starts a copy in the save. Imported images can
+> dress only a draft bound for the save - a project file shipped with the game
+> could not carry the bytes - so importing is disabled for project drafts. Differences from V2: the database is `vpg-saves` rather than
 > `vpg-player-data` (both projects were served from the same localhost
 > origin), arena drafts carry this project's `ring` field, and saved arenas
 > must name a ring from `data/environments/rings.json`.

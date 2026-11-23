@@ -200,8 +200,23 @@
                   <option v-for="t in textureOptions[slot.id]" :key="t" :value="t">
                     {{ fileLabel(t) }}
                   </option>
+                  <!-- Any imported image fits any texture slot; folders only sort the bundled art. -->
+                  <optgroup v-if="library.length" label="Imported images">
+                    <option v-for="image in library" :key="image.id" :value="imageRef(image.id)">
+                      {{ image.name }} ({{ image.width }}&times;{{ image.height }})
+                    </option>
+                  </optgroup>
                 </select>
               </label>
+              <button
+                v-if="slot.folders.length"
+                class="btn slot__import"
+                :disabled="importing || !canImport"
+                :title="canImport ? 'Import a PNG or JPEG into your local save' : 'Imported images live in a local save, so arenas saved to the project files cannot use them'"
+                @click="chooseImport(slot)"
+              >
+                {{ importing && importSlot === slot ? "Importing…" : "Import image…" }}
+              </button>
               <span v-else class="field__label slot__label">
                 {{ slot.label }}
               </span>
@@ -243,6 +258,18 @@
               </div>
             </div>
           </section>
+
+          <input
+            ref="imagePicker"
+            type="file"
+            accept="image/png,image/jpeg"
+            hidden
+            @change="onImageChosen"
+          />
+          <p v-if="!canImport" class="field__note">
+            Importing images is for arenas kept in your local save; this one
+            saves to the project files.
+          </p>
 
           <p v-if="strayKeys.length" class="field__error">
             This file sets keys the editor has no control for:
@@ -333,8 +360,9 @@ import { slotSections } from "@/data/textureSlots";
 import { PieceKind, availableStages } from "@/data/stages";
 import { availableRings, defaultRing } from "@/data/rings";
 import { projectSaveAvailable, saveLocalArena, saveProjectArena } from "@/data/arenaStore";
-import { saves } from "@/data/save/runtime";
-import { copy } from "@/data/save/types";
+import { importImageFile, saves } from "@/data/save/runtime";
+import { copy, type LibraryImage } from "@/data/save/types";
+import { describeImage, userImageRef } from "@/data/save/images";
 import { resolveAsset } from "@/data/assets";
 import { ArenaScene } from "@/renderer/ArenaScene";
 import {
@@ -478,6 +506,9 @@ export default defineComponent({
       newDestination: "local" as SaveDestination,
       /** Whether this draft has put a recovery record in the local save. */
       recoveryInSave: false,
+      importing: false,
+      /** The slot an import in progress will dress. */
+      importSlot: null as TextureSlot | null,
       saving: false,
       loading: false,
       previewReady: false,
@@ -519,6 +550,21 @@ export default defineComponent({
     /** The local save is always there; the project only under the dev server. */
     canSave(): boolean {
       return this.destination === "project" ? this.projectAvailable : this.saves.status.ready;
+    },
+
+    /**
+     * Imported images can dress only an arena kept in the local save: the
+     * bytes live in the save, and a project file shipped with the game could
+     * not carry them.
+     */
+    canImport(): boolean {
+      return this.destination === "local";
+    },
+
+    /** The selected save's imported images, offered on every texture slot. */
+    library(): LibraryImage[] {
+      if (!this.canImport || !this.saves.workspace.value) return [];
+      return this.saves.activeSave.images;
     },
 
     /** The footer's account of where Save goes. */
@@ -1007,6 +1053,54 @@ export default defineComponent({
       const draft = this.draft;
       if (!draft || !slot.materials.length) return "";
       return draft[slot.map][slot.materials[0]] ?? "";
+    },
+
+    imageRef(id: string): string {
+      return userImageRef(id);
+    },
+
+    chooseImport(slot: TextureSlot) {
+      if (this.importing || !this.canImport) return playMenuCue("deny");
+      this.importSlot = slot;
+      (this.$refs.imagePicker as HTMLInputElement | undefined)?.click();
+    },
+
+    /**
+     * Stores the chosen file in the selected save's library, then dresses the
+     * slot with it. The image stays in the library even if the draft is
+     * discarded; Save Data lists and deletes unused ones.
+     */
+    async onImageChosen(event: Event) {
+      const input = event.target as HTMLInputElement;
+      const file = input.files?.[0];
+      input.value = "";
+      const slot = this.importSlot;
+      if (!file || !slot || !this.draft) {
+        this.importSlot = null;
+        return;
+      }
+      this.importing = true;
+      try {
+        const { image, duplicate } = await importImageFile(file);
+        const draft = this.draft;
+        if (draft) {
+          for (const material of slot.materials) draft[slot.map][material] = userImageRef(image.id);
+        }
+        const save = this.saves.activeSave.name;
+        this.setStatus(
+          duplicate
+            ? `“${image.name}” is already in “${save}”; using it for ${slot.label}.`
+            : `Imported “${image.name}” (${describeImage(image)}) into “${save}”.`,
+          false
+        );
+        playMenuCue("confirm");
+      } catch (error) {
+        this.setStatus(`Import failed: ${error instanceof Error ? error.message : String(error)}`, true);
+        playMenuCue("deny");
+      } finally {
+        this.importing = false;
+        this.importSlot = null;
+      }
     },
 
     setTexture(slot: TextureSlot, event: Event) {
@@ -1656,6 +1750,12 @@ export default defineComponent({
 
 .slot:last-child {
   border-bottom: 0;
+}
+
+.slot__import {
+  margin: 0 0 6px;
+  padding: 3px 9px;
+  font-size: 12px;
 }
 
 .slot__label {
